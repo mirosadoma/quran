@@ -35,6 +35,28 @@ export function formatNumber(value: number, locale: Locale): string {
     return new Intl.NumberFormat(locale === 'ar' ? 'ar-EG-u-nu-latn' : 'en-US').format(value);
 }
 
+/**
+ * Copy to the clipboard, also where the clipboard API is missing (pages opened over http).
+ */
+export async function copyText(text: string): Promise<boolean> {
+    try {
+        await navigator.clipboard.writeText(text);
+
+        return true;
+    } catch {
+        const field = document.createElement('textarea');
+        field.value = text;
+        field.style.position = 'fixed';
+        field.style.opacity = '0';
+        document.body.appendChild(field);
+        field.select();
+        const copied = document.execCommand('copy');
+        field.remove();
+
+        return copied;
+    }
+}
+
 export function formatBytes(bytes: number | null | undefined): string {
     if (!bytes) {
         return '';

@@ -3,6 +3,7 @@ import { BookOpen, BookOpenCheck, CalendarDays, ClipboardCheck, GraduationCap, P
 import { MemorizationTrendChart } from '@/components/charts';
 import { TopStudentsCard, VerseCard, WelcomeBanner } from '@/components/dashboard/widgets';
 import { HalaqaCard } from '@/components/halaqa/halaqa-card';
+import { PushPrompt } from '@/components/install-app';
 import { PendingSubmissionsCard } from '@/components/progress/recitation-submissions';
 import { RecordList } from '@/components/progress/record-list';
 import { Countdown } from '@/components/session/countdown';
@@ -61,6 +62,8 @@ export default function TeacherDashboard(props: TeacherDashboardProps) {
                     </div>
                 )}
             </WelcomeBanner>
+
+            <PushPrompt />
 
             <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-5">
                 <StatCard icon={BookOpen} label={t('My halaqat')} value={formatNumber(stats.halaqat, locale)} tone="emerald" />

@@ -51,6 +51,22 @@ class NotificationController extends Controller
     }
 
     /**
+     * Opened from a push notification on the phone: mark it as read and go to its page.
+     */
+    public function open(Request $request, string $id): RedirectResponse
+    {
+        $notification = $request->user()->notifications()->find($id);
+
+        if ($notification === null) {
+            return redirect()->route('notifications.index');
+        }
+
+        $notification->markAsRead();
+
+        return redirect()->to($notification->data['url'] ?? route('notifications.index'));
+    }
+
+    /**
      * Mark every notification as read.
      */
     public function readAll(Request $request): RedirectResponse

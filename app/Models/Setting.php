@@ -45,6 +45,7 @@ class Setting extends Model
             'auto_start_sessions' => true,
             'notify_email' => true,
             'notify_whatsapp' => false,
+            'notify_push' => true,
             'google_meet' => null,
         ];
     }

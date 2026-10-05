@@ -49,6 +49,21 @@ export function loadPage(page: number): Promise<MushafAyah[]> {
 }
 
 /**
+ * Change an ayah of the downloaded pages (its word meanings were edited).
+ */
+export function updateCachedAyah(ayahId: number, changes: Partial<MushafAyah>): void {
+    for (const [page, ayahs] of pages) {
+        if (ayahs.some((ayah) => ayah.id === ayahId)) {
+            pages.set(
+                page,
+                ayahs.map((ayah) => (ayah.id === ayahId ? { ...ayah, ...changes } : ayah)),
+            );
+            listeners.forEach((listener) => listener());
+        }
+    }
+}
+
+/**
  * Ayahs of the given pages, downloading the missing ones (undefined while loading).
  */
 export function useMushafPages(numbers: number[]): Record<number, MushafAyah[] | undefined> {

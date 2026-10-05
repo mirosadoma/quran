@@ -1,4 +1,4 @@
-import { ArrowRight, BookmarkCheck, BookmarkPlus, BookOpenText, Copy, Headphones, Highlighter, Trash, X } from 'lucide-react';
+import { ArrowRight, BookmarkCheck, BookmarkPlus, BookOpenText, Copy, Headphones, Highlighter, Languages, Mic, Trash, X } from 'lucide-react';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { ReciterList } from '@/components/mushaf/player';
@@ -29,14 +29,18 @@ interface AyahMenuProps {
     onListen: (ayah: MushafAyah, reciter: ReciterItem, scope: ListenScope) => void;
     onHighlight: (ayah: MushafAyah, color: HighlightColor | null, note: string | null) => void;
     onBookmark: (ayah: MushafAyah) => void;
+    onRecite: (ayah: MushafAyah) => void;
+    /** Administration only: edit the meanings of the words. */
+    onEditMeanings?: (ayah: MushafAyah) => void;
 }
 
 type View = 'main' | 'listen' | 'mark';
 
 /**
- * Actions on the ayah the reader tapped: tafsir, recitation, color mark, bookmark, copy.
+ * Actions on the ayah the reader tapped: tafsir, recitation, reciting it with the voice, color mark,
+ * bookmark, copy (and the word meanings for the administration).
  */
-export function AyahMenu({ target, reciters, reciterId, highlight, bookmarked, onClose, onTafsir, onListen, onHighlight, onBookmark }: AyahMenuProps) {
+export function AyahMenu({ target, reciters, reciterId, highlight, bookmarked, onClose, onTafsir, onListen, onHighlight, onBookmark, onRecite, onEditMeanings }: AyahMenuProps) {
     const { t } = useTrans();
     const panel = useRef<HTMLDivElement>(null);
     const [view, setView] = useState<View>('main');
@@ -130,7 +134,7 @@ export function AyahMenu({ target, reciters, reciterId, highlight, bookmarked, o
 
             {view === 'main' && (
                 <div className="space-y-3 p-3">
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-3 gap-2">
                         <button
                             type="button"
                             onClick={() => onTafsir(ayah)}
@@ -145,10 +149,18 @@ export function AyahMenu({ target, reciters, reciterId, highlight, bookmarked, o
                             className="flex flex-col items-center gap-1.5 rounded-2xl bg-primary-50 px-3 py-3.5 text-sm font-semibold text-primary-800 transition hover:bg-primary-100 dark:bg-primary-500/10 dark:text-primary-200"
                         >
                             <Headphones className="size-5" />
-                            {t('Listen to the recitation')}
+                            {t('Listen')}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => onRecite(ayah)}
+                            className="flex flex-col items-center gap-1.5 rounded-2xl bg-sky-50 px-3 py-3.5 text-sm font-semibold text-sky-800 transition hover:bg-sky-100 dark:bg-sky-500/10 dark:text-sky-200"
+                        >
+                            <Mic className="size-5" />
+                            {t('Recite')}
                         </button>
                     </div>
-                    <div className="grid grid-cols-3 gap-1.5">
+                    <div className={cn('grid gap-1.5', onEditMeanings ? 'grid-cols-4' : 'grid-cols-3')}>
                         <Button variant="ghost" size="sm" className="flex-col gap-1 py-2 text-xs" onClick={() => setView('mark')}>
                             <Highlighter className={cn(highlight && 'text-gold-600')} />
                             {highlight ? t('Edit mark') : t('Mark')}
@@ -169,6 +181,20 @@ export function AyahMenu({ target, reciters, reciterId, highlight, bookmarked, o
                             <Copy />
                             {t('Copy')}
                         </Button>
+                        {onEditMeanings && (
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="flex-col gap-1 py-2 text-xs"
+                                onClick={() => {
+                                    onEditMeanings(ayah);
+                                    onClose();
+                                }}
+                            >
+                                <Languages />
+                                {t('Meanings')}
+                            </Button>
+                        )}
                     </div>
                 </div>
             )}

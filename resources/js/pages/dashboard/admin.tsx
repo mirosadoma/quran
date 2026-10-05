@@ -2,6 +2,7 @@ import { usePage } from '@inertiajs/react';
 import { BookOpen, BookOpenCheck, CalendarDays, CalendarPlus, ChartColumn, GraduationCap, Percent, Plus, UserPlus, Users } from 'lucide-react';
 import { AttendanceTrendChart, MemorizationTrendChart } from '@/components/charts';
 import { TopStudentsCard, WelcomeBanner } from '@/components/dashboard/widgets';
+import { PushPrompt } from '@/components/install-app';
 import { PendingSubmissionsCard } from '@/components/progress/recitation-submissions';
 import { RecordList } from '@/components/progress/record-list';
 import { SessionRow } from '@/components/session/session-row';
@@ -52,6 +53,8 @@ export default function AdminDashboard({ stats, attendanceTrend, memorizationTre
                     </LinkButton>
                 </div>
             </WelcomeBanner>
+
+            <PushPrompt />
 
             <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
                 <StatCard icon={GraduationCap} label={t('Active students')} value={formatNumber(stats.students, locale)} tone="emerald" />

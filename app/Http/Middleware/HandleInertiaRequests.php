@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use App\Models\Setting;
 use App\Services\ChatService;
 use App\Services\Realtime;
+use App\Services\WebPush\WebPush;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Middleware;
@@ -59,6 +60,9 @@ class HandleInertiaRequests extends Middleware
                     'avatar_url' => $user->avatar_url,
                     'timezone' => $user->displayTimezone(),
                 ] : null,
+            ],
+            'push' => fn (): array => [
+                'public_key' => $user && Setting::get('notify_push') && app(WebPush::class)->isConfigured() ? app(WebPush::class)->publicKey() : null,
             ],
             'locale' => app()->getLocale(),
             'timezone' => $user?->displayTimezone() ?? config('app.user_timezone'),

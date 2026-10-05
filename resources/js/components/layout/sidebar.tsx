@@ -11,7 +11,9 @@ import {
     LayoutDashboard,
     LogOut,
     MessagesSquare,
+    MoonStar,
     Settings,
+    Smile,
     UserRound,
     Users,
     type LucideIcon,
@@ -20,6 +22,7 @@ import { Avatar } from '@/components/ui/avatar';
 import { IslamicPattern, Logo } from '@/components/brand';
 import { useTrans } from '@/lib/i18n';
 import { useLabels } from '@/lib/labels';
+import { signOut } from '@/lib/push';
 import { cn } from '@/lib/utils';
 
 interface NavItem {
@@ -72,10 +75,12 @@ function useNavigation(): NavGroup[] {
         },
         { label: t('Learning'), items: learning },
         {
-            label: t('Quran and adhkar'),
+            label: t('Quran and worship'),
             items: [
                 { label: t('The recited mushaf'), href: route('mushaf.index'), active: current('mushaf.*'), icon: BookOpenText },
+                { label: t('Kids memorization'), href: route('kids.index'), active: current('kids.*'), icon: Smile },
                 { label: t('Adhkar and duas'), href: route('adhkar.index'), active: current('adhkar.*'), icon: HandHeart },
+                { label: t('Prayer'), href: route('prayers.index'), active: current('prayers.*'), icon: MoonStar },
             ],
         },
         {
@@ -132,10 +137,10 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
                 </Link>
             </div>
 
-            <nav className="relative flex-1 space-y-6 overflow-y-auto px-3 py-2">
+            <nav className="relative flex-1 space-y-4 overflow-y-auto px-3 py-1">
                 {groups.map((group) => (
                     <div key={group.label}>
-                        <p className="mb-2 px-3 text-[11px] font-semibold tracking-wide text-sidebar-ink/45">{group.label}</p>
+                        <p className="mb-1 px-3 text-xs font-semibold tracking-wide text-sidebar-ink/45">{group.label}</p>
                         <ul className="space-y-0.5">
                             {group.items.map((item) => (
                                 <li key={item.href}>
@@ -144,7 +149,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
                                         onClick={onNavigate}
                                         prefetch
                                         className={cn(
-                                            'group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition',
+                                            'group relative flex items-center gap-3 rounded-xl px-3 py-2 text-base font-medium transition',
                                             item.active
                                                 ? 'bg-white/10 text-white shadow-inner shadow-white/5'
                                                 : 'text-sidebar-ink/75 hover:bg-white/5 hover:text-white',
@@ -152,7 +157,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
                                     >
                                         {item.active && <span className="absolute inset-y-2 start-0 w-1 rounded-full bg-gold-400" />}
                                         <item.icon
-                                            className={cn('size-[18px] shrink-0', item.active ? 'text-gold-300' : 'text-sidebar-ink/55 group-hover:text-gold-200')}
+                                            className={cn('size-5 shrink-0', item.active ? 'text-gold-300' : 'text-sidebar-ink/55 group-hover:text-gold-200')}
                                         />
                                         <span className="flex-1 truncate">{item.label}</span>
                                         {!!item.badge && (
@@ -178,15 +183,15 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
                                 <p className="truncate text-xs text-sidebar-ink/55">{labels.role[user.role]}</p>
                             </div>
                         </Link>
-                        <Link
-                            href={route('logout')}
-                            method="post"
-                            as="button"
+                        <button
+                            type="button"
+                            onClick={signOut}
                             title={t('Sign out')}
+                            aria-label={t('Sign out')}
                             className="rounded-lg p-2 text-sidebar-ink/60 transition hover:bg-white/10 hover:text-white"
                         >
                             <LogOut className="size-4 rtl:rotate-180" />
-                        </Link>
+                        </button>
                     </div>
                 </div>
             )}

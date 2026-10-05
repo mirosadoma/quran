@@ -1,0 +1,359 @@
+[
+    {
+        "slug": "qiyam",
+        "icon": "moon-star",
+        "tone": "violet",
+        "reminder": "qiyam",
+        "title": { "ar": "قيام الليل والشفع والوتر", "en": "Night prayer (Qiyam), Shaf' and Witr" },
+        "summary": {
+            "ar": "صلاة التطوع في الليل بعد صلاة العشاء حتى طلوع الفجر، وهي أفضل الصلاة بعد الفريضة، ويُختم بالوتر.",
+            "en": "Voluntary prayer at night, from after the Isha prayer until dawn. It is the best prayer after the obligatory ones, and it ends with witr."
+        },
+        "facts": [
+            { "label": { "ar": "الوقت", "en": "Time" }, "value": { "ar": "من بعد صلاة العشاء إلى طلوع الفجر، وأفضله الثلث الأخير من الليل", "en": "From after Isha until dawn; best in the last third of the night" } },
+            { "label": { "ar": "عدد الركعات", "en": "Rak'ahs" }, "value": { "ar": "ركعتان ركعتان بلا حد، وكان النبي ﷺ لا يزيد غالبًا على إحدى عشرة ركعة", "en": "Two by two with no fixed limit; the Prophet ﷺ usually prayed eleven" } },
+            { "label": { "ar": "الشفع والوتر", "en": "Shaf' and Witr" }, "value": { "ar": "الشفع ركعتان ثم الوتر ركعة، وأقل الوتر ركعة ويجوز ثلاثًا وخمسًا وسبعًا وتسعًا", "en": "Shaf' is two rak'ahs, then witr is one; witr can also be three, five, seven or nine" } }
+        ],
+        "steps": [
+            { "ar": "انوِ القيام قبل نومك، واضبط تذكيرك على وقت قبل الفجر يناسبك.", "en": "Intend the night prayer before sleeping and set your reminder at a time before dawn." },
+            { "ar": "إذا استيقظت فاذكر الله، ثم توضأ واستعمل السواك.", "en": "When you wake up, remember Allah, then make wudu and use the siwak." },
+            { "ar": "افتتح قيامك بركعتين خفيفتين، ثم صلِّ ما تيسر ركعتين ركعتين، وسلّم من كل ركعتين.", "en": "Begin with two light rak'ahs, then pray what you can two by two, ending each pair with the salam." },
+            { "ar": "أطل القراءة والركوع والسجود، وأكثر من الدعاء في السجود وفي آخر الليل.", "en": "Lengthen the recitation, the bowing and the prostration, and make plenty of du'a in prostration and at the end of the night." },
+            { "ar": "صلِّ الشفع ركعتين: يُستحب أن تقرأ بعد الفاتحة في الأولى «سبح اسم ربك الأعلى» وفي الثانية «قل يا أيها الكافرون».", "en": "Pray the shaf' as two rak'ahs: after Al-Fatihah it is recommended to recite Al-A'la in the first and Al-Kafirun in the second." },
+            { "ar": "ثم أوتر بركعة تقرأ فيها «قل هو الله أحد»، ولك أن تقنت فيها بدعاء القنوت.", "en": "Then pray witr as one rak'ah reciting Al-Ikhlas, and you may supplicate in it with the du'a of qunut." },
+            { "ar": "بعد السلام من الوتر قل: «سبحان الملك القدوس» ثلاثًا، وارفع صوتك بالثالثة.", "en": "After the salam of witr say “Subhan al-Malik al-Quddus” three times, raising your voice the third time." },
+            { "ar": "إن فاتك قيامك لنوم أو مرض فصلِّه من النهار شفعًا، فقد كان النبي ﷺ إذا فاته صلى من النهار ثنتي عشرة ركعة.", "en": "If sleep or illness made you miss it, pray it during the day in pairs: the Prophet ﷺ then prayed twelve rak'ahs in the daytime." }
+        ],
+        "virtues": [
+            { "text": "«أفضل الصيام بعد رمضان شهر الله المحرم، وأفضل الصلاة بعد الفريضة صلاة الليل»", "source": "رواه مسلم" },
+            { "text": "«ينزل ربنا تبارك وتعالى كل ليلة إلى السماء الدنيا حين يبقى ثلث الليل الآخر يقول: من يدعوني فأستجيب له، من يسألني فأعطيه، من يستغفرني فأغفر له»", "source": "متفق عليه" },
+            { "text": "«صلاة الليل مثنى مثنى، فإذا خشي أحدكم الصبح صلى ركعة واحدة توتر له ما قد صلى»", "source": "متفق عليه" },
+            { "text": "﴿تَتَجَافَىٰ جُنُوبُهُمْ عَنِ الْمَضَاجِعِ يَدْعُونَ رَبَّهُمْ خَوْفًا وَطَمَعًا وَمِمَّا رَزَقْنَاهُمْ يُنفِقُونَ﴾", "source": "السجدة: 16" }
+        ],
+        "duas": [
+            {
+                "title": { "ar": "دعاء الاستفتاح في قيام الليل", "en": "Opening du'a of the night prayer" },
+                "text": "اللَّهُمَّ لَكَ الْحَمْدُ، أَنْتَ قَيِّمُ السَّمَاوَاتِ وَالْأَرْضِ وَمَنْ فِيهِنَّ، وَلَكَ الْحَمْدُ، أَنْتَ نُورُ السَّمَاوَاتِ وَالْأَرْضِ وَمَنْ فِيهِنَّ، وَلَكَ الْحَمْدُ، أَنْتَ مَلِكُ السَّمَاوَاتِ وَالْأَرْضِ وَمَنْ فِيهِنَّ، وَلَكَ الْحَمْدُ، أَنْتَ الْحَقُّ، وَوَعْدُكَ الْحَقُّ، وَلِقَاؤُكَ حَقٌّ، وَقَوْلُكَ حَقٌّ، وَالْجَنَّةُ حَقٌّ، وَالنَّارُ حَقٌّ، وَالنَّبِيُّونَ حَقٌّ، وَمُحَمَّدٌ ﷺ حَقٌّ، وَالسَّاعَةُ حَقٌّ، اللَّهُمَّ لَكَ أَسْلَمْتُ، وَبِكَ آمَنْتُ، وَعَلَيْكَ تَوَكَّلْتُ، وَإِلَيْكَ أَنَبْتُ، وَبِكَ خَاصَمْتُ، وَإِلَيْكَ حَاكَمْتُ، فَاغْفِرْ لِي مَا قَدَّمْتُ وَمَا أَخَّرْتُ، وَمَا أَسْرَرْتُ وَمَا أَعْلَنْتُ، أَنْتَ الْمُقَدِّمُ وَأَنْتَ الْمُؤَخِّرُ، لَا إِلَهَ إِلَّا أَنْتَ",
+                "source": "متفق عليه"
+            },
+            {
+                "title": { "ar": "دعاء القنوت في الوتر", "en": "Du'a of qunut in witr" },
+                "text": "اللَّهُمَّ اهْدِنِي فِيمَنْ هَدَيْتَ، وَعَافِنِي فِيمَنْ عَافَيْتَ، وَتَوَلَّنِي فِيمَنْ تَوَلَّيْتَ، وَبَارِكْ لِي فِيمَا أَعْطَيْتَ، وَقِنِي شَرَّ مَا قَضَيْتَ، فَإِنَّكَ تَقْضِي وَلَا يُقْضَى عَلَيْكَ، وَإِنَّهُ لَا يَذِلُّ مَنْ وَالَيْتَ، وَلَا يَعِزُّ مَنْ عَادَيْتَ، تَبَارَكْتَ رَبَّنَا وَتَعَالَيْتَ",
+                "source": "رواه أبو داود والترمذي والنسائي"
+            },
+            {
+                "title": { "ar": "بعد السلام من الوتر", "en": "After the salam of witr" },
+                "text": "سُبْحَانَ الْمَلِكِ الْقُدُّوسِ (ثلاث مرات)",
+                "source": "رواه أبو داود والنسائي"
+            },
+            {
+                "title": { "ar": "الاستغفار في السَّحَر", "en": "Asking forgiveness before dawn" },
+                "text": "﴿كَانُوا قَلِيلًا مِّنَ اللَّيْلِ مَا يَهْجَعُونَ﴾ ﴿وَبِالْأَسْحَارِ هُمْ يَسْتَغْفِرُونَ﴾",
+                "source": "الذاريات: 17-18"
+            }
+        ]
+    },
+    {
+        "slug": "rawatib",
+        "icon": "layers",
+        "tone": "emerald",
+        "title": { "ar": "السنن الرواتب", "en": "The regular Sunnah prayers (Rawatib)" },
+        "summary": {
+            "ar": "اثنتا عشرة ركعة مع الصلوات المفروضة، من حافظ عليها بنى الله له بيتًا في الجنة.",
+            "en": "Twelve rak'ahs prayed with the obligatory prayers; Allah builds a house in Paradise for whoever keeps to them."
+        },
+        "facts": [
+            { "label": { "ar": "عددها", "en": "Count" }, "value": { "ar": "اثنتا عشرة ركعة في اليوم والليلة", "en": "Twelve rak'ahs each day and night" } },
+            { "label": { "ar": "تفصيلها", "en": "When" }, "value": { "ar": "أربع قبل الظهر وركعتان بعده، وركعتان بعد المغرب، وركعتان بعد العشاء، وركعتان قبل الفجر", "en": "Four before Dhuhr and two after it, two after Maghrib, two after Isha, and two before Fajr" } }
+        ],
+        "steps": [
+            { "ar": "تُصلّى ركعتين ركعتين.", "en": "They are prayed two by two." },
+            { "ar": "آكدها ركعتا الفجر: يُستحب تخفيفهما والقراءة فيهما بعد الفاتحة بـ«قل يا أيها الكافرون» و«قل هو الله أحد».", "en": "The most stressed are the two rak'ahs before Fajr: keep them light and recite Al-Kafirun and Al-Ikhlas after Al-Fatihah." },
+            { "ar": "الأفضل أن تصليها في بيتك.", "en": "It is best to pray them at home." },
+            { "ar": "إن فاتتك سنة الفجر فلك أن تقضيها بعد صلاة الفجر أو بعد ارتفاع الشمس.", "en": "If you miss the Sunnah of Fajr you may make it up after the Fajr prayer or after the sun has risen." }
+        ],
+        "virtues": [
+            { "text": "«ما من عبد مسلم يصلي لله كل يوم ثنتي عشرة ركعة تطوعًا غير فريضة إلا بنى الله له بيتًا في الجنة»", "source": "رواه مسلم" },
+            { "text": "«ركعتا الفجر خير من الدنيا وما فيها»", "source": "رواه مسلم" },
+            { "text": "«فإن أفضل صلاة المرء في بيته إلا المكتوبة»", "source": "متفق عليه" }
+        ],
+        "duas": []
+    },
+    {
+        "slug": "duha",
+        "icon": "sun",
+        "tone": "gold",
+        "reminder": "duha",
+        "title": { "ar": "صلاة الضحى", "en": "The Duha prayer" },
+        "summary": {
+            "ar": "صلاة النهار بعد ارتفاع الشمس، وركعتان منها تجزئان عن الصدقات التي على كل مفصل من مفاصل الجسد.",
+            "en": "The morning prayer after the sun has risen; two rak'ahs of it stand for the charity owed for every joint of the body."
+        },
+        "facts": [
+            { "label": { "ar": "الوقت", "en": "Time" }, "value": { "ar": "من ارتفاع الشمس (نحو ربع ساعة بعد الشروق) إلى قبيل الظهر، وأفضله إذا اشتد الحر", "en": "From about a quarter of an hour after sunrise until shortly before Dhuhr; best when the day grows hot" } },
+            { "label": { "ar": "عدد الركعات", "en": "Rak'ahs" }, "value": { "ar": "أقلها ركعتان، وكان النبي ﷺ يصلي أربعًا ويزيد ما شاء الله، وصلّى يوم الفتح ثماني ركعات", "en": "At least two; the Prophet ﷺ prayed four and more as Allah willed, and eight on the day of the Conquest" } }
+        ],
+        "steps": [
+            { "ar": "صلِّها ركعتين ركعتين بعد ارتفاع الشمس.", "en": "Pray it two by two after the sun has risen." },
+            { "ar": "اختر لها وقتًا ثابتًا قبل الظهر بربع ساعة على الأقل، واضبط تذكيرك عليه.", "en": "Choose a fixed time at least a quarter of an hour before Dhuhr and set your reminder for it." },
+            { "ar": "داوم عليها ولو ركعتين، فقد أوصى بها النبي ﷺ.", "en": "Keep to it even if only two rak'ahs; the Prophet ﷺ advised it." }
+        ],
+        "virtues": [
+            { "text": "«يصبح على كل سلامى من أحدكم صدقة، فكل تسبيحة صدقة، وكل تحميدة صدقة، وكل تهليلة صدقة، وكل تكبيرة صدقة، وأمر بالمعروف صدقة، ونهي عن المنكر صدقة، ويجزئ من ذلك ركعتان يركعهما من الضحى»", "source": "رواه مسلم" },
+            { "text": "«أوصاني خليلي ﷺ بثلاث: صيام ثلاثة أيام من كل شهر، وركعتي الضحى، وأن أوتر قبل أن أنام»", "source": "متفق عليه" },
+            { "text": "«صلاة الأوابين حين ترمض الفصال»", "source": "رواه مسلم" }
+        ],
+        "duas": []
+    },
+    {
+        "slug": "tahiyyat-al-masjid",
+        "icon": "landmark",
+        "tone": "sky",
+        "title": { "ar": "تحية المسجد", "en": "Greeting the mosque (Tahiyyat al-Masjid)" },
+        "summary": {
+            "ar": "ركعتان يصليهما من دخل المسجد قبل أن يجلس.",
+            "en": "Two rak'ahs prayed by whoever enters the mosque, before sitting down."
+        },
+        "facts": [
+            { "label": { "ar": "الوقت", "en": "Time" }, "value": { "ar": "عند دخول المسجد وقبل الجلوس", "en": "On entering the mosque, before sitting" } },
+            { "label": { "ar": "عدد الركعات", "en": "Rak'ahs" }, "value": { "ar": "ركعتان", "en": "Two" } }
+        ],
+        "steps": [
+            { "ar": "إذا دخلت المسجد فلا تجلس حتى تصلي ركعتين.", "en": "When you enter the mosque, do not sit until you have prayed two rak'ahs." },
+            { "ar": "إن دخلت يوم الجمعة والإمام يخطب فصلِّهما خفيفتين.", "en": "If you enter on Friday while the imam is giving the sermon, pray them lightly." },
+            { "ar": "إن أقيمت الصلاة فادخل مع الإمام، وتكفيك الفريضة.", "en": "If the prayer has started, join the imam: the obligatory prayer is enough." },
+            { "ar": "تحصل التحية بأي صلاة تصليها عند دخولك كالسنة الراتبة.", "en": "Any prayer you pray on entering, such as a regular Sunnah, also counts as the greeting." }
+        ],
+        "virtues": [
+            { "text": "«إذا دخل أحدكم المسجد فليركع ركعتين قبل أن يجلس»", "source": "متفق عليه" },
+            { "text": "«إذا جاء أحدكم يوم الجمعة والإمام يخطب فليركع ركعتين وليتجوز فيهما»", "source": "رواه مسلم" }
+        ],
+        "duas": [
+            {
+                "title": { "ar": "دعاء دخول المسجد", "en": "Du'a on entering the mosque" },
+                "text": "اللَّهُمَّ افْتَحْ لِي أَبْوَابَ رَحْمَتِكَ",
+                "source": "رواه مسلم"
+            }
+        ]
+    },
+    {
+        "slug": "wudu",
+        "icon": "droplets",
+        "tone": "teal",
+        "title": { "ar": "ركعتا الوضوء", "en": "The two rak'ahs after wudu" },
+        "summary": {
+            "ar": "ركعتان بعد الوضوء بخشوع، سبب لمغفرة الذنوب، وكانت من أرجى أعمال بلال رضي الله عنه.",
+            "en": "Two humble rak'ahs after wudu, a means of forgiveness; it was among the deeds Bilal hoped for most."
+        },
+        "facts": [
+            { "label": { "ar": "الوقت", "en": "Time" }, "value": { "ar": "بعد كل وضوء", "en": "After every wudu" } },
+            { "label": { "ar": "عدد الركعات", "en": "Rak'ahs" }, "value": { "ar": "ركعتان", "en": "Two" } }
+        ],
+        "steps": [
+            { "ar": "توضأ فأحسن الوضوء.", "en": "Make wudu and do it well." },
+            { "ar": "قل بعده الذكر الوارد.", "en": "Say the remembrance that follows wudu." },
+            { "ar": "صلِّ ركعتين تُقبل فيهما على الله بقلبك.", "en": "Pray two rak'ahs with your heart turned to Allah." }
+        ],
+        "virtues": [
+            { "text": "«من توضأ نحو وضوئي هذا ثم صلى ركعتين لا يحدّث فيهما نفسه غُفر له ما تقدم من ذنبه»", "source": "متفق عليه" },
+            { "text": "قال النبي ﷺ لبلال: «حدثني بأرجى عمل عملته في الإسلام، فإني سمعت دف نعليك بين يدي في الجنة»، قال: ما عملت عملًا أرجى عندي من أني لم أتطهر طهورًا في ساعة من ليل أو نهار إلا صليت بذلك الطهور ما كُتب لي أن أصلي", "source": "متفق عليه" }
+        ],
+        "duas": [
+            {
+                "title": { "ar": "الذكر بعد الوضوء", "en": "Remembrance after wudu" },
+                "text": "أَشْهَدُ أَنْ لَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ، وَأَشْهَدُ أَنَّ مُحَمَّدًا عَبْدُهُ وَرَسُولُهُ",
+                "source": "رواه مسلم"
+            }
+        ]
+    },
+    {
+        "slug": "istikhara",
+        "icon": "compass",
+        "tone": "emerald",
+        "title": { "ar": "صلاة الاستخارة", "en": "The Istikhara prayer" },
+        "summary": {
+            "ar": "ركعتان من غير الفريضة ثم دعاء الاستخارة، تطلب بهما من الله الخير في أمر مباح تحتار فيه.",
+            "en": "Two voluntary rak'ahs followed by the du'a of istikhara, asking Allah for what is best in a permissible matter you hesitate about."
+        },
+        "facts": [
+            { "label": { "ar": "متى", "en": "When" }, "value": { "ar": "عند الهمّ بأمر مباح كالزواج والعمل والسفر", "en": "When you are about to decide a permissible matter such as marriage, work or travel" } },
+            { "label": { "ar": "عدد الركعات", "en": "Rak'ahs" }, "value": { "ar": "ركعتان من غير الفريضة", "en": "Two, other than an obligatory prayer" } }
+        ],
+        "steps": [
+            { "ar": "صلِّ ركعتين من غير الفريضة.", "en": "Pray two rak'ahs other than an obligatory prayer." },
+            { "ar": "ادعُ بعدهما بدعاء الاستخارة، وسمِّ حاجتك في موضعها.", "en": "Then say the du'a of istikhara, naming your matter where it says “this matter”." },
+            { "ar": "استشر أهل الخبرة والصلاح، ثم امضِ فيما يتيسر لك متوكلًا على الله؛ ولا يُشترط أن ترى رؤيا.", "en": "Consult people of experience, then go ahead with what becomes easy for you, relying on Allah; a dream is not required." }
+        ],
+        "virtues": [
+            { "text": "قال جابر رضي الله عنه: «كان رسول الله ﷺ يعلّمنا الاستخارة في الأمور كلها كما يعلّمنا السورة من القرآن»", "source": "رواه البخاري" }
+        ],
+        "duas": [
+            {
+                "title": { "ar": "دعاء الاستخارة", "en": "The du'a of istikhara" },
+                "text": "اللَّهُمَّ إِنِّي أَسْتَخِيرُكَ بِعِلْمِكَ، وَأَسْتَقْدِرُكَ بِقُدْرَتِكَ، وَأَسْأَلُكَ مِنْ فَضْلِكَ الْعَظِيمِ، فَإِنَّكَ تَقْدِرُ وَلَا أَقْدِرُ، وَتَعْلَمُ وَلَا أَعْلَمُ، وَأَنْتَ عَلَّامُ الْغُيُوبِ، اللَّهُمَّ إِنْ كُنْتَ تَعْلَمُ أَنَّ هَذَا الْأَمْرَ (وتسمّي حاجتك) خَيْرٌ لِي فِي دِينِي وَمَعَاشِي وَعَاقِبَةِ أَمْرِي فَاقْدُرْهُ لِي وَيَسِّرْهُ لِي ثُمَّ بَارِكْ لِي فِيهِ، وَإِنْ كُنْتَ تَعْلَمُ أَنَّ هَذَا الْأَمْرَ شَرٌّ لِي فِي دِينِي وَمَعَاشِي وَعَاقِبَةِ أَمْرِي فَاصْرِفْهُ عَنِّي وَاصْرِفْنِي عَنْهُ، وَاقْدُرْ لِيَ الْخَيْرَ حَيْثُ كَانَ ثُمَّ أَرْضِنِي بِهِ",
+                "source": "رواه البخاري"
+            }
+        ]
+    },
+    {
+        "slug": "tawbah",
+        "icon": "heart-handshake",
+        "tone": "rose",
+        "title": { "ar": "صلاة التوبة", "en": "The prayer of repentance" },
+        "summary": {
+            "ar": "من وقع في ذنب فليتطهر ويصلِّ ركعتين ثم يستغفر الله، فإن الله يغفر له.",
+            "en": "Whoever falls into a sin should purify himself, pray two rak'ahs and ask Allah's forgiveness, and Allah forgives him."
+        },
+        "facts": [
+            { "label": { "ar": "متى", "en": "When" }, "value": { "ar": "بعد الوقوع في الذنب، في أي وقت", "en": "After committing a sin, at any time" } },
+            { "label": { "ar": "عدد الركعات", "en": "Rak'ahs" }, "value": { "ar": "ركعتان", "en": "Two" } }
+        ],
+        "steps": [
+            { "ar": "توضأ وأحسن الوضوء.", "en": "Make wudu and do it well." },
+            { "ar": "صلِّ ركعتين.", "en": "Pray two rak'ahs." },
+            { "ar": "استغفر الله، واندم على الذنب، واعزم على ألا تعود إليه.", "en": "Ask Allah's forgiveness, regret the sin and resolve not to return to it." },
+            { "ar": "إن كان الذنب في حق أحد من الناس فرُدّ إليه حقه أو استسمحه.", "en": "If the sin wronged someone, return their right or ask them to forgive you." }
+        ],
+        "virtues": [
+            { "text": "«ما من رجل يذنب ذنبًا ثم يقوم فيتطهر ثم يصلي ثم يستغفر الله إلا غفر الله له»، ثم قرأ: ﴿وَالَّذِينَ إِذَا فَعَلُوا فَاحِشَةً أَوْ ظَلَمُوا أَنفُسَهُمْ ذَكَرُوا اللَّهَ فَاسْتَغْفَرُوا لِذُنُوبِهِمْ﴾", "source": "رواه أبو داود والترمذي" }
+        ],
+        "duas": [
+            {
+                "title": { "ar": "سيد الاستغفار", "en": "The master of seeking forgiveness" },
+                "text": "اللَّهُمَّ أَنْتَ رَبِّي لَا إِلَهَ إِلَّا أَنْتَ، خَلَقْتَنِي وَأَنَا عَبْدُكَ، وَأَنَا عَلَى عَهْدِكَ وَوَعْدِكَ مَا اسْتَطَعْتُ، أَعُوذُ بِكَ مِنْ شَرِّ مَا صَنَعْتُ، أَبُوءُ لَكَ بِنِعْمَتِكَ عَلَيَّ، وَأَبُوءُ لَكَ بِذَنْبِي فَاغْفِرْ لِي، فَإِنَّهُ لَا يَغْفِرُ الذُّنُوبَ إِلَّا أَنْتَ",
+                "source": "رواه البخاري"
+            }
+        ]
+    },
+    {
+        "slug": "tarawih",
+        "icon": "moon",
+        "tone": "violet",
+        "title": { "ar": "صلاة التراويح", "en": "The Tarawih prayer" },
+        "summary": {
+            "ar": "قيام الليل في رمضان، يُصلّى بعد صلاة العشاء جماعة في المسجد أو منفردًا.",
+            "en": "The night prayer of Ramadan, prayed after Isha in congregation at the mosque or alone."
+        },
+        "facts": [
+            { "label": { "ar": "الوقت", "en": "Time" }, "value": { "ar": "بعد صلاة العشاء في ليالي رمضان", "en": "After Isha in the nights of Ramadan" } },
+            { "label": { "ar": "عدد الركعات", "en": "Rak'ahs" }, "value": { "ar": "ركعتان ركعتان؛ صلّى النبي ﷺ إحدى عشرة ركعة، وصلّاها كثير من السلف عشرين، والأمر فيه سعة", "en": "Two by two; the Prophet ﷺ prayed eleven and many of the early generations twenty, and there is latitude in this" } }
+        ],
+        "steps": [
+            { "ar": "صلِّها مع الإمام حتى ينصرف لتُكتب لك قيام ليلة.", "en": "Pray with the imam until he finishes, so a whole night of prayer is written for you." },
+            { "ar": "سلّم من كل ركعتين، واختمها بالوتر.", "en": "End each pair with the salam and finish with witr." },
+            { "ar": "إن أردت أن تتهجد آخر الليل فأخّر وترك إليه.", "en": "If you want to pray again at the end of the night, delay your witr until then." }
+        ],
+        "virtues": [
+            { "text": "«من قام رمضان إيمانًا واحتسابًا غُفر له ما تقدم من ذنبه»", "source": "متفق عليه" },
+            { "text": "«إنه من قام مع الإمام حتى ينصرف كُتب له قيام ليلة»", "source": "رواه أبو داود والترمذي والنسائي" }
+        ],
+        "duas": []
+    },
+    {
+        "slug": "eid",
+        "icon": "sparkles",
+        "tone": "gold",
+        "title": { "ar": "صلاة العيدين", "en": "The two Eid prayers" },
+        "summary": {
+            "ar": "صلاة عيد الفطر وعيد الأضحى، ركعتان في الصباح بلا أذان ولا إقامة، تليهما الخطبة.",
+            "en": "The prayers of Eid al-Fitr and Eid al-Adha: two rak'ahs in the morning without adhan or iqamah, followed by a sermon."
+        },
+        "facts": [
+            { "label": { "ar": "الوقت", "en": "Time" }, "value": { "ar": "من ارتفاع الشمس قدر رمح إلى الزوال", "en": "From when the sun has risen a spear's length until noon" } },
+            { "label": { "ar": "عدد الركعات", "en": "Rak'ahs" }, "value": { "ar": "ركعتان، يُكبّر في الأولى سبعًا مع تكبيرة الإحرام وفي الثانية خمسًا سوى تكبيرة القيام (على قول جمهور العلماء)", "en": "Two; seven takbirs in the first including the opening one and five in the second besides the one of standing (the view of most scholars)" } }
+        ],
+        "steps": [
+            { "ar": "أكثر من التكبير ليلة العيد وصباحه حتى تبدأ الصلاة.", "en": "Say the takbir often on the night and morning of Eid until the prayer begins." },
+            { "ar": "كُل تمرات قبل الخروج لصلاة عيد الفطر، وأخّر الأكل في الأضحى حتى تأكل من أضحيتك.", "en": "Eat some dates before going out on Eid al-Fitr; on Eid al-Adha wait to eat from your sacrifice." },
+            { "ar": "صلِّ ركعتين يجهر الإمام فيهما بالقراءة، ثم استمع للخطبة.", "en": "Pray the two rak'ahs, recited aloud by the imam, then listen to the sermon." },
+            { "ar": "اذهب من طريق وارجع من طريق آخر.", "en": "Go by one way and come back by another." }
+        ],
+        "virtues": [
+            { "text": "«كان رسول الله ﷺ لا يغدو يوم الفطر حتى يأكل تمرات»", "source": "رواه البخاري" },
+            { "text": "«كان النبي ﷺ إذا كان يوم عيد خالف الطريق»", "source": "رواه البخاري" }
+        ],
+        "duas": []
+    },
+    {
+        "slug": "kusuf",
+        "icon": "eclipse",
+        "tone": "slate",
+        "title": { "ar": "صلاة الكسوف والخسوف", "en": "The eclipse prayer" },
+        "summary": {
+            "ar": "صلاة عند كسوف الشمس أو خسوف القمر: ركعتان، في كل ركعة قيامان وركوعان.",
+            "en": "Prayed during a solar or lunar eclipse: two rak'ahs, each with two standings and two bowings."
+        },
+        "facts": [
+            { "label": { "ar": "الوقت", "en": "Time" }, "value": { "ar": "من بدء الكسوف حتى ينجلي", "en": "From the start of the eclipse until it clears" } },
+            { "label": { "ar": "عدد الركعات", "en": "Rak'ahs" }, "value": { "ar": "ركعتان، في كل ركعة ركوعان", "en": "Two, each with two bowings" } }
+        ],
+        "steps": [
+            { "ar": "تُصلّى جماعة، ويُنادى لها: «الصلاة جامعة».", "en": "It is prayed in congregation, called with “as-salatu jami'ah”." },
+            { "ar": "في الركعة الأولى: الفاتحة وقراءة طويلة، ثم ركوع طويل، ثم رفع وقراءة الفاتحة وسورة أقصر، ثم ركوع ثانٍ، ثم رفع وسجدتان.", "en": "First rak'ah: Al-Fatihah and a long recitation, a long bowing, standing again with Al-Fatihah and a shorter recitation, a second bowing, then standing and two prostrations." },
+            { "ar": "الركعة الثانية مثل الأولى وأقصر منها، ثم التشهد والتسليم.", "en": "The second rak'ah is like the first but shorter, then the tashahhud and the salam." },
+            { "ar": "أكثر من الدعاء والتكبير والصدقة حتى ينجلي.", "en": "Make plenty of du'a, takbir and charity until it clears." }
+        ],
+        "virtues": [
+            { "text": "«إن الشمس والقمر آيتان من آيات الله، لا ينكسفان لموت أحد ولا لحياته، فإذا رأيتم ذلك فادعوا الله وكبّروا وصلّوا وتصدّقوا»", "source": "متفق عليه" }
+        ],
+        "duas": []
+    },
+    {
+        "slug": "istisqa",
+        "icon": "cloud-rain",
+        "tone": "sky",
+        "title": { "ar": "صلاة الاستسقاء", "en": "The prayer for rain (Istisqa)" },
+        "summary": {
+            "ar": "صلاة طلب المطر عند الجدب وانقطاع المطر، ركعتان يجهر فيهما بالقراءة.",
+            "en": "Asking Allah for rain in times of drought: two rak'ahs recited aloud."
+        },
+        "facts": [
+            { "label": { "ar": "متى", "en": "When" }, "value": { "ar": "عند الجدب وانقطاع المطر", "en": "In drought, when the rain stops" } },
+            { "label": { "ar": "عدد الركعات", "en": "Rak'ahs" }, "value": { "ar": "ركعتان", "en": "Two" } }
+        ],
+        "steps": [
+            { "ar": "يخرج الناس إلى المصلى متواضعين متذللين.", "en": "People go out to the prayer ground humbly." },
+            { "ar": "يُصلّى ركعتان يجهر فيهما الإمام بالقراءة.", "en": "Two rak'ahs are prayed with the recitation aloud." },
+            { "ar": "يكثرون من الاستغفار والدعاء، ويُسنّ تحويل الرداء.", "en": "They ask much forgiveness and make du'a, and it is Sunnah to turn the cloak around." }
+        ],
+        "virtues": [
+            { "text": "«خرج النبي ﷺ يستسقي، فتوجه إلى القبلة يدعو، وحوّل رداءه، ثم صلى ركعتين جهر فيهما بالقراءة»", "source": "متفق عليه" }
+        ],
+        "duas": [
+            {
+                "title": { "ar": "من دعاء الاستسقاء", "en": "From the du'a for rain" },
+                "text": "اللَّهُمَّ أَغِثْنَا، اللَّهُمَّ أَغِثْنَا، اللَّهُمَّ أَغِثْنَا",
+                "source": "متفق عليه"
+            }
+        ]
+    },
+    {
+        "slug": "janazah",
+        "icon": "users",
+        "tone": "slate",
+        "title": { "ar": "صلاة الجنازة", "en": "The funeral prayer (Janazah)" },
+        "summary": {
+            "ar": "صلاة على الميت المسلم: أربع تكبيرات بلا ركوع ولا سجود.",
+            "en": "The prayer over a deceased Muslim: four takbirs without bowing or prostration."
+        },
+        "facts": [
+            { "label": { "ar": "الصفة", "en": "Form" }, "value": { "ar": "أربع تكبيرات قيامًا ثم التسليم", "en": "Four takbirs standing, then the salam" } }
+        ],
+        "steps": [
+            { "ar": "التكبيرة الأولى ثم قراءة الفاتحة.", "en": "First takbir, then Al-Fatihah." },
+            { "ar": "التكبيرة الثانية ثم الصلاة على النبي ﷺ (الصلاة الإبراهيمية).", "en": "Second takbir, then the prayer upon the Prophet ﷺ (as in the tashahhud)." },
+            { "ar": "التكبيرة الثالثة ثم الدعاء للميت.", "en": "Third takbir, then du'a for the deceased." },
+            { "ar": "التكبيرة الرابعة ثم دعاء قصير، ثم التسليم.", "en": "Fourth takbir, a short du'a, then the salam." }
+        ],
+        "virtues": [
+            { "text": "«من شهد الجنازة حتى يُصلّي فله قيراط، ومن شهد حتى تُدفن كان له قيراطان»، قيل: وما القيراطان؟ قال: «مثل الجبلين العظيمين»", "source": "متفق عليه" }
+        ],
+        "duas": [
+            {
+                "title": { "ar": "من الدعاء للميت", "en": "From the du'a for the deceased" },
+                "text": "اللَّهُمَّ اغْفِرْ لَهُ وَارْحَمْهُ، وَعَافِهِ وَاعْفُ عَنْهُ، وَأَكْرِمْ نُزُلَهُ، وَوَسِّعْ مُدْخَلَهُ، وَاغْسِلْهُ بِالْمَاءِ وَالثَّلْجِ وَالْبَرَدِ، وَنَقِّهِ مِنَ الْخَطَايَا كَمَا نَقَّيْتَ الثَّوْبَ الْأَبْيَضَ مِنَ الدَّنَسِ",
+                "source": "رواه مسلم"
+            }
+        ]
+    }
+]

@@ -40,6 +40,8 @@ export interface SharedProps {
     csrf_token: string;
     counts: { notifications: number; chat: number } | null;
     realtime: RealtimeConfig;
+    /** VAPID key for push notifications; null when signed out or push is not set up. */
+    push: { public_key: string | null };
     [key: string]: unknown;
 }
 
@@ -214,9 +216,24 @@ export interface MushafAyah {
     surah: number;
     ayah: number;
     text: string;
+    /** The text without diacritics (to compare a recitation with). */
+    simple: string | null;
     juz: number;
     hizb_quarter: number;
     sajda: boolean;
+    /** Meaning of a word by its position in the text split on spaces (a JSON array when it starts at 0). */
+    meanings: Record<number, string>;
+}
+
+/**
+ * An ayah of a surah, for reading or memorizing it ayah by ayah.
+ */
+export interface SurahAyah {
+    id: number;
+    ayah: number;
+    page: number;
+    text: string;
+    simple: string | null;
 }
 
 export interface MushafIndex {

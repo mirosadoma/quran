@@ -14,7 +14,8 @@ use Illuminate\Support\Facades\File;
  * Data: database/data/quran/ayahs.json, built from the Tanzil Quran text
  * (tanzil.net, editions quran-uthmani and quran-simple-clean through api.alquran.cloud).
  * The basmala opening each surah is shown by the reader, so it is not part of the first ayah.
- * "text_clean" is reduced to bare letters into text_search, used by the mushaf search.
+ * "text_clean" (common spelling, no diacritics) is kept as text_simple to check a recitation
+ * against it, and reduced to bare letters into text_search, used by the mushaf search.
  */
 class AyahSeeder extends Seeder
 {
@@ -36,6 +37,7 @@ class AyahSeeder extends Seeder
                     'hizb_quarter' => $ayah['hizb_quarter'],
                     'sajda' => $ayah['sajda'],
                     'text' => $ayah['text'],
+                    'text_simple' => $ayah['text_clean'],
                     'text_search' => Mushaf::normalize($ayah['text_clean']),
                 ], $chunk),
                 ['id'],

@@ -41,6 +41,17 @@ return [
         'redirect' => env('GOOGLE_REDIRECT_URI'),
     ],
 
+    /*
+     * Push notifications on phones and desktops (Web Push, VAPID).
+     * Create the keys with: php artisan webpush:keys
+     */
+    'webpush' => [
+        'public_key' => env('VAPID_PUBLIC_KEY'),
+        'private_key' => env('VAPID_PRIVATE_KEY'),
+        // mailto: or https:// address the push services can contact (defaults to MAIL_FROM_ADDRESS).
+        'subject' => env('VAPID_SUBJECT'),
+    ],
+
     'zoom' => [
         'account_id' => env('ZOOM_ACCOUNT_ID'),
         'client_id' => env('ZOOM_CLIENT_ID'),

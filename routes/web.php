@@ -13,14 +13,19 @@ use App\Http\Controllers\GoogleConnectionController;
 use App\Http\Controllers\HalaqaAnnouncementController;
 use App\Http\Controllers\HalaqaController;
 use App\Http\Controllers\HalaqaStudentController;
+use App\Http\Controllers\InstallController;
+use App\Http\Controllers\KidsController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\ManifestController;
 use App\Http\Controllers\MushafBookmarkController;
 use App\Http\Controllers\MushafController;
 use App\Http\Controllers\MushafHighlightController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\PrayerController;
+use App\Http\Controllers\PrayerReminderController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProgressController;
+use App\Http\Controllers\PushSubscriptionController;
 use App\Http\Controllers\RecitationSubmissionController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SessionController;
@@ -38,6 +43,9 @@ Route::post('locale', LocaleController::class)->name('locale');
 
 // Fetched by browsers without cookies, so it skips the session middleware.
 Route::get('manifest.webmanifest', ManifestController::class)->withoutMiddleware('web')->name('manifest');
+
+// The link shared to install the app on a phone or a computer.
+Route::get('install', InstallController::class)->name('install');
 
 Route::post('webhooks/zoom', ZoomWebhookController::class)->name('webhooks.zoom');
 Route::post('webhooks/jaas', JaasWebhookController::class)->name('webhooks.jaas');
@@ -86,6 +94,8 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::get('mushaf/pages/{page}', [MushafController::class, 'page'])->whereNumber('page')->name('mushaf.page');
     Route::get('mushaf/search', [MushafController::class, 'search'])->middleware('throttle:60,1')->name('mushaf.search');
     Route::get('mushaf/ayahs/{ayah}/tafsir', [MushafController::class, 'tafsir'])->whereNumber('ayah')->name('mushaf.tafsir');
+    Route::put('mushaf/ayahs/{ayah}/meanings', [MushafController::class, 'updateMeanings'])->whereNumber('ayah')->middleware('role:admin')->name('mushaf.meanings.update');
+    Route::get('mushaf/surahs/{surah}', [MushafController::class, 'surah'])->whereNumber('surah')->name('mushaf.surah');
     Route::put('mushaf/position', [MushafController::class, 'position'])->name('mushaf.position');
     Route::post('mushaf/bookmarks', [MushafBookmarkController::class, 'store'])->name('mushaf.bookmarks.store');
     Route::delete('mushaf/bookmarks/{bookmark}', [MushafBookmarkController::class, 'destroy'])->name('mushaf.bookmarks.destroy');
@@ -135,6 +145,17 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::get('notifications/latest', [NotificationController::class, 'latest'])->name('notifications.latest');
     Route::post('notifications/read-all', [NotificationController::class, 'readAll'])->name('notifications.read-all');
     Route::post('notifications/{id}/read', [NotificationController::class, 'read'])->name('notifications.read');
+    Route::get('notifications/{id}/open', [NotificationController::class, 'open'])->name('notifications.open');
+
+    Route::post('push-subscriptions', [PushSubscriptionController::class, 'store'])->name('push-subscriptions.store');
+    Route::delete('push-subscriptions', [PushSubscriptionController::class, 'destroy'])->name('push-subscriptions.destroy');
+    Route::post('push-subscriptions/test', [PushSubscriptionController::class, 'test'])->middleware('throttle:6,1')->name('push-subscriptions.test');
+
+    Route::get('kids', KidsController::class)->name('kids.index');
+
+    Route::get('prayers', [PrayerController::class, 'index'])->name('prayers.index');
+    Route::get('prayers/{slug}', [PrayerController::class, 'show'])->where('slug', '[a-z-]+')->name('prayers.show');
+    Route::put('prayers/reminders/{prayer}', [PrayerReminderController::class, 'update'])->name('prayers.reminders.update');
 
     Route::middleware('role:admin,teacher')->group(function () {
         Route::get('reports', [ReportController::class, 'index'])->name('reports.index');

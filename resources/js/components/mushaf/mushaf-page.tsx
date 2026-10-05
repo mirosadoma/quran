@@ -1,9 +1,22 @@
 import { Fragment, memo, type MouseEvent, type ReactNode, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { hasLetters, isJalalah } from '@/lib/arabic';
 import { useTrans } from '@/lib/i18n';
 import { highlightClasses } from '@/lib/mushaf';
 import { arabicDigits, surahName } from '@/lib/quran';
+import type { WordStatus } from '@/lib/recitation-check';
 import { cn } from '@/lib/utils';
 import type { MushafAyah, MushafHighlightItem } from '@/types';
+
+/**
+ * How the words are shown: the name of Allah in red, words with a meaning in green, and the
+ * result of a recitation (by ayah id, then word position), with the words not recited yet hidden.
+ */
+export interface WordDisplay {
+    jalalah: boolean;
+    meanings: boolean;
+    statuses?: Map<number, Map<number, WordStatus>>;
+    hideUnrecited?: boolean;
+}
 
 const BASMALA = 'بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ';
 
@@ -31,6 +44,7 @@ interface MushafPageProps {
     selectedAyahId?: number | null;
     playingAyahId?: number | null;
     flashAyahId?: number | null;
+    display: WordDisplay;
     onAyahClick?: (ayah: MushafAyah, event: MouseEvent<HTMLElement>) => void;
 }
 
@@ -48,6 +62,7 @@ export const MushafPage = memo(function MushafPage({
     selectedAyahId,
     playingAyahId,
     flashAyahId,
+    display,
     onAyahClick,
 }: MushafPageProps) {
     const { t } = useTrans();
@@ -129,7 +144,15 @@ export const MushafPage = memo(function MushafPage({
                 <span className="font-quran">{first ? `${t('Juz')} ${arabicDigits(first.juz)}` : ''}</span>
             </div>
 
-            <div ref={bodyRef} className={cn('absolute inset-x-[7.5%] top-[9.5%] bottom-[8.5%] overflow-hidden', opening && 'flex flex-col justify-center')}>
+            <div
+                ref={bodyRef}
+                className={cn(
+                    'absolute overflow-hidden',
+                    // Narrow phone pages keep more room for the text.
+                    width < 420 ? 'inset-x-[5.5%] top-[8.8%] bottom-[7.8%]' : 'inset-x-[7.5%] top-[9.5%] bottom-[8.5%]',
+                    opening && 'flex flex-col justify-center',
+                )}
+            >
                 {ayahs ? (
                     <div ref={textRef} className="mushaf-text" dir="rtl" style={opening ? { textAlign: 'center' } : undefined}>
                         {ayahs.map((ayah) => {
@@ -154,7 +177,7 @@ export const MushafPage = memo(function MushafPage({
                                         onClick={(event) => onAyahClick?.(ayah, event)}
                                         title={highlight?.note ?? undefined}
                                     >
-                                        <AyahText text={ayah.text} number={ayah.ayah} />
+                                        <AyahText ayah={ayah} display={display} />
                                     </span>{' '}
                                 </Fragment>
                             );
@@ -178,34 +201,66 @@ export const MushafPage = memo(function MushafPage({
 });
 
 /**
- * Ayah text with the hizb (۞) and sajda (۩) signs in gold, ending with its number.
- * The last word stays on the same line as the number.
+ * Ayah text word by word, ending with its number; the last word stays on the same line as the number.
+ * The hizb (۞) and sajda (۩) signs are gold.
  */
-function AyahText({ text, number }: { text: string; number: number }) {
-    const split = text.lastIndexOf(' ');
-    const head = split === -1 ? '' : text.slice(0, split + 1);
-    const tail = split === -1 ? text : text.slice(split + 1);
+function AyahText({ ayah, display }: { ayah: MushafAyah; display: WordDisplay }) {
+    const words = ayah.text.split(' ');
+    const statuses = display.statuses?.get(ayah.id);
+    let tail = words.length - 1;
+
+    // Keep the last word with the signs that follow it (... وَٱقْتَرِب ۩).
+    while (tail > 0 && !hasLetters(words[tail])) {
+        tail--;
+    }
+
+    // A pause mark (ۖ) is hidden and shown with the word before it.
+    let previousHidden = false;
+
+    const render = (word: string, index: number): ReactNode => {
+        if (word === '۞' || word === '۩') {
+            return <span className="text-gold-600 dark:text-gold-400">{word}</span>;
+        }
+
+        const status = statuses?.get(index);
+        const hidden = !!display.hideUnrecited && (hasLetters(word) ? status === undefined || status === 'pending' : previousHidden);
+        previousHidden = hidden;
+        const recited = status !== undefined && status !== 'pending';
+        const meaning = display.meanings && !recited ? ayah.meanings?.[index] : undefined;
+        const jalalah = display.jalalah && !recited && isJalalah(word);
+
+        if (!hidden && !recited && !meaning && !jalalah) {
+            return word;
+        }
+
+        return (
+            <span
+                className={cn('mushaf-word', jalalah && 'mushaf-jalalah', meaning && 'mushaf-meaning', hidden && 'mushaf-hidden')}
+                data-status={recited ? status : undefined}
+                data-meaning={meaning && !hidden ? meaning : undefined}
+            >
+                {word}
+            </span>
+        );
+    };
 
     return (
         <>
-            {withSigns(head)}
+            {words.slice(0, tail).map((word, index) => (
+                <Fragment key={index}>
+                    {render(word, index)}{' '}
+                </Fragment>
+            ))}
             <span className="whitespace-nowrap">
-                {withSigns(tail)}
-                <AyahMarker number={number} />
+                {words.slice(tail).map((word, offset) => (
+                    <Fragment key={tail + offset}>
+                        {offset > 0 && ' '}
+                        {render(word, tail + offset)}
+                    </Fragment>
+                ))}
+                <AyahMarker number={ayah.ayah} />
             </span>
         </>
-    );
-}
-
-function withSigns(text: string): ReactNode[] {
-    return text.split(/([۞۩])/u).map((part, index) =>
-        part === '۞' || part === '۩' ? (
-            <span key={index} className="text-gold-600 dark:text-gold-400">
-                {part}
-            </span>
-        ) : (
-            part
-        ),
     );
 }
 

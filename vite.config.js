@@ -12,6 +12,12 @@ export default defineConfig({
         react(),
         tailwindcss(),
     ],
+    build: {
+        rolldownOptions: {
+            // Only a timing report (not an error); the slow Tailwind scan it pointed at is fixed in app.css.
+            checks: { bundlerTimings: false },
+        },
+    },
     server: {
         watch: {
             ignored: ['**/storage/framework/views/**'],

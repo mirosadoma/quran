@@ -28,6 +28,7 @@ interface SettingsProps {
         auto_start_sessions: boolean;
         notify_email: boolean;
         notify_whatsapp: boolean;
+        notify_push: boolean;
     };
     logoUrl: string | null;
     providers: ProviderOption[];
@@ -37,6 +38,7 @@ interface SettingsProps {
         realtime: { enabled: boolean; driver: string };
         mail: { driver: string; from: string | null };
         whatsapp: { driver: string; configured: boolean };
+        push: { configured: boolean };
         queue: string;
         webhooks: { zoom: string; jaas: string };
     };
@@ -110,7 +112,7 @@ export default function Settings({ settings, logoUrl, providers, google, integra
     return (
         <AppLayout title={t('Settings')} description={t('Academy identity, meetings, automation and notifications.')}>
             <form onSubmit={submit} className="grid gap-6 lg:grid-cols-3">
-                <div className="space-y-6 lg:col-span-2">
+                <div className="min-w-0 space-y-6 lg:col-span-2">
                     <Card>
                         <CardHeader title={t('Academy')} icon={Building2} />
                         <CardBody className="grid gap-5 sm:grid-cols-2">
@@ -292,7 +294,7 @@ export default function Settings({ settings, logoUrl, providers, google, integra
                     </Card>
                 </div>
 
-                <div className="space-y-6">
+                <div className="min-w-0 space-y-6">
                     <Card>
                         <CardHeader title={t('Notifications')} icon={Bell} />
                         <CardBody className="space-y-5">
@@ -310,6 +312,16 @@ export default function Settings({ settings, logoUrl, providers, google, integra
                                     integrations.whatsapp.configured
                                         ? t('WhatsApp Cloud API is configured.')
                                         : t('Driver ":driver": messages are written to the log only.', { driver: integrations.whatsapp.driver })
+                                }
+                            />
+                            <Switch
+                                checked={form.data.notify_push}
+                                onChange={(value) => form.setData('notify_push', value)}
+                                label={t('Push notifications on phones and computers')}
+                                description={
+                                    integrations.push.configured
+                                        ? t('Every user turns them on for each device from the app window.')
+                                        : t('Run php artisan webpush:keys to create the keys first.')
                                 }
                             />
                             <div className="space-y-2 border-t border-line pt-4 text-xs">

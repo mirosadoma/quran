@@ -1,7 +1,8 @@
 import { router, usePage } from '@inertiajs/react';
-import { BookOpenCheck, ChevronDown, Languages, LogOut, Menu, Moon, Sun, UserRound } from 'lucide-react';
+import { BookOpenCheck, ChevronDown, Languages, LogOut, Menu, MonitorSmartphone, Moon, Sun, UserRound } from 'lucide-react';
+import { useState } from 'react';
 import { LogoMark } from '@/components/brand';
-import { InstallAppButton } from '@/components/install-app';
+import { AppButton, AppDialog } from '@/components/install-app';
 import { NotificationsMenu } from '@/components/layout/notifications-menu';
 import { Avatar } from '@/components/ui/avatar';
 import { Dropdown, DropdownItem, DropdownLabel, DropdownSeparator } from '@/components/ui/dropdown';
@@ -9,6 +10,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { useDates } from '@/lib/dates';
 import { useTrans } from '@/lib/i18n';
 import { useLabels } from '@/lib/labels';
+import { signOut } from '@/lib/push';
 import { cn } from '@/lib/utils';
 
 export function LanguageSwitch({ className }: { className?: string }) {
@@ -60,7 +62,7 @@ function HijriDate() {
     );
 }
 
-function UserMenu() {
+function UserMenu({ onApp }: { onApp: () => void }) {
     const { auth } = usePage().props;
     const { t } = useTrans();
     const labels = useLabels();
@@ -96,8 +98,11 @@ function UserMenu() {
                     {t('My progress')}
                 </DropdownItem>
             )}
+            <DropdownItem icon={MonitorSmartphone} onClick={onApp}>
+                {t('App and notifications')}
+            </DropdownItem>
             <DropdownSeparator />
-            <DropdownItem icon={LogOut} href={route('logout')} method="post" danger>
+            <DropdownItem icon={LogOut} onClick={signOut} danger>
                 {t('Sign out')}
             </DropdownItem>
         </Dropdown>
@@ -106,6 +111,7 @@ function UserMenu() {
 
 export function Topbar({ onMenu }: { onMenu: () => void }) {
     const { t } = useTrans();
+    const [appOpen, setAppOpen] = useState(false);
 
     return (
         <header className="no-print sticky top-0 z-20 border-b border-line/80 bg-canvas/85 backdrop-blur-md">
@@ -121,15 +127,16 @@ export function Topbar({ onMenu }: { onMenu: () => void }) {
                 <LogoMark className="size-9 lg:hidden" />
                 <HijriDate />
                 <div className="ms-auto flex items-center gap-0.5">
-                    <InstallAppButton />
+                    <AppButton onOpen={() => setAppOpen(true)} />
                     <LanguageSwitch />
                     <ThemeToggle />
                     <NotificationsMenu />
                     <div className="ms-1">
-                        <UserMenu />
+                        <UserMenu onApp={() => setAppOpen(true)} />
                     </div>
                 </div>
             </div>
+            <AppDialog open={appOpen} onClose={() => setAppOpen(false)} />
         </header>
     );
 }

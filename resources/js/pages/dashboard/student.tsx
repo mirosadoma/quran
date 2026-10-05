@@ -5,6 +5,7 @@ import { IslamicPattern } from '@/components/brand';
 import { VerseCard, WelcomeBanner } from '@/components/dashboard/widgets';
 import { AnnouncementList } from '@/components/halaqa/announcements';
 import { HalaqaCard } from '@/components/halaqa/halaqa-card';
+import { PushPrompt } from '@/components/install-app';
 import { JuzMap } from '@/components/progress/juz-map';
 import { RecordList } from '@/components/progress/record-list';
 import { Countdown } from '@/components/session/countdown';
@@ -76,6 +77,8 @@ export default function StudentDashboard({ nextSession, upcomingSessions, summar
                     </div>
                 )}
             </WelcomeBanner>
+
+            <PushPrompt />
 
             <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
                 <StatCard

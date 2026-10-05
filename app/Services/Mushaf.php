@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Enums\TafsirEdition;
 use App\Models\Ayah;
 use App\Models\Tafsir;
+use App\Models\WordMeaning;
 use Illuminate\Support\Facades\Cache;
 
 /**
@@ -17,26 +18,72 @@ class Mushaf
     public const PAGES = 604;
 
     /**
-     * Ayahs printed on a page, in order.
+     * Ayahs printed on a page, in order, with the meanings of their rare words
+     * (keyed by the position of the word in the ayah).
      *
-     * @return list<array{id: int, surah: int, ayah: int, text: string, juz: int, hizb_quarter: int, sajda: bool}>
+     * @return list<array{id: int, surah: int, ayah: int, text: string, simple: string|null, juz: int, hizb_quarter: int, sajda: bool, meanings: array<int, string>}>
      */
     public function page(int $page): array
     {
         return Cache::rememberForever("mushaf.page.{$page}", fn (): array => Ayah::query()
             ->where('page', $page)
+            ->with('meanings')
             ->orderBy('id')
-            ->get(['id', 'surah', 'ayah', 'text', 'juz', 'hizb_quarter', 'sajda'])
+            ->get(['id', 'surah', 'ayah', 'text', 'text_simple', 'juz', 'hizb_quarter', 'sajda'])
             ->map(fn (Ayah $ayah): array => [
                 'id' => $ayah->id,
                 'surah' => $ayah->surah,
                 'ayah' => $ayah->ayah,
                 'text' => $ayah->text,
+                'simple' => $ayah->text_simple,
                 'juz' => $ayah->juz,
                 'hizb_quarter' => $ayah->hizb_quarter,
                 'sajda' => $ayah->sajda,
+                'meanings' => $this->meaningsOf($ayah),
             ])
             ->all());
+    }
+
+    /**
+     * Every ayah of a surah (to memorize it ayah by ayah).
+     *
+     * @return list<array{id: int, ayah: int, page: int, text: string, simple: string|null}>
+     */
+    public function surah(int $surah): array
+    {
+        return Cache::rememberForever("mushaf.surah.{$surah}", fn (): array => Ayah::query()
+            ->where('surah', $surah)
+            ->orderBy('ayah')
+            ->get(['id', 'ayah', 'page', 'text', 'text_simple'])
+            ->map(fn (Ayah $ayah): array => [
+                'id' => $ayah->id,
+                'ayah' => $ayah->ayah,
+                'page' => $ayah->page,
+                'text' => $ayah->text,
+                'simple' => $ayah->text_simple,
+            ])
+            ->all());
+    }
+
+    /**
+     * Meanings shown for an ayah (an empty meaning hides the word's meaning), keyed by word position.
+     *
+     * @return array<int, string>
+     */
+    public function meaningsOf(Ayah $ayah): array
+    {
+        return $ayah->meanings
+            ->filter(fn (WordMeaning $meaning): bool => $meaning->meaning !== '')
+            ->mapWithKeys(fn (WordMeaning $meaning): array => [$meaning->position => $meaning->meaning])
+            ->all();
+    }
+
+    /**
+     * Forget the cached ayahs of one page (after its meanings changed).
+     */
+    public function forgetPage(int $page): void
+    {
+        Cache::forget("mushaf.page.{$page}");
     }
 
     /**
@@ -123,6 +170,10 @@ class Mushaf
 
         foreach (range(1, self::PAGES) as $page) {
             Cache::forget("mushaf.page.{$page}");
+        }
+
+        foreach (range(1, 114) as $surah) {
+            Cache::forget("mushaf.surah.{$surah}");
         }
     }
 

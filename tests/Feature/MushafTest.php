@@ -10,6 +10,7 @@ use App\Models\MushafHighlight;
 use App\Models\Reciter;
 use App\Models\Tafsir;
 use App\Models\User;
+use App\Models\WordMeaning;
 use App\Services\Mushaf;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia;
@@ -133,5 +134,52 @@ class MushafTest extends TestCase
         $this->actingAs($this->student)->deleteJson(route('mushaf.highlights.destroy', 262))->assertNoContent();
 
         $this->assertSame(0, MushafHighlight::query()->count());
+    }
+
+    public function test_a_page_gives_the_plain_text_and_the_word_meanings(): void
+    {
+        Ayah::query()->whereKey(262)->update(['text_simple' => 'الله لا إله إلا هو الحي القيوم']);
+        WordMeaning::factory()->create(['ayah_id' => 262, 'position' => 6, 'word' => 'ٱلْقَيُّومُ', 'meaning' => 'المبالغ في القيام بتدبير خلقه', 'source' => WordMeaning::JALALAYN]);
+        // An empty meaning hides the word's meaning.
+        WordMeaning::factory()->create(['ayah_id' => 262, 'position' => 5, 'word' => 'ٱلْحَىُّ', 'meaning' => '', 'source' => WordMeaning::MANUAL]);
+
+        $this->actingAs($this->student)
+            ->getJson(route('mushaf.page', 42))
+            ->assertOk()
+            ->assertJsonPath('ayahs.0.simple', 'الله لا إله إلا هو الحي القيوم')
+            ->assertJsonPath('ayahs.0.meanings', ['6' => 'المبالغ في القيام بتدبير خلقه']);
+    }
+
+    public function test_a_surah_is_given_ayah_by_ayah_for_memorizing(): void
+    {
+        $this->actingAs($this->student)
+            ->getJson(route('mushaf.surah', 1))
+            ->assertOk()
+            ->assertJsonPath('surah', 1)
+            ->assertJsonCount(2, 'ayahs')
+            ->assertJsonPath('ayahs.1.ayah', 2)
+            ->assertJsonPath('ayahs.1.page', 1)
+            ->assertJsonStructure(['ayahs' => [['id', 'ayah', 'page', 'text', 'simple']]]);
+
+        $this->actingAs($this->student)->getJson(route('mushaf.surah', 115))->assertNotFound();
+    }
+
+    public function test_only_the_administration_edits_word_meanings(): void
+    {
+        WordMeaning::factory()->create(['ayah_id' => 262, 'position' => 6, 'word' => 'ٱلْقَيُّومُ', 'meaning' => 'معنى قديم', 'source' => WordMeaning::JALALAYN]);
+        $meanings = ['meanings' => [['position' => 1, 'meaning' => 'نافية للجنس'], ['position' => 6, 'meaning' => '']]];
+
+        $this->actingAs($this->student)->putJson(route('mushaf.meanings.update', 262), $meanings)->assertForbidden();
+
+        $this->actingAs(User::factory()->admin()->create())
+            ->putJson(route('mushaf.meanings.update', 262), $meanings)
+            ->assertOk()
+            ->assertJsonPath('meanings', ['1' => 'نافية للجنس']);
+
+        $this->assertSame(WordMeaning::MANUAL, WordMeaning::query()->where('ayah_id', 262)->where('position', 6)->value('source'));
+
+        $this->actingAs(User::factory()->admin()->create())
+            ->putJson(route('mushaf.meanings.update', 262), ['meanings' => [['position' => 9, 'meaning' => 'خارج الآية']]])
+            ->assertJsonValidationErrors('meanings.0.position');
     }
 }

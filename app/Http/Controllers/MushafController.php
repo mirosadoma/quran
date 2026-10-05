@@ -7,6 +7,7 @@ use App\Models\Ayah;
 use App\Models\MushafBookmark;
 use App\Models\MushafHighlight;
 use App\Models\Reciter;
+use App\Models\WordMeaning;
 use App\Services\Mushaf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -51,6 +52,7 @@ class MushafController extends Controller
                 ->get()
                 ->map(fn (MushafHighlight $highlight): array => $highlight->toReaderArray())
                 ->values(),
+            'can' => ['editMeanings' => $user->isAdmin()],
         ]);
     }
 
@@ -64,6 +66,59 @@ class MushafController extends Controller
         return response()
             ->json(['page' => $page, 'ayahs' => $this->mushaf->page($page)])
             ->header('Cache-Control', 'private, max-age=86400');
+    }
+
+    /**
+     * Ayahs of a surah, to memorize it ayah by ayah.
+     */
+    public function surah(int $surah): JsonResponse
+    {
+        abort_unless($surah >= 1 && $surah <= 114, 404);
+
+        return response()
+            ->json(['surah' => $surah, 'ayahs' => $this->mushaf->surah($surah)])
+            ->header('Cache-Control', 'private, max-age=86400');
+    }
+
+    /**
+     * Write, change or remove the meanings of the words of an ayah (admins).
+     * An empty meaning hides the meaning found by the seeder.
+     */
+    public function updateMeanings(Request $request, Ayah $ayah): JsonResponse
+    {
+        $count = count($ayah->words());
+
+        $validated = $request->validate([
+            'meanings' => ['present', 'array', 'max:'.$count],
+            'meanings.*.position' => ['required', 'integer', 'min:0', 'max:'.($count - 1)],
+            'meanings.*.meaning' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        $words = $ayah->words();
+        $existing = $ayah->meanings()->get()->keyBy('position');
+
+        foreach ($validated['meanings'] as $row) {
+            $position = (int) $row['position'];
+            $meaning = trim((string) ($row['meaning'] ?? ''));
+            $current = $existing->get($position);
+
+            if ($meaning === '' && $current === null) {
+                continue;
+            }
+
+            if ($current?->meaning === $meaning) {
+                continue;
+            }
+
+            WordMeaning::query()->updateOrCreate(
+                ['ayah_id' => $ayah->id, 'position' => $position],
+                ['word' => mb_substr($words[$position], 0, 100), 'meaning' => $meaning, 'source' => WordMeaning::MANUAL],
+            );
+        }
+
+        $this->mushaf->forgetPage($ayah->page);
+
+        return response()->json(['meanings' => $this->mushaf->meaningsOf($ayah->load('meanings'))]);
     }
 
     /**

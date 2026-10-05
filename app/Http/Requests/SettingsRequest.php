@@ -38,6 +38,7 @@ class SettingsRequest extends FormRequest
             'auto_start_sessions' => ['boolean'],
             'notify_email' => ['boolean'],
             'notify_whatsapp' => ['boolean'],
+            'notify_push' => ['boolean'],
             'logo' => ['nullable', 'image', 'max:2048'],
             'remove_logo' => ['boolean'],
         ];

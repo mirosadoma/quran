@@ -3,8 +3,11 @@
 namespace App\Notifications;
 
 use App\Models\Setting;
+use App\Notifications\Channels\WebPushChannel;
 use App\Notifications\Channels\WhatsAppChannel;
+use App\Services\AppIcons;
 use App\Services\Realtime;
+use App\Services\WebPush\WebPush;
 use App\Services\WhatsApp\WhatsAppMessage;
 use Carbon\CarbonInterface;
 use Illuminate\Bus\Queueable;
@@ -12,6 +15,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Support\Str;
 
 /**
  * Base class for every platform notification. It is stored in the database
@@ -84,7 +88,37 @@ abstract class AppNotification extends Notification implements ShouldQueue
             $channels[] = WhatsAppChannel::class;
         }
 
+        if (Setting::get('notify_push')
+            && app(WebPush::class)->isConfigured()
+            && method_exists($notifiable, 'pushSubscriptions')
+            && $notifiable->pushSubscriptions()->exists()) {
+            $channels[] = WebPushChannel::class;
+        }
+
         return $channels;
+    }
+
+    /**
+     * The push notification shown by the phone or the computer. Opening it marks the
+     * notification as read and goes to its page.
+     *
+     * @return array<string, mixed>
+     */
+    public function toWebPush(object $notifiable): array
+    {
+        $locale = method_exists($notifiable, 'preferredLocale') ? $notifiable->preferredLocale() : app()->getLocale();
+        $icons = app(AppIcons::class)->urls();
+
+        return [
+            'title' => $this->title($notifiable),
+            'body' => Str::limit($this->body($notifiable), 300),
+            'url' => $this->id ? route('notifications.open', $this->id, false) : ($this->url() ?? '/'),
+            'icon' => $icons['icon-192'],
+            'badge' => '/icons/badge-96.png',
+            'tag' => $this->id,
+            'lang' => $locale,
+            'dir' => $locale === 'ar' ? 'rtl' : 'ltr',
+        ];
     }
 
     /**

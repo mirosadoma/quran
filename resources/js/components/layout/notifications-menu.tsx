@@ -11,6 +11,8 @@ import {
     CircleCheck,
     CirclePlay,
     Megaphone,
+    MoonStar,
+    Sun,
     Users,
     Video,
     type LucideIcon,
@@ -34,6 +36,8 @@ export const notificationIcons: Record<string, LucideIcon> = {
     'circle-play': CirclePlay,
     'circle-check': CircleCheck,
     megaphone: Megaphone,
+    'moon-star': MoonStar,
+    sun: Sun,
     bell: Bell,
 };
 

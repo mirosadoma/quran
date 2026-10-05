@@ -124,6 +124,24 @@ class User extends Authenticatable implements HasLocalePreference
     }
 
     /**
+     * Browsers and installed apps of the user that receive push notifications.
+     *
+     * @return HasMany<PushSubscription, $this>
+     */
+    public function pushSubscriptions(): HasMany
+    {
+        return $this->hasMany(PushSubscription::class);
+    }
+
+    /**
+     * @return HasMany<PrayerReminder, $this>
+     */
+    public function prayerReminders(): HasMany
+    {
+        return $this->hasMany(PrayerReminder::class);
+    }
+
+    /**
      * Keep only digits and a leading plus sign so phone logins match.
      */
     public static function normalizePhone(?string $phone): ?string

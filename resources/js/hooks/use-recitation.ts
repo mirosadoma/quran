@@ -68,11 +68,12 @@ export function ayahsQueue(ayahs: Pick<MushafAyah, 'id' | 'surah' | 'ayah'>[]): 
 
 /**
  * Plays a list of ayahs with the chosen reciter, one file per ayah, with repetition
- * for memorization and the lock-screen controls of the phone.
+ * for memorization and the lock-screen controls of the phone. The options are remembered
+ * on the device under preferenceKey.
  */
-export function useRecitation(reciter: ReciterItem | null) {
+export function useRecitation(reciter: ReciterItem | null, preferenceKey = 'player') {
     const [state, setState] = useState<RecitationState>(idle);
-    const [options, setOptionsState] = useState<RecitationOptions>(() => readPreference('player', { repeatAyah: 1, repeatAll: 1, rate: 1 }));
+    const [options, setOptionsState] = useState<RecitationOptions>(() => readPreference(preferenceKey, { repeatAyah: 1, repeatAll: 1, rate: 1 }));
     const audio = useRef<HTMLAudioElement | null>(null);
     const preloader = useRef<HTMLAudioElement | null>(null);
     const stateRef = useRef(state);
@@ -224,7 +225,7 @@ export function useRecitation(reciter: ReciterItem | null) {
     const setOptions = useCallback((changes: Partial<RecitationOptions>) => {
         setOptionsState((previous) => {
             const next = { ...previous, ...changes };
-            writePreference('player', next);
+            writePreference(preferenceKey, next);
 
             if (audio.current) {
                 audio.current.playbackRate = next.rate;
@@ -232,7 +233,7 @@ export function useRecitation(reciter: ReciterItem | null) {
 
             return next;
         });
-    }, []);
+    }, [preferenceKey]);
 
     // A new reciter takes over from the current ayah.
     useEffect(() => {

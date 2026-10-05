@@ -9,6 +9,7 @@ use App\Services\Meetings\Drivers\JitsiDriver;
 use App\Services\Meetings\GoogleClient;
 use App\Services\Meetings\MeetingManager;
 use App\Services\Realtime;
+use App\Services\WebPush\WebPush;
 use App\Services\WhatsApp\WhatsAppClient;
 use DateTimeZone;
 use Illuminate\Http\RedirectResponse;
@@ -51,6 +52,7 @@ class SettingsController extends Controller
                 'realtime' => ['enabled' => Realtime::enabled(), 'driver' => Realtime::driver()],
                 'mail' => ['driver' => config('mail.default'), 'from' => config('mail.from.address')],
                 'whatsapp' => ['driver' => config('services.whatsapp.driver'), 'configured' => $this->whatsApp->isConfigured()],
+                'push' => ['configured' => app(WebPush::class)->isConfigured()],
                 'queue' => config('queue.default'),
                 'webhooks' => [
                     'zoom' => route('webhooks.zoom'),

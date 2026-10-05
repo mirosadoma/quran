@@ -1,3 +1,5 @@
+import { router } from '@inertiajs/react';
+
 /**
  * Installable app (PWA): registers the service worker and keeps the browser's
  * install prompt so the "Install app" button can show it later.
@@ -57,6 +59,13 @@ export function setupPwa(): void {
     });
 
     window.addEventListener('appinstalled', clearInstallPrompt);
+
+    // A push notification arrived while the app is open: refresh the unread counters.
+    navigator.serviceWorker?.addEventListener('message', (event: MessageEvent<{ type?: string }>) => {
+        if (event.data?.type === 'push') {
+            router.reload({ only: ['counts'] });
+        }
+    });
 
     // Production builds only: during development Vite serves the assets and a worker would only get in the way.
     if (!import.meta.env.PROD || !('serviceWorker' in navigator) || !window.isSecureContext) {

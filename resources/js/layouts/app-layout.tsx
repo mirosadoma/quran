@@ -9,6 +9,7 @@ import { Topbar } from '@/components/layout/topbar';
 import { useDocumentDirection, useFlashToasts } from '@/hooks/use-app-shell';
 import { useRealtime } from '@/hooks/use-realtime';
 import { useTrans } from '@/lib/i18n';
+import { syncPushSubscription } from '@/lib/push';
 import { syncRealtime } from '@/lib/realtime';
 import { cn } from '@/lib/utils';
 import type { ChatMessage } from '@/types';
@@ -24,7 +25,7 @@ interface AppLayoutProps extends Omit<PageHeaderProps, 'title'> {
 }
 
 export default function AppLayout({ title, heading, description, actions, back, hideHeader = false, wide = false, flush = false, children }: AppLayoutProps) {
-    const { auth, realtime } = usePage().props;
+    const { auth, realtime, push } = usePage().props;
     const { t } = useTrans();
     const [menuOpen, setMenuOpen] = useState(false);
 
@@ -34,6 +35,14 @@ export default function AppLayout({ title, heading, description, actions, back, 
     useEffect(() => {
         syncRealtime(realtime, auth.user?.id ?? null);
     }, [realtime, auth.user?.id]);
+
+    const userId = auth.user?.id;
+
+    useEffect(() => {
+        if (userId) {
+            void syncPushSubscription(push.public_key, userId);
+        }
+    }, [push.public_key, userId]);
 
     useRealtime<{ title?: string; body?: string }>('notification', (notification) => {
         toast(notification.title ?? t('New notification'), { description: notification.body });

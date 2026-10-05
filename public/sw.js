@@ -4,6 +4,7 @@
  * - Pages and data always come from the network (they are personal and change constantly).
  * - Built assets (/build/assets/*, content-hashed) are cached for faster starts.
  * - Without a connection, page visits show /offline.html.
+ * - Push notifications are shown even when the app is closed; tapping one opens its page.
  *
  * Bump VERSION whenever offline.html changes.
  */
@@ -91,3 +92,74 @@ async function trim(cache) {
 
     await Promise.all(keys.slice(0, Math.max(0, keys.length - MAX_ASSETS)).map((key) => cache.delete(key)));
 }
+
+/*
+ * Push notifications. The server sends JSON: { title, body, url, icon, badge, tag, lang, dir }.
+ */
+self.addEventListener('push', (event) => {
+    let data = {};
+
+    try {
+        data = event.data ? event.data.json() : {};
+    } catch {
+        data = { body: event.data ? event.data.text() : '' };
+    }
+
+    event.waitUntil(
+        (async () => {
+            await self.registration.showNotification(data.title || 'رتّل', {
+                body: data.body || '',
+                icon: data.icon || '/icons/icon-192.png',
+                badge: data.badge || '/icons/badge-96.png',
+                tag: data.tag || undefined,
+                renotify: Boolean(data.tag),
+                lang: data.lang || 'ar',
+                dir: data.dir || 'auto',
+                vibrate: [80, 40, 80],
+                data: { url: data.url || '/' },
+            });
+
+            // Open windows refresh their unread counters.
+            const windows = await self.clients.matchAll({ type: 'window' });
+            windows.forEach((client) => client.postMessage({ type: 'push' }));
+        })(),
+    );
+});
+
+self.addEventListener('notificationclick', (event) => {
+    event.notification.close();
+
+    const target = new URL(event.notification.data?.url || '/', self.location.origin).href;
+
+    event.waitUntil(
+        (async () => {
+            const windows = await self.clients.matchAll({ type: 'window' });
+            const client = windows.find((item) => item.visibilityState === 'visible') || windows[0];
+
+            if (client) {
+                try {
+                    await client.focus();
+                    await client.navigate(target);
+
+                    return;
+                } catch {
+                    // The window cannot be steered (not controlled by this worker): open a new one.
+                }
+            }
+
+            await self.clients.openWindow(target);
+        })(),
+    );
+});
+
+/*
+ * The browser renewed the subscription: subscribe again with the same key. The app sends the
+ * new subscription to the server the next time it is opened.
+ */
+self.addEventListener('pushsubscriptionchange', (event) => {
+    const options = event.oldSubscription?.options;
+
+    if (options) {
+        event.waitUntil(self.registration.pushManager.subscribe(options));
+    }
+});

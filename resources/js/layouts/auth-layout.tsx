@@ -2,7 +2,7 @@ import { Head, usePage } from '@inertiajs/react';
 import { BookOpenCheck, MessagesSquare, Video } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { IslamicPattern, Logo, StarOrnament } from '@/components/brand';
-import { InstallAppButton } from '@/components/install-app';
+import { AppButton } from '@/components/install-app';
 import { LanguageSwitch, ThemeToggle } from '@/components/layout/topbar';
 import { useDocumentDirection, useFlashToasts } from '@/hooks/use-app-shell';
 import { useTrans } from '@/lib/i18n';
@@ -34,7 +34,7 @@ export default function AuthLayout({ title, subtitle, children }: AuthLayoutProp
                 <div className="flex items-center justify-between">
                     <Logo />
                     <div className="flex items-center">
-                        <InstallAppButton />
+                        <AppButton />
                         <LanguageSwitch />
                         <ThemeToggle />
                     </div>

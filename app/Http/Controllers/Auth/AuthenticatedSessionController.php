@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Models\PushSubscription;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -44,10 +45,17 @@ class AuthenticatedSessionController extends Controller
     }
 
     /**
-     * Destroy an authenticated session.
+     * Destroy an authenticated session. The device the user signs out from stops receiving
+     * their push notifications.
      */
     public function destroy(Request $request): RedirectResponse
     {
+        $endpoint = $request->input('push_endpoint');
+
+        if (is_string($endpoint) && $endpoint !== '') {
+            $request->user()?->pushSubscriptions()->where('endpoint_hash', PushSubscription::hashEndpoint($endpoint))->delete();
+        }
+
         Auth::guard('web')->logout();
 
         $request->session()->invalidate();

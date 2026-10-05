@@ -1,4 +1,5 @@
-@import 'tailwindcss';
+/* Look for classes in resources/ only: the Quran data files (database/data) are megabytes of text with none. */
+@import 'tailwindcss' source('../');
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
@@ -175,22 +176,90 @@
         opacity: 0.5;
     }
 
-    /* Mushaf: a cream page with a double gold frame (dark green in dark mode) */
+    /* Mushaf: a ghee-colored page with a double gold frame and black text (dark green in dark mode);
+       the name of Allah in red and the words that have a meaning in green */
     .mushaf-paper {
-        --paper: #fffaf0;
-        --paper-edge: #f1e3c0;
-        --paper-ink: #1d2823;
-        --paper-line: color-mix(in oklab, var(--color-gold-500) 60%, transparent);
+        --paper: #fbf2d7;
+        --paper-edge: #ecd9a6;
+        --paper-ink: #141210;
+        --paper-jalalah: #c4161c;
+        --paper-meaning: #12773a;
+        --paper-line: color-mix(in oklab, var(--color-gold-600) 55%, transparent);
         background:
-            radial-gradient(120% 90% at 50% 45%, var(--paper) 55%, var(--paper-edge) 130%);
+            radial-gradient(120% 90% at 50% 45%, var(--paper) 55%, var(--paper-edge) 135%);
         color: var(--paper-ink);
     }
 
     .dark .mushaf-paper {
         --paper: #13211d;
         --paper-edge: #0a1512;
-        --paper-ink: #ebf1ec;
+        --paper-ink: #eef2ee;
+        --paper-jalalah: #ff8a80;
+        --paper-meaning: #74e3a1;
         --paper-line: color-mix(in oklab, var(--color-gold-400) 45%, transparent);
+    }
+
+    .mushaf-jalalah {
+        color: var(--paper-jalalah);
+    }
+
+    .mushaf-meaning {
+        color: var(--paper-meaning);
+        cursor: help;
+        border-radius: 0.25em;
+        transition: background-color 0.15s ease;
+    }
+
+    .mushaf-meaning:hover,
+    .mushaf-meaning[data-active='true'] {
+        background-color: color-mix(in oklab, var(--paper-meaning) 15%, transparent);
+    }
+
+    /* Result of a recitation: right in green, close in amber, wrong and forgotten in red */
+    .mushaf-word[data-status] {
+        border-radius: 0.25em;
+        transition: color 0.3s ease, background-color 0.3s ease;
+    }
+
+    .mushaf-word[data-status='correct'] {
+        color: #0f7a3a;
+    }
+
+    .mushaf-word[data-status='close'] {
+        color: #a86a00;
+        background-color: color-mix(in oklab, #f5b301 18%, transparent);
+    }
+
+    .mushaf-word[data-status='wrong'] {
+        color: #c4161c;
+        background-color: color-mix(in oklab, #ef4444 14%, transparent);
+    }
+
+    .mushaf-word[data-status='missing'] {
+        color: #c4161c;
+        background-color: color-mix(in oklab, #ef4444 22%, transparent);
+        text-decoration: underline dotted 0.08em;
+        text-underline-offset: 0.5em;
+    }
+
+    .dark .mushaf-word[data-status='correct'] {
+        color: #74e3a1;
+    }
+
+    .dark .mushaf-word[data-status='close'] {
+        color: #fbd06b;
+    }
+
+    .dark .mushaf-word[data-status='wrong'],
+    .dark .mushaf-word[data-status='missing'] {
+        color: #ff8a80;
+    }
+
+    /* Memorization test: the words not recited yet are blurred */
+    .mushaf-hidden {
+        color: transparent;
+        text-shadow: 0 0 0.45em color-mix(in oklab, var(--paper-ink) 55%, transparent);
+        user-select: none;
     }
 
     .mushaf-frame {
@@ -225,7 +294,7 @@
 
     .mushaf-text {
         font-family: var(--font-mushaf);
-        line-height: 2.05;
+        line-height: 2;
         text-align: justify;
         text-align-last: center;
         word-spacing: 0.04em;
