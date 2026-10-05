@@ -1,0 +1,172 @@
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+    --font-sans: 'IBM Plex Sans Arabic', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
+    --font-quran: 'Amiri', 'IBM Plex Sans Arabic', serif;
+
+    /* Deep emerald: calm, the main brand color */
+    --color-primary-50: #effaf5;
+    --color-primary-100: #d8f3e6;
+    --color-primary-200: #b4e6d0;
+    --color-primary-300: #82d2b3;
+    --color-primary-400: #4db691;
+    --color-primary-500: #2a9a77;
+    --color-primary-600: #1b7c60;
+    --color-primary-700: #16634e;
+    --color-primary-800: #144f40;
+    --color-primary-900: #124136;
+    --color-primary-950: #08251e;
+
+    /* Gold: highlights, achievements and ornaments */
+    --color-gold-50: #fcf8ee;
+    --color-gold-100: #f6ecd2;
+    --color-gold-200: #ecd7a1;
+    --color-gold-300: #e1bd6c;
+    --color-gold-400: #d8a747;
+    --color-gold-500: #c98f2f;
+    --color-gold-600: #ad7026;
+    --color-gold-700: #8b5422;
+    --color-gold-800: #734522;
+    --color-gold-900: #613a20;
+    --color-gold-950: #371d0e;
+
+    --radius-card: 1.25rem;
+
+    --animate-fade-in: fade-in 0.25s ease-out;
+    --animate-slide-up: slide-up 0.3s ease-out;
+
+    @keyframes fade-in {
+        from {
+            opacity: 0;
+        }
+        to {
+            opacity: 1;
+        }
+    }
+
+    @keyframes slide-up {
+        from {
+            opacity: 0;
+            transform: translateY(8px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+}
+
+/* Semantic surface tokens, redefined for dark mode */
+:root {
+    --canvas: #f6f3ec;
+    --surface: #ffffff;
+    --surface-muted: #faf8f3;
+    --line: #e9e3d6;
+    --line-strong: #d9d0bf;
+    --ink: #1b2a25;
+    --muted: #68736e;
+    --sidebar: #0b3b31;
+    --sidebar-ink: #d7ebe2;
+}
+
+.dark {
+    --canvas: #08110f;
+    --surface: #0f1b18;
+    --surface-muted: #13231f;
+    --line: #1e322c;
+    --line-strong: #2a453d;
+    --ink: #e6eee9;
+    --muted: #8da39a;
+    --sidebar: #061411;
+    --sidebar-ink: #c9ddd4;
+    color-scheme: dark;
+}
+
+@theme inline {
+    --color-canvas: var(--canvas);
+    --color-surface: var(--surface);
+    --color-surface-muted: var(--surface-muted);
+    --color-line: var(--line);
+    --color-line-strong: var(--line-strong);
+    --color-ink: var(--ink);
+    --color-muted: var(--muted);
+    --color-sidebar: var(--sidebar);
+    --color-sidebar-ink: var(--sidebar-ink);
+}
+
+@layer base {
+    html {
+        -webkit-tap-highlight-color: transparent;
+        text-rendering: optimizeLegibility;
+    }
+
+    body {
+        @apply bg-canvas text-ink;
+        min-height: 100dvh;
+    }
+
+    ::selection {
+        background-color: color-mix(in oklab, var(--color-gold-300) 55%, transparent);
+    }
+
+    button:not(:disabled),
+    [role='button']:not(:disabled) {
+        cursor: pointer;
+    }
+
+    input[type='date']::-webkit-calendar-picker-indicator,
+    input[type='time']::-webkit-calendar-picker-indicator {
+        cursor: pointer;
+        opacity: 0.6;
+    }
+
+    * {
+        scrollbar-width: thin;
+        scrollbar-color: var(--line-strong) transparent;
+    }
+}
+
+@layer components {
+    /* Quranic text: Amiri with generous line height */
+    .quran-text {
+        font-family: var(--font-quran);
+        line-height: 2.2;
+    }
+
+    /* Thin gold divider with a centered ornament */
+    .ornament-divider {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        color: var(--color-gold-500);
+    }
+
+    .ornament-divider::before,
+    .ornament-divider::after {
+        content: '';
+        flex: 1;
+        height: 1px;
+        background: linear-gradient(to var(--tw-gradient-direction, right), transparent, currentColor, transparent);
+        opacity: 0.5;
+    }
+}
+
+@media print {
+    body {
+        background: white !important;
+        color: black !important;
+    }
+
+    .no-print {
+        display: none !important;
+    }
+
+    @page {
+        margin: 14mm;
+    }
+}
