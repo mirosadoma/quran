@@ -3,6 +3,7 @@ import { BookOpen, BookOpenCheck, CalendarDays, ClipboardCheck, GraduationCap, P
 import { MemorizationTrendChart } from '@/components/charts';
 import { TopStudentsCard, VerseCard, WelcomeBanner } from '@/components/dashboard/widgets';
 import { HalaqaCard } from '@/components/halaqa/halaqa-card';
+import { PendingSubmissionsCard } from '@/components/progress/recitation-submissions';
 import { RecordList } from '@/components/progress/record-list';
 import { Countdown } from '@/components/session/countdown';
 import { JoinSessionButton } from '@/components/session/join-button';
@@ -17,7 +18,7 @@ import AppLayout from '@/layouts/app-layout';
 import { useDates } from '@/lib/dates';
 import { useTrans } from '@/lib/i18n';
 import { formatNumber } from '@/lib/utils';
-import type { HalaqaItem, ProgressRecordItem, SessionItem, WeeklyMemorization } from '@/types';
+import type { HalaqaItem, ProgressRecordItem, RecitationSubmissionItem, SessionItem, WeeklyMemorization } from '@/types';
 
 interface TeacherDashboardProps {
     stats: { halaqat: number; students: number; sessions_week: number; attendance_rate: number | null; records_month: number };
@@ -28,10 +29,11 @@ interface TeacherDashboardProps {
     attentionStudents: { id: number; name: string; avatar_url: string | null; absences: number }[];
     memorizationTrend: WeeklyMemorization[];
     topStudents: { id: number; name: string; avatar_url: string | null; ayahs: number; total: number }[];
+    pendingSubmissions: RecitationSubmissionItem[];
 }
 
 export default function TeacherDashboard(props: TeacherDashboardProps) {
-    const { stats, upcomingSessions, pendingAttendance, halaqat, recentRecords, attentionStudents, memorizationTrend, topStudents } = props;
+    const { stats, upcomingSessions, pendingAttendance, halaqat, recentRecords, attentionStudents, memorizationTrend, topStudents, pendingSubmissions } = props;
     const { t, locale } = useTrans();
     const dates = useDates();
     const { auth } = usePage().props;
@@ -97,6 +99,8 @@ export default function TeacherDashboard(props: TeacherDashboardProps) {
                 </Card>
 
                 <div className="space-y-6">
+                    <PendingSubmissionsCard submissions={pendingSubmissions} />
+
                     {pendingAttendance.length > 0 && (
                         <Card className="border-amber-200 dark:border-amber-500/20">
                             <CardHeader title={t('Attendance not recorded')} icon={ClipboardCheck} description={t('Completed sessions without attendance')} />

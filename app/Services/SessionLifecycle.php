@@ -11,6 +11,7 @@ use App\Models\HalaqaSession;
 use App\Models\Setting;
 use App\Models\User;
 use App\Notifications\SessionCancelled;
+use App\Notifications\SessionEnded;
 use App\Notifications\SessionStarted;
 use App\Services\Meetings\MeetingManager;
 
@@ -22,14 +23,16 @@ class SessionLifecycle
     public function __construct(
         protected MeetingManager $meetings,
         protected Notifier $notifier,
+        protected AnnouncementDispatcher $announcements,
     ) {}
 
     /**
-     * Open the session and invite the students to join.
+     * Open the session, invite the students to join and deliver the messages planned for it.
+     * When the system opens it at its time ($automatic), the teacher is invited too.
      *
      * @throws MeetingException
      */
-    public function start(HalaqaSession $session): void
+    public function start(HalaqaSession $session, bool $automatic = false): void
     {
         $this->meetings->ensure($session);
 
@@ -39,16 +42,20 @@ class SessionLifecycle
 
         $session->update(['status' => SessionStatus::Live, 'started_at' => now()]);
 
-        $this->notifier->send(
-            $session->halaqa->students()->active()->get(),
-            new SessionStarted($session),
-        );
+        $recipients = $session->halaqa->students()->active()->get();
+
+        if ($automatic && $session->teacher !== null) {
+            $recipients->push($session->teacher);
+        }
+
+        $this->notifier->send($recipients, new SessionStarted($session));
+        $this->announcements->deliverForSession($session);
 
         SessionUpdated::dispatch($session);
     }
 
     /**
-     * Close the session and mark students who never joined as absent.
+     * Close the session, mark students who never joined as absent and tell everyone it ended.
      */
     public function end(HalaqaSession $session, ?User $by = null): void
     {
@@ -62,6 +69,14 @@ class SessionLifecycle
 
         if ($wasLive) {
             $this->meetings->end($session);
+
+            $recipients = $session->halaqa->students()->active()->get();
+
+            if ($session->teacher !== null && $session->teacher_id !== $by?->id) {
+                $recipients->push($session->teacher);
+            }
+
+            $this->notifier->send($recipients, new SessionEnded($session));
         }
 
         SessionUpdated::dispatch($session);

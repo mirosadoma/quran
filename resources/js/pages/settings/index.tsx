@@ -25,6 +25,7 @@ interface SettingsProps {
         reminder_minutes: number;
         late_after_minutes: number;
         auto_mark_absent: boolean;
+        auto_start_sessions: boolean;
         notify_email: boolean;
         notify_whatsapp: boolean;
     };
@@ -277,6 +278,14 @@ export default function Settings({ settings, logoUrl, providers, google, integra
                                     onChange={(value) => form.setData('auto_mark_absent', value)}
                                     label={t('Mark students who did not join as absent')}
                                     description={t('When a session ends (manually or automatically 30 minutes after its end time).')}
+                                />
+                            </div>
+                            <div className="sm:col-span-3">
+                                <Switch
+                                    checked={form.data.auto_start_sessions}
+                                    onChange={(value) => form.setData('auto_start_sessions', value)}
+                                    label={t('Start the sessions automatically at their time')}
+                                    description={t('The students and the teacher are notified that the session started, and the messages planned for it are delivered.')}
                                 />
                             </div>
                         </CardBody>

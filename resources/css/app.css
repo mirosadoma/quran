@@ -5,9 +5,29 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* Amiri Quran (SIL Open Font License, see public/fonts/amiri-quran/OFL.txt): the mushaf text */
+@font-face {
+    font-family: 'Amiri Quran';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url('/fonts/amiri-quran/amiri-quran-arabic.woff2') format('woff2');
+    unicode-range: U+0600-06FF, U+0750-077F, U+0870-088E, U+0890-0891, U+0897-08E1, U+08E3-08FF, U+200C-200E, U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE70-FE74, U+FE76-FEFC;
+}
+
+@font-face {
+    font-family: 'Amiri Quran';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url('/fonts/amiri-quran/amiri-quran-latin.woff2') format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
 @theme {
     --font-sans: 'IBM Plex Sans Arabic', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
     --font-quran: 'Amiri', 'IBM Plex Sans Arabic', serif;
+    --font-mushaf: 'Amiri Quran', 'Amiri', serif;
 
     /* Deep emerald: calm, the main brand color */
     --color-primary-50: #effaf5;
@@ -153,6 +173,172 @@
         height: 1px;
         background: linear-gradient(to var(--tw-gradient-direction, right), transparent, currentColor, transparent);
         opacity: 0.5;
+    }
+
+    /* Mushaf: a cream page with a double gold frame (dark green in dark mode) */
+    .mushaf-paper {
+        --paper: #fffaf0;
+        --paper-edge: #f1e3c0;
+        --paper-ink: #1d2823;
+        --paper-line: color-mix(in oklab, var(--color-gold-500) 60%, transparent);
+        background:
+            radial-gradient(120% 90% at 50% 45%, var(--paper) 55%, var(--paper-edge) 130%);
+        color: var(--paper-ink);
+    }
+
+    .dark .mushaf-paper {
+        --paper: #13211d;
+        --paper-edge: #0a1512;
+        --paper-ink: #ebf1ec;
+        --paper-line: color-mix(in oklab, var(--color-gold-400) 45%, transparent);
+    }
+
+    .mushaf-frame {
+        position: absolute;
+        inset: 3.2%;
+        border: 1.5px solid var(--paper-line);
+        border-radius: 0.5rem;
+        outline: 1px solid var(--paper-line);
+        outline-offset: 4px;
+        pointer-events: none;
+    }
+
+    /* Shadow of the binding between two facing pages */
+    .mushaf-gutter-left::after,
+    .mushaf-gutter-right::after {
+        content: '';
+        position: absolute;
+        inset-block: 0;
+        width: 9%;
+        pointer-events: none;
+    }
+
+    .mushaf-gutter-left::after {
+        left: 0;
+        background: linear-gradient(to right, rgb(0 0 0 / 0.16), transparent);
+    }
+
+    .mushaf-gutter-right::after {
+        right: 0;
+        background: linear-gradient(to left, rgb(0 0 0 / 0.16), transparent);
+    }
+
+    .mushaf-text {
+        font-family: var(--font-mushaf);
+        line-height: 2.05;
+        text-align: justify;
+        text-align-last: center;
+        word-spacing: 0.04em;
+    }
+
+    .mushaf-ayah {
+        border-radius: 0.3em;
+        box-decoration-break: clone;
+        -webkit-box-decoration-break: clone;
+        cursor: pointer;
+        transition: background-color 0.25s ease, box-shadow 0.25s ease;
+    }
+
+    .mushaf-ayah:hover {
+        background-color: color-mix(in oklab, var(--color-primary-400) 10%, transparent);
+    }
+
+    .mushaf-ayah[data-selected='true'] {
+        box-shadow: inset 0 -0.12em 0 color-mix(in oklab, var(--color-primary-500) 80%, transparent);
+        background-color: color-mix(in oklab, var(--color-primary-400) 14%, transparent);
+    }
+
+    .mushaf-ayah[data-playing='true'] {
+        background-color: color-mix(in oklab, var(--color-primary-400) 26%, transparent);
+    }
+
+    .mushaf-ayah[data-flash='true'] {
+        animation: ayah-flash 1.6s ease-in-out 2;
+    }
+
+    .ayah-marker {
+        display: inline-block;
+        width: 1.3em;
+        height: 1.3em;
+        margin-inline: 0.12em;
+        vertical-align: -0.32em;
+        color: var(--color-gold-600);
+    }
+
+    .dark .ayah-marker {
+        color: var(--color-gold-400);
+    }
+
+    /* Page turn: a leaf with a front and a back rotating around the binding */
+    .mushaf-leaf {
+        position: absolute;
+        top: 0;
+        z-index: 20;
+        transform-style: preserve-3d;
+        will-change: transform;
+    }
+
+    .mushaf-leaf-face {
+        position: absolute;
+        inset: 0;
+        backface-visibility: hidden;
+        -webkit-backface-visibility: hidden;
+        overflow: hidden;
+    }
+
+    .mushaf-leaf-back {
+        transform: rotateY(180deg);
+    }
+
+    .mushaf-leaf-face::after,
+    .mushaf-turn-shade::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        opacity: 0;
+    }
+
+    .mushaf-leaf-face::after {
+        background: linear-gradient(to var(--shade-direction, left), rgb(0 0 0 / 0.22), transparent 55%);
+    }
+
+    .mushaf-leaf[data-turning='true'] .mushaf-leaf-face::after {
+        animation: leaf-shade var(--turn-duration, 750ms) ease-in-out;
+    }
+
+    .mushaf-turn-shade::after {
+        background: rgb(0 0 0 / 0.12);
+        animation: under-shade var(--turn-duration, 750ms) ease-in-out;
+    }
+
+    @keyframes leaf-shade {
+        0%,
+        100% {
+            opacity: 0;
+        }
+        50% {
+            opacity: 1;
+        }
+    }
+
+    @keyframes under-shade {
+        0% {
+            opacity: 1;
+        }
+        100% {
+            opacity: 0;
+        }
+    }
+
+    @keyframes ayah-flash {
+        0%,
+        100% {
+            background-color: transparent;
+        }
+        50% {
+            background-color: color-mix(in oklab, var(--color-gold-300) 55%, transparent);
+        }
     }
 }
 

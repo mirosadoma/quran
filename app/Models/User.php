@@ -57,6 +57,7 @@ class User extends Authenticatable implements HasLocalePreference
             'notify_whatsapp' => 'boolean',
             'memorized_ayahs' => 'integer',
             'last_login_at' => 'datetime',
+            'mushaf_page' => 'integer',
         ];
     }
 
@@ -94,6 +95,32 @@ class User extends Authenticatable implements HasLocalePreference
     public function progressRecords(): HasMany
     {
         return $this->hasMany(ProgressRecord::class, 'student_id');
+    }
+
+    /**
+     * Recitations the student entered and that wait for grading.
+     *
+     * @return HasMany<RecitationSubmission, $this>
+     */
+    public function recitationSubmissions(): HasMany
+    {
+        return $this->hasMany(RecitationSubmission::class, 'student_id');
+    }
+
+    /**
+     * @return HasMany<MushafBookmark, $this>
+     */
+    public function mushafBookmarks(): HasMany
+    {
+        return $this->hasMany(MushafBookmark::class);
+    }
+
+    /**
+     * @return HasMany<MushafHighlight, $this>
+     */
+    public function mushafHighlights(): HasMany
+    {
+        return $this->hasMany(MushafHighlight::class);
     }
 
     /**

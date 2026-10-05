@@ -6,14 +6,18 @@ use App\Enums\AttendanceStatus;
 use App\Enums\ProgressType;
 use App\Enums\SessionStatus;
 use App\Enums\UserRole;
+use App\Http\Resources\HalaqaAnnouncementResource;
 use App\Http\Resources\HalaqaResource;
 use App\Http\Resources\ProgressRecordResource;
+use App\Http\Resources\RecitationSubmissionResource;
 use App\Http\Resources\SessionResource;
 use App\Http\Resources\VideoResource;
 use App\Models\Attendance;
 use App\Models\Halaqa;
+use App\Models\HalaqaAnnouncement;
 use App\Models\HalaqaSession;
 use App\Models\ProgressRecord;
+use App\Models\RecitationSubmission;
 use App\Models\User;
 use App\Models\Video;
 use App\Services\Reports;
@@ -73,9 +77,10 @@ class DashboardController extends Controller
             'memorizationTrend' => $this->reports->weeklyMemorization(null, $trendFrom, now()),
             'todaySessions' => SessionResource::collection($todaySessions)->resolve(),
             'recentRecords' => ProgressRecordResource::collection(
-                ProgressRecord::query()->with(['student', 'teacher', 'halaqa'])->latest('id')->limit(6)->get(),
+                ProgressRecord::query()->with(['student', 'teacher', 'halaqa', 'groupRecords'])->latest('id')->limit(6)->get(),
             )->resolve(),
             'topStudents' => $this->topStudents(null),
+            'pendingSubmissions' => $this->pendingSubmissions(null),
         ]);
     }
 
@@ -118,11 +123,12 @@ class DashboardController extends Controller
             'pendingAttendance' => SessionResource::collection($pendingAttendance)->resolve(),
             'halaqat' => HalaqaResource::collection($halaqat)->resolve(),
             'recentRecords' => ProgressRecordResource::collection(
-                ProgressRecord::query()->with(['student', 'teacher', 'halaqa'])->whereIn('halaqa_id', $halaqaIds)->latest('id')->limit(6)->get(),
+                ProgressRecord::query()->with(['student', 'teacher', 'halaqa', 'groupRecords'])->whereIn('halaqa_id', $halaqaIds)->latest('id')->limit(6)->get(),
             )->resolve(),
             'attentionStudents' => $this->attentionStudents($halaqaIds),
             'memorizationTrend' => $this->reports->weeklyMemorization(null, $trendFrom, now(), $halaqaIds),
             'topStudents' => $this->topStudents($halaqaIds),
+            'pendingSubmissions' => $this->pendingSubmissions($halaqaIds),
         ]);
     }
 
@@ -143,11 +149,42 @@ class DashboardController extends Controller
             'upcomingSessions' => SessionResource::collection($sessions->slice(1)->values())->resolve(),
             'summary' => $this->progress->summary($user),
             'recentRecords' => ProgressRecordResource::collection(
-                $user->progressRecords()->with(['teacher', 'halaqa'])->latest('recorded_on')->latest('id')->limit(5)->get(),
+                $user->progressRecords()->with(['teacher', 'halaqa', 'groupRecords'])->latest('recorded_on')->latest('id')->limit(5)->get(),
             )->resolve(),
             'halaqat' => HalaqaResource::collection($user->halaqat()->with('teacher')->withCount('students')->get())->resolve(),
             'videos' => VideoResource::collection(Video::query()->visibleTo($user)->with('halaqa')->latest()->limit(4)->get())->resolve(),
+            'announcements' => HalaqaAnnouncementResource::collection(
+                HalaqaAnnouncement::query()
+                    ->sent()
+                    ->whereIn('halaqa_id', $user->enrolledHalaqaIds())
+                    ->with(['author', 'halaqa'])
+                    ->latest('sent_at')
+                    ->limit(3)
+                    ->get(),
+            )->resolve(),
+            'mySubmissions' => RecitationSubmissionResource::collection(
+                $user->recitationSubmissions()->with('halaqa')->latest('updated_at')->get(),
+            )->resolve(),
+            'mushafPage' => $user->mushaf_page,
         ]);
+    }
+
+    /**
+     * Recitations entered by students and waiting for grading.
+     *
+     * @param  list<int>|null  $halaqaIds
+     * @return list<array<string, mixed>>
+     */
+    protected function pendingSubmissions(?array $halaqaIds): array
+    {
+        return RecitationSubmissionResource::collection(
+            RecitationSubmission::query()
+                ->when($halaqaIds !== null, fn (Builder $query) => $query->whereIn('halaqa_id', $halaqaIds))
+                ->with(['student', 'halaqa'])
+                ->oldest('updated_at')
+                ->limit(8)
+                ->get(),
+        )->resolve();
     }
 
     /**

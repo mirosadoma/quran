@@ -1,19 +1,27 @@
 <?php
 
+use App\Http\Controllers\AdhkarController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DhikrCategoryController;
+use App\Http\Controllers\DhikrController;
 use App\Http\Controllers\GoogleConnectionController;
+use App\Http\Controllers\HalaqaAnnouncementController;
 use App\Http\Controllers\HalaqaController;
 use App\Http\Controllers\HalaqaStudentController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\ManifestController;
+use App\Http\Controllers\MushafBookmarkController;
+use App\Http\Controllers\MushafController;
+use App\Http\Controllers\MushafHighlightController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProgressController;
+use App\Http\Controllers\RecitationSubmissionController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SessionController;
 use App\Http\Controllers\SessionMeetingController;
@@ -63,10 +71,39 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::get('settings/google/connect', [GoogleConnectionController::class, 'redirect'])->name('settings.google.connect');
         Route::get('settings/google/callback', [GoogleConnectionController::class, 'callback'])->name('settings.google.callback');
         Route::delete('settings/google', [GoogleConnectionController::class, 'destroy'])->name('settings.google.disconnect');
+
+        Route::post('adhkar/categories', [DhikrCategoryController::class, 'store'])->name('adhkar.categories.store');
+        Route::put('adhkar/categories/{category}', [DhikrCategoryController::class, 'update'])->name('adhkar.categories.update');
+        Route::patch('adhkar/categories/{category}/toggle', [DhikrCategoryController::class, 'toggle'])->name('adhkar.categories.toggle');
+        Route::delete('adhkar/categories/{category}', [DhikrCategoryController::class, 'destroy'])->name('adhkar.categories.destroy');
+        Route::post('adhkar', [DhikrController::class, 'store'])->name('adhkar.store');
+        Route::put('adhkar/{dhikr}', [DhikrController::class, 'update'])->name('adhkar.update');
+        Route::patch('adhkar/{dhikr}/toggle', [DhikrController::class, 'toggle'])->name('adhkar.toggle');
+        Route::delete('adhkar/{dhikr}', [DhikrController::class, 'destroy'])->name('adhkar.destroy');
     });
+
+    Route::get('mushaf', [MushafController::class, 'index'])->name('mushaf.index');
+    Route::get('mushaf/pages/{page}', [MushafController::class, 'page'])->whereNumber('page')->name('mushaf.page');
+    Route::get('mushaf/search', [MushafController::class, 'search'])->middleware('throttle:60,1')->name('mushaf.search');
+    Route::get('mushaf/ayahs/{ayah}/tafsir', [MushafController::class, 'tafsir'])->whereNumber('ayah')->name('mushaf.tafsir');
+    Route::put('mushaf/position', [MushafController::class, 'position'])->name('mushaf.position');
+    Route::post('mushaf/bookmarks', [MushafBookmarkController::class, 'store'])->name('mushaf.bookmarks.store');
+    Route::delete('mushaf/bookmarks/{bookmark}', [MushafBookmarkController::class, 'destroy'])->name('mushaf.bookmarks.destroy');
+    Route::put('mushaf/highlights/{ayah}', [MushafHighlightController::class, 'update'])->whereNumber('ayah')->name('mushaf.highlights.update');
+    Route::delete('mushaf/highlights/{ayah}', [MushafHighlightController::class, 'destroy'])->whereNumber('ayah')->name('mushaf.highlights.destroy');
+
+    Route::get('adhkar', [AdhkarController::class, 'index'])->name('adhkar.index');
 
     Route::resource('halaqat', HalaqaController::class)->parameters(['halaqat' => 'halaqa']);
     Route::post('halaqat/{halaqa}/generate-sessions', [HalaqaController::class, 'generateSessions'])->name('halaqat.generate-sessions');
+    Route::put('halaqat/{halaqa}/recitation', [RecitationSubmissionController::class, 'update'])->middleware('role:student')->name('halaqat.recitation.update');
+    Route::delete('recitation-submissions/{submission}', [RecitationSubmissionController::class, 'destroy'])->name('recitation-submissions.destroy');
+
+    Route::middleware('role:admin,teacher')->group(function () {
+        Route::post('halaqat/{halaqa}/announcements', [HalaqaAnnouncementController::class, 'store'])->name('halaqat.announcements.store');
+        Route::put('announcements/{announcement}', [HalaqaAnnouncementController::class, 'update'])->name('announcements.update');
+        Route::delete('announcements/{announcement}', [HalaqaAnnouncementController::class, 'destroy'])->name('announcements.destroy');
+    });
 
     Route::resource('sessions', SessionController::class);
     Route::post('sessions/{session}/cancel', [SessionController::class, 'cancel'])->name('sessions.cancel');

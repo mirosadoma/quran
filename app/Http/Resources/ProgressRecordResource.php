@@ -32,6 +32,18 @@ class ProgressRecordResource extends JsonResource
             'recorded_on' => $this->recorded_on->toDateString(),
             'halaqa_id' => $this->halaqa_id,
             'halaqa_session_id' => $this->halaqa_session_id,
+            'group_uuid' => $this->group_uuid,
+            'portions' => $this->recitationRecords()->map(fn (ProgressRecord $record): array => [
+                'id' => $record->id,
+                'type' => $record->type->value,
+                'from_surah' => $record->from_surah,
+                'from_ayah' => $record->from_ayah,
+                'to_surah' => $record->to_surah,
+                'to_ayah' => $record->to_ayah,
+                'ayahs_count' => $record->ayahs_count,
+                'grade' => $record->grade?->value,
+                'mistakes' => $record->mistakes,
+            ])->values()->all(),
             'student' => $this->whenLoaded('student', fn (): array => [
                 'id' => $this->student->id,
                 'name' => $this->student->name,

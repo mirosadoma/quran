@@ -96,6 +96,22 @@ class Halaqa extends Model
     }
 
     /**
+     * @return HasMany<RecitationSubmission, $this>
+     */
+    public function recitationSubmissions(): HasMany
+    {
+        return $this->hasMany(RecitationSubmission::class);
+    }
+
+    /**
+     * @return HasMany<HalaqaAnnouncement, $this>
+     */
+    public function announcements(): HasMany
+    {
+        return $this->hasMany(HalaqaAnnouncement::class);
+    }
+
+    /**
      * Limit the query to halaqat the given user may access.
      */
     #[Scope]

@@ -67,6 +67,14 @@ export const halaqaColors: Record<string, ColorTokens> = {
         gradient: 'from-emerald-600 to-emerald-900',
         border: 'border-emerald-500',
     },
+    gold: {
+        dot: 'bg-gold-500',
+        soft: 'bg-gold-500/10 text-gold-700 dark:text-gold-300',
+        text: 'text-gold-600 dark:text-gold-400',
+        bar: 'bg-gold-500',
+        gradient: 'from-gold-500 to-gold-800',
+        border: 'border-gold-500',
+    },
     teal: {
         dot: 'bg-teal-500',
         soft: 'bg-teal-500/10 text-teal-700 dark:text-teal-300',

@@ -3,9 +3,11 @@ import {
     Bell,
     BookOpen,
     BookOpenCheck,
+    BookOpenText,
     CalendarDays,
     ChartColumn,
     CirclePlay,
+    HandHeart,
     LayoutDashboard,
     LogOut,
     MessagesSquare,
@@ -69,6 +71,13 @@ function useNavigation(): NavGroup[] {
             items: [{ label: t('Dashboard'), href: route('dashboard'), active: current('dashboard'), icon: LayoutDashboard }],
         },
         { label: t('Learning'), items: learning },
+        {
+            label: t('Quran and adhkar'),
+            items: [
+                { label: t('The recited mushaf'), href: route('mushaf.index'), active: current('mushaf.*'), icon: BookOpenText },
+                { label: t('Adhkar and duas'), href: route('adhkar.index'), active: current('adhkar.*'), icon: HandHeart },
+            ],
+        },
         {
             label: t('Communication'),
             items: [

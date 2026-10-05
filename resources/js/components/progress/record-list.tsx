@@ -27,6 +27,11 @@ export function RecordList({ records, showStudent = false, showHalaqa = true, on
     const [deleting, setDeleting] = useState<ProgressRecordItem | null>(null);
     const [processing, setProcessing] = useState(false);
 
+    // Memorization and revision saved together arrive as separate records: show them once.
+    const recitations = records.filter(
+        (record, index) => record.group_uuid === null || records.findIndex((item) => item.group_uuid === record.group_uuid) === index,
+    );
+
     if (records.length === 0) {
         return <EmptyState icon={BookOpen} title={emptyTitle ?? t('No recitations yet')} description={emptyDescription} compact />;
     }
@@ -49,8 +54,9 @@ export function RecordList({ records, showStudent = false, showHalaqa = true, on
     return (
         <>
             <ul className="divide-y divide-line">
-                {records.map((record) => {
-                    const memorization = record.type === 'memorization';
+                {recitations.map((record) => {
+                    const portions = record.portions.length > 0 ? record.portions : [record];
+                    const memorization = portions.some((portion) => portion.type === 'memorization');
 
                     return (
                         <li key={record.id} className="flex gap-4 px-5 py-4 sm:px-6">
@@ -68,27 +74,37 @@ export function RecordList({ records, showStudent = false, showHalaqa = true, on
                             )}
 
                             <div className="min-w-0 flex-1">
-                                <div className="flex flex-wrap items-center gap-2">
-                                    {showStudent && record.student && (
-                                        <Link
-                                            href={route('progress.student', record.student.id)}
-                                            className="font-semibold text-ink hover:text-primary-700 dark:hover:text-primary-300"
-                                        >
-                                            {record.student.name}
-                                        </Link>
-                                    )}
-                                    <ProgressTypeBadge type={record.type} />
-                                    {record.grade && <GradeBadge grade={record.grade} />}
+                                {showStudent && record.student && (
+                                    <Link
+                                        href={route('progress.student', record.student.id)}
+                                        className="font-semibold text-ink hover:text-primary-700 dark:hover:text-primary-300"
+                                    >
+                                        {record.student.name}
+                                    </Link>
+                                )}
+                                <div className={cn('space-y-3', showStudent && record.student && 'mt-1.5')}>
+                                    {portions.map((portion) => (
+                                        <div key={portion.id}>
+                                            <div className="flex flex-wrap items-center gap-2">
+                                                <ProgressTypeBadge type={portion.type} />
+                                                {portion.grade && <GradeBadge grade={portion.grade} />}
+                                            </div>
+                                            <p className="mt-1 font-quran text-lg leading-relaxed text-ink">{rangeLabel(portion, locale)}</p>
+                                            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted">
+                                                <span className="font-semibold text-primary-700 dark:text-primary-300">
+                                                    {t(':count ayahs', { count: portion.ayahs_count })}
+                                                </span>
+                                                {portion.mistakes > 0 && (
+                                                    <span className="inline-flex items-center gap-1">
+                                                        <CircleAlert className="size-3.5" />
+                                                        {t(':count mistakes', { count: portion.mistakes })}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))}
                                 </div>
-                                <p className="mt-1 font-quran text-lg leading-relaxed text-ink">{rangeLabel(record, locale)}</p>
-                                <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted">
-                                    <span className="font-semibold text-primary-700 dark:text-primary-300">{t(':count ayahs', { count: record.ayahs_count })}</span>
-                                    {record.mistakes > 0 && (
-                                        <span className="inline-flex items-center gap-1">
-                                            <CircleAlert className="size-3.5" />
-                                            {t(':count mistakes', { count: record.mistakes })}
-                                        </span>
-                                    )}
+                                <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted">
                                     <span className="inline-flex items-center gap-1">
                                         <CalendarDays className="size-3.5" />
                                         {dates.day(record.recorded_on)}

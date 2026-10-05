@@ -2,6 +2,7 @@ import { usePage } from '@inertiajs/react';
 import { BookOpen, BookOpenCheck, CalendarDays, CalendarPlus, ChartColumn, GraduationCap, Percent, Plus, UserPlus, Users } from 'lucide-react';
 import { AttendanceTrendChart, MemorizationTrendChart } from '@/components/charts';
 import { TopStudentsCard, WelcomeBanner } from '@/components/dashboard/widgets';
+import { PendingSubmissionsCard } from '@/components/progress/recitation-submissions';
 import { RecordList } from '@/components/progress/record-list';
 import { SessionRow } from '@/components/session/session-row';
 import { LinkButton } from '@/components/ui/button';
@@ -11,7 +12,7 @@ import { StatCard } from '@/components/ui/stat-card';
 import AppLayout from '@/layouts/app-layout';
 import { useTrans } from '@/lib/i18n';
 import { formatNumber } from '@/lib/utils';
-import type { ProgressRecordItem, SessionItem, WeeklyAttendance, WeeklyMemorization } from '@/types';
+import type { ProgressRecordItem, RecitationSubmissionItem, SessionItem, WeeklyAttendance, WeeklyMemorization } from '@/types';
 
 interface AdminDashboardProps {
     stats: {
@@ -27,9 +28,10 @@ interface AdminDashboardProps {
     todaySessions: SessionItem[];
     recentRecords: ProgressRecordItem[];
     topStudents: { id: number; name: string; avatar_url: string | null; ayahs: number; total: number }[];
+    pendingSubmissions: RecitationSubmissionItem[];
 }
 
-export default function AdminDashboard({ stats, attendanceTrend, memorizationTrend, todaySessions, recentRecords, topStudents }: AdminDashboardProps) {
+export default function AdminDashboard({ stats, attendanceTrend, memorizationTrend, todaySessions, recentRecords, topStudents, pendingSubmissions }: AdminDashboardProps) {
     const { t, locale } = useTrans();
     const { auth } = usePage().props;
 
@@ -107,6 +109,12 @@ export default function AdminDashboard({ stats, attendanceTrend, memorizationTre
                 </Card>
                 <TopStudentsCard students={topStudents} />
             </div>
+
+            {pendingSubmissions.length > 0 && (
+                <div className="mt-6">
+                    <PendingSubmissionsCard submissions={pendingSubmissions} />
+                </div>
+            )}
 
             <Card className="mt-6">
                 <CardHeader

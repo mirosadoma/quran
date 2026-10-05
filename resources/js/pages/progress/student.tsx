@@ -19,7 +19,7 @@ import { useTrans } from '@/lib/i18n';
 import { useLabels } from '@/lib/labels';
 import { nextPosition, surahName, TOTAL_AYAHS } from '@/lib/quran';
 import { cleanQuery, cn, colorOf, formatNumber } from '@/lib/utils';
-import type { HalaqaRef, Paginated, ProgressRecordItem, ProgressSummary, ProgressType, UserItem, WeeklyMemorization } from '@/types';
+import type { HalaqaRef, Paginated, ProgressRecordItem, ProgressSummary, ProgressType, RecitationSubmissionItem, UserItem, WeeklyMemorization } from '@/types';
 
 interface StudentProgressProps {
     student: Omit<UserItem, 'halaqat'> & { halaqat: HalaqaRef[] };
@@ -29,10 +29,11 @@ interface StudentProgressProps {
     filters: { type: ProgressType | null };
     canRecord: boolean;
     halaqat: HalaqaRef[];
+    submissions: RecitationSubmissionItem[];
     lastPosition: { surah: number; ayah: number } | null;
 }
 
-export default function StudentProgress({ student, summary, records, weekly, filters, canRecord, halaqat, lastPosition }: StudentProgressProps) {
+export default function StudentProgress({ student, summary, records, weekly, filters, canRecord, halaqat, submissions, lastPosition }: StudentProgressProps) {
     const { t, locale } = useTrans();
     const labels = useLabels();
     const dates = useDates();
@@ -200,6 +201,7 @@ export default function StudentProgress({ student, summary, records, weekly, fil
                     student={{ id: student.id, name: student.name }}
                     halaqat={halaqat}
                     suggestion={suggestion}
+                    submissions={submissions}
                 />
             )}
         </AppLayout>

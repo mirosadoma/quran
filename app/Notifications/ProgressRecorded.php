@@ -19,18 +19,23 @@ class ProgressRecorded extends AppNotification
 
     public function body(object $notifiable): string
     {
-        $range = app(Quran::class)->rangeLabel(
-            $this->record->from_surah,
-            $this->record->from_ayah,
-            $this->record->to_surah,
-            $this->record->to_ayah,
-        );
+        $quran = app(Quran::class);
 
-        $body = $this->record->type->label().': '.$range;
+        $body = $this->record->recitationRecords()
+            ->map(function (ProgressRecord $record) use ($quran): string {
+                $line = $record->type->label().': '.$quran->rangeLabel($record->from_surah, $record->from_ayah, $record->to_surah, $record->to_ayah);
 
-        if ($this->record->grade !== null) {
-            $body .= ' — '.$this->record->grade->label();
-        }
+                if ($record->grade !== null) {
+                    $line .= ' — '.$record->grade->label();
+                }
+
+                if ($record->mistakes > 0) {
+                    $line .= ' ('.__(':count mistakes', ['count' => $record->mistakes]).')';
+                }
+
+                return $line;
+            })
+            ->implode(' · ');
 
         if (filled($this->record->notes)) {
             $body .= '. '.$this->record->notes;
@@ -39,8 +44,15 @@ class ProgressRecorded extends AppNotification
         return $body;
     }
 
+    /**
+     * Opens the recitations tab of the halaqa (or the progress page for records without a halaqa).
+     */
     public function url(): ?string
     {
+        if ($this->record->halaqa_id !== null) {
+            return route('halaqat.show', ['halaqa' => $this->record->halaqa_id, 'tab' => 'records']);
+        }
+
         return route('progress.student', $this->record->student_id);
     }
 

@@ -55,6 +55,23 @@ class StudentProgress
     }
 
     /**
+     * End of the student's latest memorization portion.
+     *
+     * @return array{surah: int, ayah: int}|null
+     */
+    public function lastMemorizedPosition(User $student): ?array
+    {
+        $record = ProgressRecord::query()
+            ->where('student_id', $student->id)
+            ->where('type', ProgressType::Memorization)
+            ->latest('recorded_on')
+            ->latest('id')
+            ->first(['to_surah', 'to_ayah']);
+
+        return $record ? ['surah' => $record->to_surah, 'ayah' => $record->to_ayah] : null;
+    }
+
+    /**
      * Attendance totals for completed sessions in an optional date range.
      *
      * @return array{total: int, present: int, late: int, absent: int, excused: int, rate: int|null}

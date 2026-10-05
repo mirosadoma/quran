@@ -56,6 +56,14 @@ class HalaqaPolicy
     }
 
     /**
+     * Determine whether the user can enter the recitation they are about to recite.
+     */
+    public function submitRecitation(User $user, Halaqa $halaqa): bool
+    {
+        return $user->isStudent() && $halaqa->is_active && $halaqa->hasMember($user);
+    }
+
+    /**
      * Determine whether the user can take part in the halaqa chat.
      */
     public function chat(User $user, Halaqa $halaqa): bool

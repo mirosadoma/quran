@@ -171,7 +171,7 @@ class ReportController extends Controller
         $student->load('halaqat.teacher:id,name');
 
         $records = $student->progressRecords()
-            ->with(['teacher', 'halaqa'])
+            ->with(['teacher', 'halaqa', 'groupRecords'])
             ->whereBetween('recorded_on', [$from->toDateString(), $to->toDateString()])
             ->orderBy('recorded_on')
             ->orderBy('id')

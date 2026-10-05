@@ -169,10 +169,133 @@ export interface ProgressRecordItem {
     recorded_on: string;
     halaqa_id: number | null;
     halaqa_session_id: number | null;
+    group_uuid: string | null;
+    portions: ProgressPortion[];
     student?: UserRef;
     teacher?: UserRef | null;
     halaqa?: HalaqaRef | null;
     can_manage: boolean;
+}
+
+export interface QuranRange {
+    from_surah: number;
+    from_ayah: number;
+    to_surah: number;
+    to_ayah: number;
+}
+
+/**
+ * One part (memorization or revision) of a recitation; both parts share the same record group.
+ */
+export interface ProgressPortion extends QuranRange {
+    id: number;
+    type: ProgressType;
+    ayahs_count: number;
+    grade: Grade | null;
+    mistakes: number;
+}
+
+/**
+ * A recitation entered by the student and waiting for the teacher's grading.
+ */
+export interface RecitationSubmissionItem {
+    id: number;
+    halaqa_id: number;
+    memorization: QuranRange | null;
+    revision: QuranRange | null;
+    notes: string | null;
+    submitted_at: string | null;
+    student?: UserRef;
+    halaqa?: HalaqaRef | null;
+}
+
+export interface MushafAyah {
+    id: number;
+    surah: number;
+    ayah: number;
+    text: string;
+    juz: number;
+    hizb_quarter: number;
+    sajda: boolean;
+}
+
+export interface MushafIndex {
+    surahs: Record<string, number>;
+    juz: Record<string, number>;
+    quarters: { quarter: number; surah: number; ayah: number; page: number }[];
+    page_starts: number[];
+}
+
+export interface ReciterItem {
+    id: number;
+    name: string;
+    name_en: string | null;
+    description: string | null;
+    audio_url: string;
+}
+
+export type HighlightColor = 'gold' | 'emerald' | 'sky' | 'rose' | 'violet';
+
+export interface MushafBookmarkItem {
+    id: number;
+    page: number;
+    ayah_id: number | null;
+    surah: number | null;
+    ayah: number | null;
+    label: string | null;
+    created_at: string | null;
+}
+
+export interface MushafHighlightItem {
+    ayah_id: number;
+    surah: number;
+    ayah: number;
+    page: number;
+    color: HighlightColor;
+    note: string | null;
+    updated_at: string | null;
+}
+
+export interface DhikrItem {
+    id: number;
+    dhikr_category_id: number;
+    title: string | null;
+    text: string;
+    repeat: number;
+    reference: string | null;
+    virtue: string | null;
+    sort_order: number;
+    is_active: boolean;
+}
+
+export interface DhikrCategoryItem {
+    id: number;
+    name: string;
+    slug: string;
+    description: string | null;
+    icon: string;
+    color: string;
+    sort_order: number;
+    is_active: boolean;
+    adhkar: DhikrItem[];
+}
+
+export type AnnouncementKind = 'advice' | 'word' | 'hadith' | 'reminder';
+export type AnnouncementDelivery = 'now' | 'scheduled' | 'sessions';
+
+export interface AnnouncementItem {
+    id: number;
+    kind: AnnouncementKind;
+    title: string | null;
+    body: string;
+    delivery: AnnouncementDelivery;
+    scheduled_at: string | null;
+    sent_at: string | null;
+    created_at: string | null;
+    author?: UserRef | null;
+    halaqa?: HalaqaRef | null;
+    sessions?: { id: number; title: string; starts_at: string; cancelled: boolean; sent_at: string | null }[];
+    can: { update: boolean; delete: boolean };
 }
 
 export interface VideoItem {

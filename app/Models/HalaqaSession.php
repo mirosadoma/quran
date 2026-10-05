@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\DB;
 
@@ -109,6 +110,17 @@ class HalaqaSession extends Model
     }
 
     /**
+     * Messages of the halaqa delivered when this session starts.
+     *
+     * @return BelongsToMany<HalaqaAnnouncement, $this>
+     */
+    public function announcements(): BelongsToMany
+    {
+        return $this->belongsToMany(HalaqaAnnouncement::class, 'halaqa_announcement_session', 'halaqa_session_id', 'halaqa_announcement_id')
+            ->withPivot('sent_at');
+    }
+
+    /**
      * Sessions that are not finished yet (scheduled or live, and not past their end).
      */
     #[Scope]
@@ -116,7 +128,19 @@ class HalaqaSession extends Model
     {
         $query->whereIn('status', [SessionStatus::Scheduled, SessionStatus::Live])
             ->where('starts_at', '>=', now()->subMinutes(240))
-            ->whereRaw('DATE_ADD(starts_at, INTERVAL duration_minutes MINUTE) >= ?', [now()->toDateTimeString()]);
+            ->whereRaw(static::endSql().' >= ?', [now()->toDateTimeString()]);
+    }
+
+    /**
+     * SQL expression of the session end (start plus duration, plus extra minutes).
+     */
+    public static function endSql(int $extraMinutes = 0): string
+    {
+        $minutes = $extraMinutes > 0 ? "duration_minutes + {$extraMinutes}" : 'duration_minutes';
+
+        return DB::connection()->getDriverName() === 'sqlite'
+            ? "datetime(starts_at, '+' || ({$minutes}) || ' minutes')"
+            : "DATE_ADD(starts_at, INTERVAL {$minutes} MINUTE)";
     }
 
     public function endsAt(): CarbonInterface

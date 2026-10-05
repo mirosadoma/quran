@@ -18,6 +18,10 @@ class SessionStarted extends AppNotification
 
     public function body(object $notifiable): string
     {
+        if (($notifiable->id ?? null) === $this->session->teacher_id) {
+            return __('It is time for :title. Your students are invited, join them now.', ['title' => $this->session->displayTitle()]);
+        }
+
         return __(':teacher started :title. Join now!', [
             'teacher' => $this->session->teacher?->name ?? __('The teacher'),
             'title' => $this->session->displayTitle(),

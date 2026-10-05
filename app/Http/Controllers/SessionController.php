@@ -8,8 +8,8 @@ use App\Enums\SessionSource;
 use App\Enums\SessionStatus;
 use App\Http\Requests\SessionRequest;
 use App\Http\Resources\ProgressRecordResource;
+use App\Http\Resources\RecitationSubmissionResource;
 use App\Http\Resources\SessionResource;
-use App\Models\Attendance;
 use App\Models\Halaqa;
 use App\Models\HalaqaSession;
 use App\Models\User;
@@ -61,11 +61,11 @@ class SessionController extends Controller
             ->when($view === 'upcoming', fn (Builder $query) => $query
                 ->where(fn (Builder $query) => $query
                     ->where('status', SessionStatus::Live)
-                    ->orWhereRaw('DATE_ADD(starts_at, INTERVAL duration_minutes MINUTE) >= ?', [$now]))
+                    ->orWhereRaw(HalaqaSession::endSql().' >= ?', [$now]))
                 ->orderBy('starts_at'))
             ->when($view === 'past', fn (Builder $query) => $query
                 ->where('status', '!=', SessionStatus::Live)
-                ->whereRaw('DATE_ADD(starts_at, INTERVAL duration_minutes MINUTE) < ?', [$now])
+                ->whereRaw(HalaqaSession::endSql().' < ?', [$now])
                 ->orderByDesc('starts_at'))
             ->when($view === 'all', fn (Builder $query) => $query->orderByDesc('starts_at'))
             ->paginate(20)
@@ -170,7 +170,7 @@ class SessionController extends Controller
         }
 
         $records = $session->progressRecords()
-            ->with(['student', 'teacher', 'halaqa'])
+            ->with(['student', 'teacher', 'halaqa', 'groupRecords'])
             ->when(! $canManage, fn (Builder $query) => $query->where('student_id', $user->id))
             ->latest('id')
             ->get();
@@ -211,6 +211,11 @@ class SessionController extends Controller
             ] : null,
             'records' => ProgressRecordResource::collection($records)->resolve(),
             'students' => $canManage ? $students->map(fn (User $student): array => ['id' => $student->id, 'name' => $student->name])->values() : [],
+            'submissions' => $canManage
+                ? RecitationSubmissionResource::collection(
+                    $session->halaqa->recitationSubmissions()->with('student')->oldest('updated_at')->get(),
+                )->resolve()
+                : [],
             'can' => [
                 'manage' => $canManage,
                 'join' => $canJoin,

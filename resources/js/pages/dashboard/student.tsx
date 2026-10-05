@@ -1,7 +1,9 @@
 import { Link, router, usePage } from '@inertiajs/react';
-import { Award, BookOpen, BookOpenCheck, CalendarDays, CirclePlay, Layers, Percent } from 'lucide-react';
+import { Award, BookOpen, BookOpenCheck, BookOpenText, CalendarDays, CirclePlay, HandHeart, Inbox, Layers, Megaphone, Percent } from 'lucide-react';
 import { useState } from 'react';
+import { IslamicPattern } from '@/components/brand';
 import { VerseCard, WelcomeBanner } from '@/components/dashboard/widgets';
+import { AnnouncementList } from '@/components/halaqa/announcements';
 import { HalaqaCard } from '@/components/halaqa/halaqa-card';
 import { JuzMap } from '@/components/progress/juz-map';
 import { RecordList } from '@/components/progress/record-list';
@@ -18,9 +20,9 @@ import AppLayout from '@/layouts/app-layout';
 import { useDates } from '@/lib/dates';
 import { useTrans } from '@/lib/i18n';
 import { useLabels } from '@/lib/labels';
-import { TOTAL_AYAHS } from '@/lib/quran';
+import { rangeLabel, TOTAL_AYAHS } from '@/lib/quran';
 import { formatNumber } from '@/lib/utils';
-import type { HalaqaItem, ProgressRecordItem, ProgressSummary, SessionItem, VideoItem } from '@/types';
+import type { AnnouncementItem, HalaqaItem, ProgressRecordItem, ProgressSummary, QuranRange, RecitationSubmissionItem, SessionItem, VideoItem } from '@/types';
 
 interface StudentDashboardProps {
     nextSession: SessionItem | null;
@@ -29,9 +31,12 @@ interface StudentDashboardProps {
     recentRecords: ProgressRecordItem[];
     halaqat: HalaqaItem[];
     videos: VideoItem[];
+    announcements: AnnouncementItem[];
+    mySubmissions: RecitationSubmissionItem[];
+    mushafPage: number | null;
 }
 
-export default function StudentDashboard({ nextSession, upcomingSessions, summary, recentRecords, halaqat, videos }: StudentDashboardProps) {
+export default function StudentDashboard({ nextSession, upcomingSessions, summary, recentRecords, halaqat, videos, announcements, mySubmissions, mushafPage }: StudentDashboardProps) {
     const { t, locale } = useTrans();
     const labels = useLabels();
     const dates = useDates();
@@ -103,6 +108,59 @@ export default function StudentDashboard({ nextSession, upcomingSessions, summar
                 />
             </div>
 
+            {mySubmissions.length > 0 && (
+                <div className="mt-6 flex flex-wrap items-center gap-3 rounded-2xl border border-sky-200 bg-sky-50 px-5 py-4 text-sky-900 dark:border-sky-500/20 dark:bg-sky-500/10 dark:text-sky-100">
+                    <Inbox className="size-5 shrink-0" />
+                    <div className="min-w-0 flex-1 text-sm">
+                        <p className="font-semibold">{t('Your recitation is waiting for your teacher')}</p>
+                        <p className="text-sky-800/80 dark:text-sky-200/80">
+                            {mySubmissions
+                                .map((submission) =>
+                                    [submission.memorization, submission.revision]
+                                        .filter((range): range is QuranRange => range !== null)
+                                        .map((range) => rangeLabel(range, locale))
+                                        .join(' · '),
+                                )
+                                .join(' — ')}
+                        </p>
+                    </div>
+                    <LinkButton href={route('halaqat.show', mySubmissions[0].halaqa_id)} variant="secondary" size="sm">
+                        {t('View')}
+                    </LinkButton>
+                </div>
+            )}
+
+            <div className="mt-6 grid gap-4 sm:grid-cols-2">
+                <Link
+                    href={route('mushaf.index')}
+                    className="group relative flex items-center gap-4 overflow-hidden rounded-3xl bg-linear-to-br from-primary-700 to-primary-950 px-6 py-5 text-white shadow-lg transition hover:-translate-y-0.5"
+                >
+                    <IslamicPattern className="text-white/7" size={48} />
+                    <span className="relative flex size-12 shrink-0 items-center justify-center rounded-2xl bg-white/10 ring-1 ring-white/20">
+                        <BookOpenText className="size-6" />
+                    </span>
+                    <span className="relative min-w-0">
+                        <span className="block text-lg font-bold">{t('The recited mushaf')}</span>
+                        <span className="block text-sm text-white/75">
+                            {mushafPage ? t('Continue reading from page :page', { page: mushafPage }) : t('Read, listen to the sheikhs and mark the ayahs')}
+                        </span>
+                    </span>
+                </Link>
+                <Link
+                    href={route('adhkar.index')}
+                    className="group relative flex items-center gap-4 overflow-hidden rounded-3xl bg-linear-to-br from-gold-500 to-gold-800 px-6 py-5 text-white shadow-lg transition hover:-translate-y-0.5"
+                >
+                    <IslamicPattern className="text-white/8" size={48} />
+                    <span className="relative flex size-12 shrink-0 items-center justify-center rounded-2xl bg-white/10 ring-1 ring-white/20">
+                        <HandHeart className="size-6" />
+                    </span>
+                    <span className="relative min-w-0">
+                        <span className="block text-lg font-bold">{t('Adhkar and duas')}</span>
+                        <span className="block text-sm text-white/80">{t('Morning and evening adhkar, sleep, and duas from the Quran and the sunnah')}</span>
+                    </span>
+                </Link>
+            </div>
+
             <Card className="mt-6">
                 <CardHeader
                     title={t('My memorization map')}
@@ -126,6 +184,22 @@ export default function StudentDashboard({ nextSession, upcomingSessions, summar
                     <RecordList records={recentRecords} emptyDescription={t('Your recitations and the notes of your teacher will appear here.')} />
                 </Card>
                 <div className="space-y-6">
+                    {announcements.length > 0 && (
+                        <Card>
+                            <CardHeader
+                                title={t('Messages from your teacher')}
+                                icon={Megaphone}
+                                actions={
+                                    announcements[0].halaqa && (
+                                        <LinkButton href={route('halaqat.show', { halaqa: announcements[0].halaqa.id, tab: 'messages' })} variant="ghost" size="sm">
+                                            {t('View all')}
+                                        </LinkButton>
+                                    )
+                                }
+                            />
+                            <AnnouncementList announcements={announcements} showHalaqa={halaqat.length > 1} compact />
+                        </Card>
+                    )}
                     <Card>
                         <CardHeader title={t('Upcoming sessions')} icon={CalendarDays} />
                         {upcomingSessions.length === 0 ? (

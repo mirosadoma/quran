@@ -97,3 +97,32 @@ export function countAyahs(fromSurah: number | null, fromAyah: number | null, to
 
     return end >= start ? end - start + 1 : null;
 }
+
+/**
+ * Number of the ayah in the whole Quran (1 to 6236).
+ */
+export function ayahId(surahNumber: number, ayah: number): number {
+    return offsets[surahNumber] + ayah;
+}
+
+/**
+ * Surah and ayah of a number in the whole Quran.
+ */
+export function ayahFromId(id: number): { surah: number; ayah: number } {
+    let surahNumber = 1;
+
+    while (surahNumber < 114 && offsets[surahNumber + 1] < id) {
+        surahNumber++;
+    }
+
+    return { surah: surahNumber, ayah: id - offsets[surahNumber] };
+}
+
+const easternDigits = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+
+/**
+ * Digits as written in the mushaf (٠١٢٣٤٥٦٧٨٩).
+ */
+export function arabicDigits(value: number | string): string {
+    return String(value).replace(/\d/g, (digit) => easternDigits[Number(digit)]);
+}

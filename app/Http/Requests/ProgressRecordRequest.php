@@ -2,10 +2,8 @@
 
 namespace App\Http\Requests;
 
-use App\Enums\Grade;
-use App\Enums\ProgressType;
 use App\Enums\UserRole;
-use App\Services\Quran;
+use App\Http\Requests\Concerns\ValidatesPortions;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -13,6 +11,8 @@ use Illuminate\Validation\Validator;
 
 class ProgressRecordRequest extends FormRequest
 {
+    use ValidatesPortions;
+
     /**
      * Determine if the user is authorized to make this request.
      */
@@ -28,24 +28,41 @@ class ProgressRecordRequest extends FormRequest
      */
     public function rules(): array
     {
+        $creating = $this->route('record') === null;
+
         return [
             'student_id' => [
-                $this->route('record') ? 'prohibited' : 'required',
+                $creating ? 'required' : 'prohibited',
                 'integer',
                 Rule::exists('users', 'id')->where('role', UserRole::Student->value),
             ],
             'halaqa_id' => ['nullable', 'integer', 'exists:halaqat,id'],
             'halaqa_session_id' => ['nullable', 'integer', 'exists:halaqa_sessions,id'],
-            'type' => ['required', Rule::enum(ProgressType::class)],
-            'from_surah' => ['required', 'integer', 'between:1,114'],
-            'from_ayah' => ['required', 'integer', 'min:1'],
-            'to_surah' => ['required', 'integer', 'between:1,114'],
-            'to_ayah' => ['required', 'integer', 'min:1'],
-            'grade' => ['nullable', Rule::enum(Grade::class)],
-            'mistakes' => ['nullable', 'integer', 'min:0', 'max:255'],
+            'submission_id' => [$creating ? 'nullable' : 'prohibited', 'integer'],
+            ...$this->portionRules(graded: true),
             'notes' => ['nullable', 'string', 'max:2000'],
             'recorded_on' => ['nullable', 'date', 'before_or_equal:tomorrow'],
         ];
+    }
+
+    /**
+     * Get custom attributes for validator errors.
+     *
+     * @return array<string, string>
+     */
+    public function attributes(): array
+    {
+        return $this->portionAttributes();
+    }
+
+    /**
+     * Get the error messages for the defined validation rules.
+     *
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return $this->portionMessages();
     }
 
     /**
@@ -56,34 +73,7 @@ class ProgressRecordRequest extends FormRequest
     public function after(): array
     {
         return [
-            function (Validator $validator): void {
-                if ($validator->errors()->isNotEmpty()) {
-                    return;
-                }
-
-                $quran = app(Quran::class);
-                $fromSurah = $this->integer('from_surah');
-                $toSurah = $this->integer('to_surah');
-
-                if (! $quran->isValid($fromSurah, $this->integer('from_ayah'))) {
-                    $validator->errors()->add('from_ayah', __('Surah :surah has only :count ayahs.', [
-                        'surah' => $quran->surahName($fromSurah),
-                        'count' => $quran->ayahCount($fromSurah),
-                    ]));
-                }
-
-                if (! $quran->isValid($toSurah, $this->integer('to_ayah'))) {
-                    $validator->errors()->add('to_ayah', __('Surah :surah has only :count ayahs.', [
-                        'surah' => $quran->surahName($toSurah),
-                        'count' => $quran->ayahCount($toSurah),
-                    ]));
-                }
-
-                if ($validator->errors()->isEmpty()
-                    && $quran->absolute($fromSurah, $this->integer('from_ayah')) > $quran->absolute($toSurah, $this->integer('to_ayah'))) {
-                    $validator->errors()->add('to_ayah', __('The end of the portion must come after its start.'));
-                }
-            },
+            fn (Validator $validator) => $this->validatePortions($validator),
         ];
     }
 }

@@ -66,6 +66,8 @@ return [
             'session_reminder' => 'session_reminder',
             'session_started' => 'session_started',
             'session_cancelled' => 'session_cancelled',
+            'session_ended' => 'session_ended',
+            'halaqa_message' => 'halaqa_message',
             'progress_recorded' => 'progress_recorded',
             'added_to_halaqa' => 'added_to_halaqa',
             'account_created' => 'account_created',

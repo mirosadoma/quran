@@ -8,7 +8,9 @@ import {
     CalendarPlus,
     CalendarX,
     CheckCheck,
+    CircleCheck,
     CirclePlay,
+    Megaphone,
     Users,
     Video,
     type LucideIcon,
@@ -30,6 +32,8 @@ export const notificationIcons: Record<string, LucideIcon> = {
     video: Video,
     'book-open-check': BookOpenCheck,
     'circle-play': CirclePlay,
+    'circle-check': CircleCheck,
+    megaphone: Megaphone,
     bell: Bell,
 };
 

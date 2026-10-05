@@ -35,6 +35,7 @@ class SettingsRequest extends FormRequest
             'reminder_minutes' => ['required', 'integer', 'between:0,240'],
             'late_after_minutes' => ['required', 'integer', 'between:0,120'],
             'auto_mark_absent' => ['boolean'],
+            'auto_start_sessions' => ['boolean'],
             'notify_email' => ['boolean'],
             'notify_whatsapp' => ['boolean'],
             'logo' => ['nullable', 'image', 'max:2048'],

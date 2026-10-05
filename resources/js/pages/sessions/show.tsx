@@ -9,6 +9,7 @@ import {
     Copy,
     ExternalLink,
     FileText,
+    Inbox,
     Info,
     KeyRound,
     Pencil,
@@ -22,6 +23,7 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { AttendanceBadge, SessionStatusBadge } from '@/components/badges';
 import { RecordForm } from '@/components/progress/record-form';
+import { PendingSubmissions } from '@/components/progress/recitation-submissions';
 import { RecordList } from '@/components/progress/record-list';
 import { Countdown } from '@/components/session/countdown';
 import { JoinSessionButton } from '@/components/session/join-button';
@@ -36,7 +38,7 @@ import { useDates } from '@/lib/dates';
 import { useTrans } from '@/lib/i18n';
 import { attendanceStatuses, attendanceTone, useLabels } from '@/lib/labels';
 import { cn, colorOf } from '@/lib/utils';
-import type { AttendanceStatus, ProgressRecordItem, SessionItem, UserRef } from '@/types';
+import type { AttendanceStatus, ProgressRecordItem, RecitationSubmissionItem, SessionItem, UserRef } from '@/types';
 
 interface SessionDetails extends SessionItem {
     notes: string | null;
@@ -65,6 +67,7 @@ interface SessionShowProps {
     myAttendance: { status: AttendanceStatus; joined_at: string | null } | null;
     records: ProgressRecordItem[];
     students: { id: number; name: string }[];
+    submissions: RecitationSubmissionItem[];
     can: { manage: boolean; join: boolean; edit: boolean; cancel: boolean; end: boolean; delete: boolean };
 }
 
@@ -75,7 +78,7 @@ const statusButton: Record<string, string> = {
     sky: 'data-[on=true]:bg-sky-600 data-[on=true]:text-white data-[on=true]:ring-sky-600',
 };
 
-export default function SessionShow({ session, attendance, myAttendance, records, students, can }: SessionShowProps) {
+export default function SessionShow({ session, attendance, myAttendance, records, students, submissions, can }: SessionShowProps) {
     const { t } = useTrans();
     const labels = useLabels();
     const dates = useDates();
@@ -87,6 +90,7 @@ export default function SessionShow({ session, attendance, myAttendance, records
     const [endOpen, setEndOpen] = useState(false);
     const [recordOpen, setRecordOpen] = useState(false);
     const [editingRecord, setEditingRecord] = useState<ProgressRecordItem | null>(null);
+    const [recordStudent, setRecordStudent] = useState<{ id: number; name: string } | null>(null);
 
     const open = session.status === 'scheduled' || session.status === 'live';
     const upcoming = session.status === 'scheduled' && new Date(session.starts_at).getTime() > Date.now();
@@ -280,6 +284,21 @@ export default function SessionShow({ session, attendance, myAttendance, records
                         </Card>
                     )}
 
+                    {can.manage && submissions.length > 0 && (
+                        <Card className="border-sky-200 dark:border-sky-500/20">
+                            <CardHeader
+                                title={t('Recitations waiting for grading')}
+                                description={t('Students entered what they will recite. Add the grade and mistakes.')}
+                                icon={Inbox}
+                            />
+                            <PendingSubmissions
+                                submissions={submissions}
+                                showStudent
+                                onReview={(submission) => submission.student && setRecordStudent({ id: submission.student.id, name: submission.student.name })}
+                            />
+                        </Card>
+                    )}
+
                     <Card>
                         <CardHeader
                             title={t('Recitations in this session')}
@@ -462,16 +481,19 @@ export default function SessionShow({ session, attendance, myAttendance, records
             />
 
             <RecordForm
-                open={recordOpen || editingRecord !== null}
+                open={recordOpen || editingRecord !== null || recordStudent !== null}
                 onClose={() => {
                     setRecordOpen(false);
                     setEditingRecord(null);
+                    setRecordStudent(null);
                 }}
                 record={editingRecord}
+                student={recordStudent}
                 students={students}
                 halaqat={session.halaqa ? [session.halaqa] : []}
                 defaultHalaqaId={session.halaqa?.id}
                 sessionId={session.id}
+                submissions={submissions}
             />
         </AppLayout>
     );

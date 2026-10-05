@@ -122,7 +122,7 @@ class UserController extends Controller
         if ($user->isStudent()) {
             $props['summary'] = $this->progress->summary($user);
             $props['records'] = ProgressRecordResource::collection(
-                $user->progressRecords()->with(['teacher', 'halaqa'])->latest('recorded_on')->latest('id')->limit(8)->get(),
+                $user->progressRecords()->with(['teacher', 'halaqa', 'groupRecords'])->latest('recorded_on')->latest('id')->limit(8)->get(),
             )->resolve();
             $props['halaqat'] = HalaqaResource::collection($user->halaqat()->with('teacher')->withCount('students')->get())->resolve();
         }

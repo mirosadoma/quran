@@ -5,9 +5,12 @@ import {
     CalendarDays,
     CalendarPlus,
     CirclePlay,
+    ClipboardCheck,
     Copy,
     EllipsisVertical,
     GraduationCap,
+    Inbox,
+    Megaphone,
     MessagesSquare,
     Pencil,
     Percent,
@@ -18,13 +21,15 @@ import {
     UserPlus,
     Users,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { GradeBadge } from '@/components/badges';
 import { IslamicPattern } from '@/components/brand';
+import { AnnouncementForm, AnnouncementList, type AnnouncementSession } from '@/components/halaqa/announcements';
 import { ScheduleChips } from '@/components/halaqa/schedule-chips';
 import { RecordForm } from '@/components/progress/record-form';
 import { RecordList } from '@/components/progress/record-list';
+import { PendingSubmissions, SubmissionForm } from '@/components/progress/recitation-submissions';
 import { SessionRow } from '@/components/session/session-row';
 import { Avatar } from '@/components/ui/avatar';
 import { Button, LinkButton } from '@/components/ui/button';
@@ -41,8 +46,9 @@ import AppLayout from '@/layouts/app-layout';
 import { useDates } from '@/lib/dates';
 import { useTrans } from '@/lib/i18n';
 import { useLabels } from '@/lib/labels';
+import { nextPosition } from '@/lib/quran';
 import { colorOf, formatNumber } from '@/lib/utils';
-import type { Grade, HalaqaItem, ProgressRecordItem, SessionItem, UserRef, VideoItem } from '@/types';
+import type { AnnouncementItem, Grade, HalaqaItem, ProgressRecordItem, RecitationSubmissionItem, SessionItem, UserRef, VideoItem } from '@/types';
 
 interface StudentRow {
     student: UserRef;
@@ -64,19 +70,25 @@ interface HalaqaShowProps {
     videos: VideoItem[];
     stats: { attendance_rate: number | null; memorized_month: number; sessions_month: number };
     availableStudents: { id: number; name: string; avatar_url: string | null }[];
-    can: { manage: boolean; update: boolean; delete: boolean };
+    submissions: RecitationSubmissionItem[];
+    lastPosition: { surah: number; ayah: number } | null;
+    announcements: AnnouncementItem[];
+    announcementSessions: AnnouncementSession[];
+    focus: { tab: Tab | null; submission: number | null };
+    can: { manage: boolean; update: boolean; delete: boolean; submit: boolean };
 }
 
-type Tab = 'students' | 'sessions' | 'records' | 'videos';
+type Tab = 'students' | 'sessions' | 'records' | 'messages' | 'videos';
 
 export default function HalaqaShow(props: HalaqaShowProps) {
-    const { halaqa, students, upcomingSessions, recentSessions, recentRecords, videos, stats, availableStudents, can } = props;
+    const { halaqa, students, upcomingSessions, recentSessions, recentRecords, videos, stats, availableStudents, submissions, lastPosition, announcements, can } = props;
     const { t, locale } = useTrans();
     const labels = useLabels();
     const dates = useDates();
     const color = colorOf(halaqa.color);
 
-    const [tab, setTab] = useState<Tab>(can.manage ? 'students' : 'sessions');
+    const [tab, setTab] = useState<Tab>(props.focus.tab ?? (can.manage ? 'students' : 'sessions'));
+    const [announcementForm, setAnnouncementForm] = useState<{ open: boolean; announcement: AnnouncementItem | null }>({ open: false, announcement: null });
     const [adding, setAdding] = useState(false);
     const [removing, setRemoving] = useState<UserRef | null>(null);
     const [deleting, setDeleting] = useState(false);
@@ -84,6 +96,19 @@ export default function HalaqaShow(props: HalaqaShowProps) {
     const [editingRecord, setEditingRecord] = useState<ProgressRecordItem | null>(null);
     const [videoForm, setVideoForm] = useState<{ open: boolean; video: VideoItem | null }>({ open: false, video: null });
     const [playing, setPlaying] = useState<VideoItem | null>(null);
+    const [submitting, setSubmitting] = useState(false);
+    const mySubmission = can.manage ? null : (submissions[0] ?? null);
+    const submittedBy = (studentId: number) => submissions.some((submission) => submission.student?.id === studentId);
+
+    // Opened from the notification of a student's recitation: show its grading form.
+    useEffect(() => {
+        const submission = submissions.find((item) => item.id === props.focus.submission);
+
+        if (can.manage && submission?.student) {
+            setRecordFor({ id: submission.student.id, name: submission.student.name });
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [props.focus.submission]);
 
     const addForm = useForm({ student_ids: [] as number[] });
 
@@ -227,6 +252,45 @@ export default function HalaqaShow(props: HalaqaShowProps) {
                 <StatCard icon={CalendarDays} label={t('Completed sessions')} value={stats.sessions_month} hint={t('Last 30 days')} tone="violet" />
             </div>
 
+            {can.manage && submissions.length > 0 && (
+                <Card className="mt-6 border-sky-200 dark:border-sky-500/20">
+                    <CardHeader
+                        title={t('Recitations waiting for grading')}
+                        description={t('Students entered what they will recite. Add the grade and mistakes.')}
+                        icon={Inbox}
+                    />
+                    <PendingSubmissions
+                        submissions={submissions}
+                        showStudent
+                        onReview={(submission) => submission.student && setRecordFor({ id: submission.student.id, name: submission.student.name })}
+                    />
+                </Card>
+            )}
+
+            {!can.manage && (can.submit || mySubmission) && (
+                <Card className="mt-6">
+                    <CardHeader
+                        title={t('My recitation')}
+                        description={
+                            mySubmission
+                                ? t('Waiting for your teacher to grade it.')
+                                : t('Enter what you will recite (memorization, revision or both) before your turn.')
+                        }
+                        icon={BookOpenCheck}
+                        actions={
+                            !mySubmission &&
+                            can.submit && (
+                                <Button size="sm" onClick={() => setSubmitting(true)}>
+                                    <Plus />
+                                    {t('Enter my recitation')}
+                                </Button>
+                            )
+                        }
+                    />
+                    {mySubmission && <PendingSubmissions submissions={[mySubmission]} onEdit={can.submit ? () => setSubmitting(true) : undefined} />}
+                </Card>
+            )}
+
             <Tabs
                 className="mt-8"
                 value={tab}
@@ -235,6 +299,7 @@ export default function HalaqaShow(props: HalaqaShowProps) {
                     { value: 'students', label: t('Students'), icon: GraduationCap, count: students.length },
                     { value: 'sessions', label: t('Sessions'), icon: CalendarDays },
                     { value: 'records', label: t('Recitations'), icon: BookOpenCheck },
+                    { value: 'messages', label: t('Messages'), icon: Megaphone, count: announcements.length },
                     { value: 'videos', label: t('Videos'), icon: CirclePlay, count: videos.length },
                 ]}
             />
@@ -301,10 +366,17 @@ export default function HalaqaShow(props: HalaqaShowProps) {
                                             <Td className="text-muted">{row.last_record_on ? dates.day(row.last_record_on) : '—'}</Td>
                                             <Td>
                                                 <div className="flex justify-end gap-1">
-                                                    <Button variant="outline" size="xs" onClick={() => setRecordFor({ id: row.student.id, name: row.student.name })}>
-                                                        <Plus />
-                                                        {t('Recitation')}
-                                                    </Button>
+                                                    {submittedBy(row.student.id) ? (
+                                                        <Button size="xs" onClick={() => setRecordFor({ id: row.student.id, name: row.student.name })}>
+                                                            <ClipboardCheck />
+                                                            {t('Grade the recitation')}
+                                                        </Button>
+                                                    ) : (
+                                                        <Button variant="outline" size="xs" onClick={() => setRecordFor({ id: row.student.id, name: row.student.name })}>
+                                                            <Plus />
+                                                            {t('Recitation')}
+                                                        </Button>
+                                                    )}
                                                     {can.update && (
                                                         <Button
                                                             variant="ghost"
@@ -376,6 +448,25 @@ export default function HalaqaShow(props: HalaqaShowProps) {
                     <Card>
                         <CardHeader title={t('Latest recitations')} icon={BookOpenCheck} />
                         <RecordList records={recentRecords} showStudent={can.manage} showHalaqa={false} onEdit={setEditingRecord} />
+                    </Card>
+                )}
+
+                {tab === 'messages' && (
+                    <Card>
+                        <CardHeader
+                            title={t('Messages of the halaqa')}
+                            description={can.manage ? t('Advice, a word, a hadith or a reminder for all the students.') : t('Messages from your teacher.')}
+                            icon={Megaphone}
+                            actions={
+                                can.manage && (
+                                    <Button size="sm" onClick={() => setAnnouncementForm({ open: true, announcement: null })}>
+                                        <Plus />
+                                        {t('New message')}
+                                    </Button>
+                                )
+                            }
+                        />
+                        <AnnouncementList announcements={announcements} onEdit={(announcement) => setAnnouncementForm({ open: true, announcement })} />
                     </Card>
                 )}
 
@@ -469,6 +560,25 @@ export default function HalaqaShow(props: HalaqaShowProps) {
                 record={editingRecord}
                 halaqat={[{ id: halaqa.id, name: halaqa.name, color: halaqa.color }]}
                 defaultHalaqaId={halaqa.id}
+                submissions={can.manage ? submissions : []}
+            />
+
+            {can.manage && (
+                <AnnouncementForm
+                    open={announcementForm.open}
+                    onClose={() => setAnnouncementForm({ open: false, announcement: null })}
+                    halaqaId={halaqa.id}
+                    announcement={announcementForm.announcement}
+                    sessions={props.announcementSessions}
+                />
+            )}
+
+            <SubmissionForm
+                open={submitting}
+                onClose={() => setSubmitting(false)}
+                halaqaId={halaqa.id}
+                submission={mySubmission}
+                suggestion={lastPosition ? nextPosition(lastPosition) : null}
             />
 
             <VideoForm

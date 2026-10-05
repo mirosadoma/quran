@@ -6,10 +6,12 @@ use App\Enums\Grade;
 use App\Enums\ProgressType;
 use App\Http\Requests\ProgressRecordRequest;
 use App\Http\Resources\ProgressRecordResource;
+use App\Http\Resources\RecitationSubmissionResource;
 use App\Http\Resources\UserResource;
 use App\Models\Halaqa;
 use App\Models\HalaqaSession;
 use App\Models\ProgressRecord;
+use App\Models\RecitationSubmission;
 use App\Models\User;
 use App\Notifications\ProgressRecorded;
 use App\Services\Notifier;
@@ -17,8 +19,11 @@ use App\Services\Quran;
 use App\Services\Reports;
 use App\Services\StudentProgress;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -59,7 +64,7 @@ class ProgressController extends Controller
 
         $records = ProgressRecord::query()
             ->tap($scope)
-            ->with(['student', 'teacher', 'halaqa'])
+            ->with(['student', 'teacher', 'halaqa', 'groupRecords'])
             ->when($filters['halaqa_id'], fn (Builder $query, int $id) => $query->where('halaqa_id', $id))
             ->when($filters['student_id'], fn (Builder $query, int $id) => $query->where('student_id', $id))
             ->when($filters['type'], fn (Builder $query, string $type) => $query->where('type', $type))
@@ -122,7 +127,7 @@ class ProgressController extends Controller
         $student->load('halaqat:id,name,color,teacher_id');
 
         $records = $student->progressRecords()
-            ->with(['teacher', 'halaqa'])
+            ->with(['teacher', 'halaqa', 'groupRecords'])
             ->when($type, fn (Builder $query, string $type) => $query->where('type', $type))
             ->latest('recorded_on')
             ->latest('id')
@@ -130,12 +135,9 @@ class ProgressController extends Controller
             ->withQueryString();
 
         $canRecord = $user->can('recordProgress', $student);
-
-        $lastMemorized = $student->progressRecords()
-            ->where('type', ProgressType::Memorization)
-            ->latest('recorded_on')
-            ->latest('id')
-            ->first(['to_surah', 'to_ayah']);
+        $recordableHalaqat = $canRecord
+            ? $student->halaqat->filter(fn (Halaqa $halaqa): bool => $user->isAdmin() || $halaqa->teacher_id === $user->id)->values()
+            : collect();
 
         return Inertia::render('progress/student', [
             'student' => [
@@ -151,18 +153,23 @@ class ProgressController extends Controller
             'weekly' => $this->reports->weeklyMemorization([$student->id], now()->subWeeks(12)->addDay()->startOfDay(), now()),
             'filters' => ['type' => $type],
             'canRecord' => $canRecord,
-            'halaqat' => $canRecord
-                ? $student->halaqat
-                    ->filter(fn (Halaqa $halaqa): bool => $user->isAdmin() || $halaqa->teacher_id === $user->id)
-                    ->map(fn (Halaqa $halaqa): array => ['id' => $halaqa->id, 'name' => $halaqa->name, 'color' => $halaqa->color])
-                    ->values()
-                : [],
-            'lastPosition' => $lastMemorized ? ['surah' => $lastMemorized->to_surah, 'ayah' => $lastMemorized->to_ayah] : null,
+            'halaqat' => $recordableHalaqat
+                ->map(fn (Halaqa $halaqa): array => ['id' => $halaqa->id, 'name' => $halaqa->name, 'color' => $halaqa->color])
+                ->values(),
+            'submissions' => RecitationSubmissionResource::collection(
+                RecitationSubmission::query()
+                    ->where('student_id', $student->id)
+                    ->whereIn('halaqa_id', $recordableHalaqat->pluck('id'))
+                    ->with('student')
+                    ->latest('updated_at')
+                    ->get(),
+            )->resolve(),
+            'lastPosition' => $this->progress->lastMemorizedPosition($student),
         ]);
     }
 
     /**
-     * Record a recitation (memorization or revision).
+     * Record a recitation: a memorization portion, a revision portion or both together.
      */
     public function store(ProgressRecordRequest $request): RedirectResponse
     {
@@ -178,16 +185,36 @@ class ProgressController extends Controller
             $sessionId = null;
         }
 
-        $record = ProgressRecord::query()->create([
-            ...$this->recordAttributes($request),
+        $shared = [
             'student_id' => $student->id,
             'halaqa_id' => $halaqa?->id,
             'halaqa_session_id' => $sessionId,
             'teacher_id' => $user->isTeacher() ? $user->id : $halaqa?->teacher_id,
+            'group_uuid' => (string) Str::uuid(),
+            'notes' => $request->input('notes'),
             'recorded_on' => $request->date('recorded_on')?->toDateString() ?? now($user->displayTimezone())->toDateString(),
-        ]);
+        ];
 
-        $this->notifier->send($student, new ProgressRecorded($record));
+        $records = DB::transaction(function () use ($request, $student, $shared): Collection {
+            $records = new Collection(array_map(
+                fn (ProgressType $type): ProgressRecord => ProgressRecord::query()->create([
+                    ...$shared,
+                    ...$this->portionAttributes($request, $type),
+                ]),
+                $request->portionTypes(),
+            ));
+
+            if ($request->filled('submission_id')) {
+                RecitationSubmission::query()
+                    ->whereKey($request->integer('submission_id'))
+                    ->where('student_id', $student->id)
+                    ->delete();
+            }
+
+            return $records;
+        });
+
+        $this->notifier->send($student, new ProgressRecorded($records->first()));
 
         $this->toast(__('Recitation recorded.'));
 
@@ -195,16 +222,42 @@ class ProgressController extends Controller
     }
 
     /**
-     * Update a recitation record.
+     * Update a recitation: its portions are added, changed or removed together.
      */
     public function update(ProgressRecordRequest $request, ProgressRecord $record): RedirectResponse
     {
         $this->authorize('update', $record);
 
-        $record->update([
-            ...$this->recordAttributes($request),
-            'recorded_on' => $request->date('recorded_on')?->toDateString() ?? $record->recorded_on,
-        ]);
+        DB::transaction(function () use ($request, $record): void {
+            $existing = $record->recitationRecords()->keyBy(fn (ProgressRecord $item): string => $item->type->value);
+            $groupUuid = $record->group_uuid ?? (string) Str::uuid();
+            $shared = [
+                'group_uuid' => $groupUuid,
+                'notes' => $request->input('notes'),
+                'recorded_on' => $request->date('recorded_on')?->toDateString() ?? $record->recorded_on,
+            ];
+
+            foreach (ProgressType::cases() as $type) {
+                $current = $existing->get($type->value);
+
+                if (! $request->filled($type->value)) {
+                    $current?->delete();
+
+                    continue;
+                }
+
+                $attributes = [...$shared, ...$this->portionAttributes($request, $type)];
+
+                if ($current !== null) {
+                    $current->update($attributes);
+                } else {
+                    ProgressRecord::query()->create([
+                        ...$record->only(['student_id', 'halaqa_id', 'halaqa_session_id', 'teacher_id']),
+                        ...$attributes,
+                    ]);
+                }
+            }
+        });
 
         $this->toast(__('Record updated.'));
 
@@ -212,13 +265,13 @@ class ProgressController extends Controller
     }
 
     /**
-     * Delete a recitation record.
+     * Delete a recitation with all of its portions.
      */
     public function destroy(ProgressRecord $record): RedirectResponse
     {
         $this->authorize('delete', $record);
 
-        $record->delete();
+        DB::transaction(fn () => $record->recitationRecords()->each(fn (ProgressRecord $item) => $item->delete()));
 
         $this->toast(__('Record deleted.'));
 
@@ -226,25 +279,28 @@ class ProgressController extends Controller
     }
 
     /**
+     * Columns of one portion (memorization or revision) of the recitation.
+     *
      * @return array<string, mixed>
      */
-    protected function recordAttributes(ProgressRecordRequest $request): array
+    protected function portionAttributes(ProgressRecordRequest $request, ProgressType $type): array
     {
+        $key = $type->value;
+
         return [
-            'type' => $request->input('type'),
-            'from_surah' => $request->integer('from_surah'),
-            'from_ayah' => $request->integer('from_ayah'),
-            'to_surah' => $request->integer('to_surah'),
-            'to_ayah' => $request->integer('to_ayah'),
+            'type' => $type,
+            'from_surah' => $request->integer("{$key}.from_surah"),
+            'from_ayah' => $request->integer("{$key}.from_ayah"),
+            'to_surah' => $request->integer("{$key}.to_surah"),
+            'to_ayah' => $request->integer("{$key}.to_ayah"),
             'ayahs_count' => $this->quran->countRange(
-                $request->integer('from_surah'),
-                $request->integer('from_ayah'),
-                $request->integer('to_surah'),
-                $request->integer('to_ayah'),
+                $request->integer("{$key}.from_surah"),
+                $request->integer("{$key}.from_ayah"),
+                $request->integer("{$key}.to_surah"),
+                $request->integer("{$key}.to_ayah"),
             ),
-            'grade' => $request->input('grade'),
-            'mistakes' => $request->integer('mistakes'),
-            'notes' => $request->input('notes'),
+            'grade' => $request->input("{$key}.grade"),
+            'mistakes' => $request->integer("{$key}.mistakes"),
         ];
     }
 

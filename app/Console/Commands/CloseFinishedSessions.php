@@ -21,7 +21,7 @@ class CloseFinishedSessions extends Command
         $sessions = HalaqaSession::query()
             ->with('halaqa')
             ->whereIn('status', [SessionStatus::Scheduled, SessionStatus::Live])
-            ->whereRaw('DATE_ADD(starts_at, INTERVAL duration_minutes + 30 MINUTE) < ?', [now()->toDateTimeString()])
+            ->whereRaw(HalaqaSession::endSql(30).' < ?', [now()->toDateTimeString()])
             ->limit(200)
             ->get();
 

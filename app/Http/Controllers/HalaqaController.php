@@ -5,10 +5,13 @@ namespace App\Http\Controllers;
 use App\Enums\AttendanceStatus;
 use App\Enums\HalaqaGender;
 use App\Enums\ProgressType;
+use App\Enums\SessionSource;
 use App\Enums\SessionStatus;
 use App\Http\Requests\HalaqaRequest;
+use App\Http\Resources\HalaqaAnnouncementResource;
 use App\Http\Resources\HalaqaResource;
 use App\Http\Resources\ProgressRecordResource;
+use App\Http\Resources\RecitationSubmissionResource;
 use App\Http\Resources\SessionResource;
 use App\Http\Resources\VideoResource;
 use App\Models\Halaqa;
@@ -20,6 +23,7 @@ use App\Services\Meetings\MeetingManager;
 use App\Services\Notifier;
 use App\Services\Reports;
 use App\Services\SessionScheduler;
+use App\Services\StudentProgress;
 use DateTimeZone;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
@@ -35,6 +39,7 @@ class HalaqaController extends Controller
         protected MeetingManager $meetings,
         protected Notifier $notifier,
         protected Reports $reports,
+        protected StudentProgress $progress,
     ) {}
 
     /**
@@ -139,7 +144,7 @@ class HalaqaController extends Controller
             'recentRecords' => ProgressRecordResource::collection(
                 $halaqa->progressRecords()
                     ->when(! $canManage, fn (Builder $query) => $query->where('student_id', $user->id))
-                    ->with(['student', 'teacher', 'halaqa'])
+                    ->with(['student', 'teacher', 'halaqa', 'groupRecords'])
                     ->latest('recorded_on')
                     ->latest('id')
                     ->limit(8)
@@ -165,10 +170,48 @@ class HalaqaController extends Controller
                     ->count(),
             ],
             'availableStudents' => $user->isAdmin() ? $this->availableStudents($halaqa) : [],
+            'submissions' => RecitationSubmissionResource::collection(
+                $halaqa->recitationSubmissions()
+                    ->when(! $canManage, fn (Builder $query) => $query->where('student_id', $user->id))
+                    ->with('student')
+                    ->oldest('updated_at')
+                    ->get(),
+            )->resolve(),
+            'lastPosition' => $user->isStudent() ? $this->progress->lastMemorizedPosition($user) : null,
+            'announcements' => HalaqaAnnouncementResource::collection(
+                $halaqa->announcements()
+                    ->when(! $canManage, fn (Builder $query) => $query->sent())
+                    ->with(['author', 'sessions', 'halaqa'])
+                    ->orderByRaw('sent_at IS NULL DESC')
+                    ->orderByDesc('sent_at')
+                    ->latest('id')
+                    ->limit(50)
+                    ->get(),
+            )->resolve(),
+            'announcementSessions' => $canManage
+                ? $halaqa->sessions()
+                    ->upcoming()
+                    ->orderBy('starts_at')
+                    ->limit(30)
+                    ->get()
+                    ->map(fn (HalaqaSession $session): array => [
+                        'id' => $session->id,
+                        'title' => $session->displayTitle(),
+                        'starts_at' => $session->starts_at->toIso8601String(),
+                        'status' => $session->status->value,
+                        'extra' => $session->source === SessionSource::Manual,
+                    ])
+                    ->values()
+                : [],
+            'focus' => [
+                'tab' => in_array($request->query('tab'), ['students', 'sessions', 'records', 'messages', 'videos'], true) ? $request->query('tab') : null,
+                'submission' => $request->integer('submission') ?: null,
+            ],
             'can' => [
                 'manage' => $canManage,
                 'update' => $user->can('update', $halaqa),
                 'delete' => $user->can('delete', $halaqa),
+                'submit' => $user->can('submitRecitation', $halaqa),
             ],
         ]);
     }

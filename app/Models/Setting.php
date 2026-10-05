@@ -42,6 +42,7 @@ class Setting extends Model
             'reminder_minutes' => 15,
             'late_after_minutes' => 10,
             'auto_mark_absent' => true,
+            'auto_start_sessions' => true,
             'notify_email' => true,
             'notify_whatsapp' => false,
             'google_meet' => null,
