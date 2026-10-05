@@ -4,16 +4,21 @@ import {
     BookOpen,
     BookOpenCheck,
     BookOpenText,
+    Building2,
     CalendarDays,
     ChartColumn,
     CirclePlay,
     HandHeart,
+    Inbox,
     LayoutDashboard,
     LogOut,
     MessagesSquare,
     MoonStar,
+    Scale,
+    School,
     Settings,
     Smile,
+    UserPlus,
     UserRound,
     Users,
     type LucideIcon,
@@ -49,30 +54,57 @@ function useNavigation(): NavGroup[] {
 
     const current = (pattern: string) => route().current(pattern) ?? false;
     const isAdmin = user.role === 'admin';
+    const isManager = user.role === 'manager';
     const isStudent = user.role === 'student';
+    // A student who studies on their own, without academy: no halaqat, sessions or chat.
+    const isIndependent = isStudent && user.academy === null;
 
-    const learning: NavItem[] = [
+    const main: NavItem[] = [{ label: t('Dashboard'), href: route('dashboard'), active: current('dashboard'), icon: LayoutDashboard }];
+
+    if (isStudent) {
+        main.push({
+            label: isIndependent ? t('Join an academy') : t('My academy'),
+            href: route('my-academy'),
+            active: current('my-academy'),
+            icon: School,
+        });
+    }
+
+    const learning: NavItem[] = isIndependent
+        ? [{ label: t('Video library'), href: route('videos.index'), active: current('videos.*'), icon: CirclePlay }]
+        : [
+              {
+                  label: isAdmin || isManager ? t('Halaqat') : t('My halaqat'),
+                  href: route('halaqat.index'),
+                  active: current('halaqat.*'),
+                  icon: BookOpen,
+              },
+              { label: t('Sessions'), href: route('sessions.index'), active: current('sessions.*'), icon: CalendarDays },
+              {
+                  label: isStudent ? t('My progress') : t('Recitations'),
+                  href: isStudent ? route('progress.student', user.id) : route('progress.index'),
+                  active: current('progress.*'),
+                  icon: BookOpenCheck,
+              },
+              { label: t('Video library'), href: route('videos.index'), active: current('videos.*'), icon: CirclePlay },
+          ];
+
+    const communication: NavItem[] = [
         {
-            label: isAdmin ? t('Halaqat') : t('My halaqat'),
-            href: route('halaqat.index'),
-            active: current('halaqat.*'),
-            icon: BookOpen,
+            label: t('Notifications'),
+            href: route('notifications.index'),
+            active: current('notifications.*'),
+            icon: Bell,
+            badge: counts?.notifications,
         },
-        { label: t('Sessions'), href: route('sessions.index'), active: current('sessions.*'), icon: CalendarDays },
-        {
-            label: isStudent ? t('My progress') : t('Recitations'),
-            href: isStudent ? route('progress.student', user.id) : route('progress.index'),
-            active: current('progress.*'),
-            icon: BookOpenCheck,
-        },
-        { label: t('Video library'), href: route('videos.index'), active: current('videos.*'), icon: CirclePlay },
     ];
 
+    if (!isIndependent) {
+        communication.unshift({ label: t('Chat'), href: route('chat.index'), active: current('chat.*'), icon: MessagesSquare, badge: counts?.chat });
+    }
+
     const groups: NavGroup[] = [
-        {
-            label: t('Main'),
-            items: [{ label: t('Dashboard'), href: route('dashboard'), active: current('dashboard'), icon: LayoutDashboard }],
-        },
+        { label: t('Main'), items: main },
         { label: t('Learning'), items: learning },
         {
             label: t('Quran and worship'),
@@ -81,31 +113,52 @@ function useNavigation(): NavGroup[] {
                 { label: t('Kids memorization'), href: route('kids.index'), active: current('kids.*'), icon: Smile },
                 { label: t('Adhkar and duas'), href: route('adhkar.index'), active: current('adhkar.*'), icon: HandHeart },
                 { label: t('Prayer'), href: route('prayers.index'), active: current('prayers.*'), icon: MoonStar },
+                { label: t('Self-accounting'), href: route('deeds.index'), active: current('deeds.*'), icon: Scale },
             ],
         },
-        {
-            label: t('Communication'),
-            items: [
-                { label: t('Chat'), href: route('chat.index'), active: current('chat.*'), icon: MessagesSquare, badge: counts?.chat },
-                {
-                    label: t('Notifications'),
-                    href: route('notifications.index'),
-                    active: current('notifications.*'),
-                    icon: Bell,
-                    badge: counts?.notifications,
-                },
-            ],
-        },
+        { label: t('Communication'), items: communication },
     ];
 
     const management: NavItem[] = [];
 
     if (isAdmin) {
-        management.push({ label: t('Users'), href: route('users.index'), active: current('users.*'), icon: Users });
+        management.push({ label: t('Academies'), href: route('academies.index'), active: current('academies.*'), icon: Building2 });
+    }
+
+    if (isAdmin || isManager) {
+        management.push(
+            {
+                label: t('Join requests'),
+                href: route('join-requests.index'),
+                active: current('join-requests.*'),
+                icon: UserPlus,
+                badge: counts?.join_requests,
+            },
+            { label: isAdmin ? t('Users') : t('Teachers and students'), href: route('users.index'), active: current('users.*'), icon: Users },
+        );
+    }
+
+    if (isAdmin) {
+        management.push({
+            label: t('Contact messages'),
+            href: route('contact-messages.index'),
+            active: current('contact-messages.*'),
+            icon: Inbox,
+            badge: counts?.contact_messages,
+        });
     }
 
     if (!isStudent) {
         management.push({ label: t('Reports'), href: route('reports.index'), active: current('reports.*'), icon: ChartColumn });
+    }
+
+    if (isManager && user.academy) {
+        management.push({
+            label: t('Academy profile'),
+            href: route('academies.edit', user.academy.id),
+            active: current('academies.*'),
+            icon: School,
+        });
     }
 
     if (isAdmin) {
@@ -149,7 +202,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
                                         onClick={onNavigate}
                                         prefetch
                                         className={cn(
-                                            'group relative flex items-center gap-3 rounded-xl px-3 py-2 text-base font-medium transition',
+                                            'group relative flex items-center gap-3 rounded-xl px-3 py-2 text-base font-medium text-[15px] transition',
                                             item.active
                                                 ? 'bg-white/10 text-white shadow-inner shadow-white/5'
                                                 : 'text-sidebar-ink/75 hover:bg-white/5 hover:text-white',
@@ -180,7 +233,10 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
                             <Avatar name={user.name} src={user.avatar_url} size="sm" className="ring-white/20" />
                             <div className="min-w-0">
                                 <p className="truncate text-sm font-semibold text-white">{user.name}</p>
-                                <p className="truncate text-xs text-sidebar-ink/55">{labels.role[user.role]}</p>
+                                <p className="truncate text-xs text-sidebar-ink/55">
+                                    {labels.role[user.role]}
+                                    {user.academy && ` · ${user.academy.name}`}
+                                </p>
                             </div>
                         </Link>
                         <button

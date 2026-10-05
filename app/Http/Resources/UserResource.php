@@ -25,6 +25,8 @@ class UserResource extends JsonResource
             'email' => $this->email,
             'phone' => $this->phone,
             'role' => $this->role->value,
+            'academy_id' => $this->academy_id,
+            'academy' => $this->whenLoaded('academy', fn (): ?array => $this->academy ? ['id' => $this->academy->id, 'name' => $this->academy->name] : null),
             'gender' => $this->gender?->value,
             'avatar_url' => $this->avatar_url,
             'is_active' => $this->is_active,

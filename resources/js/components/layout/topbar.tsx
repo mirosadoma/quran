@@ -1,5 +1,5 @@
 import { router, usePage } from '@inertiajs/react';
-import { BookOpenCheck, ChevronDown, Languages, LogOut, Menu, MonitorSmartphone, Moon, Sun, UserRound } from 'lucide-react';
+import { BookOpenCheck, Building2, ChevronDown, Languages, LogOut, Menu, MonitorSmartphone, Moon, Sun, UserRound } from 'lucide-react';
 import { useState } from 'react';
 import { LogoMark } from '@/components/brand';
 import { AppButton, AppDialog } from '@/components/install-app';
@@ -93,7 +93,7 @@ function UserMenu({ onApp }: { onApp: () => void }) {
             <DropdownItem icon={UserRound} href={route('profile.edit')}>
                 {t('My profile')}
             </DropdownItem>
-            {user.role === 'student' && (
+            {user.role === 'student' && user.academy && (
                 <DropdownItem icon={BookOpenCheck} href={route('progress.student', user.id)}>
                     {t('My progress')}
                 </DropdownItem>
@@ -109,12 +109,44 @@ function UserMenu({ onApp }: { onApp: () => void }) {
     );
 }
 
+/**
+ * The administration is inside an academy with the account of its manager.
+ */
+function ImpersonationBanner() {
+    const { impersonating } = usePage().props;
+    const { t } = useTrans();
+    const [leaving, setLeaving] = useState(false);
+
+    if (!impersonating) {
+        return null;
+    }
+
+    return (
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 bg-gold-500 px-4 py-2 text-sm text-primary-950 sm:px-6 lg:px-8">
+            <Building2 className="size-4 shrink-0" />
+            <p className="min-w-0 flex-1 font-semibold">
+                {t('You are inside :academy with the account of its manager.', { academy: impersonating.academy ?? t('the academy') })}
+            </p>
+            <button
+                type="button"
+                disabled={leaving}
+                onClick={() => router.post(route('impersonation.stop'), {}, { onStart: () => setLeaving(true), onFinish: () => setLeaving(false) })}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-primary-950/90 px-3 py-1 text-xs font-bold text-white transition hover:bg-primary-950 disabled:opacity-60"
+            >
+                <LogOut className="size-3.5 rtl:rotate-180" />
+                {t('Back to the administration')}
+            </button>
+        </div>
+    );
+}
+
 export function Topbar({ onMenu }: { onMenu: () => void }) {
     const { t } = useTrans();
     const [appOpen, setAppOpen] = useState(false);
 
     return (
         <header className="no-print sticky top-0 z-20 border-b border-line/80 bg-canvas/85 backdrop-blur-md">
+            <ImpersonationBanner />
             <div className="flex h-16 items-center gap-2 px-4 sm:px-6 lg:px-8">
                 <button
                     type="button"

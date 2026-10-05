@@ -6,6 +6,7 @@ use App\Enums\HalaqaGender;
 use App\Enums\HalaqaLevel;
 use App\Enums\MeetingProvider;
 use App\Http\Requests\HalaqaRequest;
+use App\Models\Academy;
 use App\Models\Halaqa;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -23,9 +24,11 @@ class HalaqaFactory extends Factory
     public function definition(): array
     {
         return [
+            'academy_id' => Academy::factory(),
             'name' => 'حلقة '.fake()->unique()->word(),
             'description' => fake()->sentence(),
-            'teacher_id' => User::factory()->teacher(),
+            // A teacher of the same academy.
+            'teacher_id' => fn (array $attributes) => User::factory()->teacher()->state(['academy_id' => $attributes['academy_id']]),
             'gender' => HalaqaGender::Mixed,
             'level' => fake()->randomElement(HalaqaLevel::cases()),
             'capacity' => 10,

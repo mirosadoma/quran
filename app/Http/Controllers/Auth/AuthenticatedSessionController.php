@@ -22,6 +22,7 @@ class AuthenticatedSessionController extends Controller
             'status' => $request->session()->get('status'),
             'demoAccounts' => app()->environment('local') ? [
                 ['role' => 'admin', 'login' => 'admin@rattil.test'],
+                ['role' => 'manager', 'login' => 'manager@rattil.test'],
                 ['role' => 'teacher', 'login' => 'teacher@rattil.test'],
                 ['role' => 'student', 'login' => 'student@rattil.test'],
             ] : [],

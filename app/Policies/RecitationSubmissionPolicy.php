@@ -13,7 +13,7 @@ class RecitationSubmissionPolicy
      */
     public function delete(User $user, RecitationSubmission $recitationSubmission): bool
     {
-        if ($user->isAdmin() || $recitationSubmission->student_id === $user->id) {
+        if ($user->managesAcademy($recitationSubmission->halaqa?->academy_id) || $recitationSubmission->student_id === $user->id) {
             return true;
         }
 

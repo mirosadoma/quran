@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -21,7 +22,7 @@ use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Storage;
 
 #[Fillable([
-    'name', 'email', 'phone', 'password', 'role', 'gender', 'birth_date', 'country', 'timezone', 'locale',
+    'name', 'email', 'phone', 'password', 'role', 'academy_id', 'gender', 'birth_date', 'country', 'timezone', 'locale',
     'avatar_path', 'bio', 'guardian_name', 'guardian_phone', 'zoom_user_id', 'admin_notes', 'is_active',
     'notify_email', 'notify_whatsapp',
 ])]
@@ -59,6 +60,27 @@ class User extends Authenticatable implements HasLocalePreference
             'last_login_at' => 'datetime',
             'mushaf_page' => 'integer',
         ];
+    }
+
+    /**
+     * The academy of a manager, teacher or student (none for the administration and for
+     * students who joined no academy).
+     *
+     * @return BelongsTo<Academy, $this>
+     */
+    public function academy(): BelongsTo
+    {
+        return $this->belongsTo(Academy::class)->withTrashed();
+    }
+
+    /**
+     * Requests the student sent to join academies.
+     *
+     * @return HasMany<AcademyJoinRequest, $this>
+     */
+    public function joinRequests(): HasMany
+    {
+        return $this->hasMany(AcademyJoinRequest::class);
     }
 
     /**
@@ -142,6 +164,16 @@ class User extends Authenticatable implements HasLocalePreference
     }
 
     /**
+     * The good and bad deeds the user records to hold themselves to account (private).
+     *
+     * @return HasMany<Deed, $this>
+     */
+    public function deeds(): HasMany
+    {
+        return $this->hasMany(Deed::class);
+    }
+
+    /**
      * Keep only digits and a leading plus sign so phone logins match.
      */
     public static function normalizePhone(?string $phone): ?string
@@ -160,6 +192,35 @@ class User extends Authenticatable implements HasLocalePreference
     public function isAdmin(): bool
     {
         return $this->role === UserRole::Admin;
+    }
+
+    public function isManager(): bool
+    {
+        return $this->role === UserRole::Manager;
+    }
+
+    /**
+     * Whether the user runs academies: the administration (all of them) or an academy manager (theirs).
+     */
+    public function managesAcademies(): bool
+    {
+        return $this->isAdmin() || $this->isManager();
+    }
+
+    /**
+     * Whether the user manages the given academy (the administration manages every academy).
+     */
+    public function managesAcademy(?int $academyId): bool
+    {
+        return $this->isAdmin() || ($this->isManager() && $academyId !== null && $this->academy_id === $academyId);
+    }
+
+    /**
+     * A student who joined no academy: only the personal features (mushaf, adhkar, prayer...).
+     */
+    public function isIndependent(): bool
+    {
+        return $this->isStudent() && $this->academy_id === null;
     }
 
     public function isTeacher(): bool
@@ -250,6 +311,21 @@ class User extends Authenticatable implements HasLocalePreference
     protected function admins(Builder $query): void
     {
         $query->where('role', UserRole::Admin);
+    }
+
+    #[Scope]
+    protected function managers(Builder $query): void
+    {
+        $query->where('role', UserRole::Manager);
+    }
+
+    /**
+     * Users of one academy, or of every academy when null (the administration's view).
+     */
+    #[Scope]
+    protected function inAcademy(Builder $query, ?int $academyId): void
+    {
+        $query->when($academyId !== null, fn (Builder $query) => $query->where('academy_id', $academyId));
     }
 
     #[Scope]

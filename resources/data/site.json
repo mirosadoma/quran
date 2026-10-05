@@ -1,0 +1,690 @@
+{
+    "features": [
+        {
+            "icon": "video",
+            "tone": "emerald",
+            "title": { "ar": "حلقات مباشرة مع معلمين", "en": "Live halaqat with teachers" },
+            "text": {
+                "ar": "حصص أونلاين بجدول أسبوعي ثابت، وزر دخول يظهر قبل موعد الحصة، وتسجيل حضور تلقائي.",
+                "en": "Online sessions on a fixed weekly schedule, a join button shortly before each session, and attendance taken for you."
+            }
+        },
+        {
+            "icon": "book-open-check",
+            "tone": "gold",
+            "title": { "ar": "متابعة الحفظ آية بآية", "en": "Memorization tracked ayah by ayah" },
+            "text": {
+                "ar": "يسجّل المعلم الحفظ والمراجعة بالتقدير، وترى خريطة حفظك لكل جزء ونسبة ما أتممته من القرآن.",
+                "en": "Your teacher records memorization and revision with a grade, and you see your map of every juz and how much of the Quran you hold."
+            }
+        },
+        {
+            "icon": "book-open-text",
+            "tone": "teal",
+            "title": { "ar": "المصحف المرتل والتفسير", "en": "The recited mushaf and its tafsir" },
+            "text": {
+                "ar": "اقرأ بالرسم العثماني، واستمع لكبار القراء، واعرف معاني الكلمات والتفسير الميسر لكل آية.",
+                "en": "Read in the Uthmani script, listen to great reciters, and see the meaning of the words and a simple tafsir of every ayah."
+            }
+        },
+        {
+            "icon": "mic",
+            "tone": "sky",
+            "title": { "ar": "سمّع بصوتك", "en": "Recite with your voice" },
+            "text": {
+                "ar": "سمّع من المصحف بصوتك فيظهر لك ما أصبت فيه وما فاتك من الكلمات، وأرسل تسميعك لمعلمك في الحلقة.",
+                "en": "Recite from the mushaf and see the words you got right and the ones you missed, and send your recitation to your teacher."
+            }
+        },
+        {
+            "icon": "hand-heart",
+            "tone": "amber",
+            "title": { "ar": "الأذكار والأدعية", "en": "Adhkar and duas" },
+            "text": {
+                "ar": "أذكار الصباح والمساء والنوم وبعد الصلاة، وأدعية من القرآن والسنة مع عدّاد للتسبيح.",
+                "en": "Morning, evening, sleep and after-prayer adhkar, and duas from the Quran and the Sunnah, with a counter."
+            }
+        },
+        {
+            "icon": "moon-star",
+            "tone": "violet",
+            "title": { "ar": "الصلاة وقيام الليل", "en": "Prayer and the night prayer" },
+            "text": {
+                "ar": "كيفية القيام والوتر والضحى وسائر النوافل، مع تذكير يومي بالوقت الذي تختاره.",
+                "en": "How to pray the night prayer, witr, duha and the other voluntary prayers, with a daily reminder at the time you choose."
+            }
+        },
+        {
+            "icon": "scale",
+            "tone": "rose",
+            "title": { "ar": "محاسبة النفس", "en": "Self-accounting" },
+            "text": {
+                "ar": "سجّل حسناتك لتشكر الله عليها، وذنوبك لتتوب منها، مع طريقة التوبة والكفارة وتقارير تساعدك على الترقي.",
+                "en": "Record your good deeds to thank Allah for them and your sins to repent of them, with the way to repent and reports that help you improve."
+            }
+        },
+        {
+            "icon": "smile",
+            "tone": "sky",
+            "title": { "ar": "تحفيظ الأطفال", "en": "Memorization for children" },
+            "text": {
+                "ar": "قصار السور بطريقة مرحة: استماع وتكرار ونجوم تشجع الصغار على الحفظ.",
+                "en": "The short surahs in a joyful way: listening, repetition and stars that encourage the little ones."
+            }
+        },
+        {
+            "icon": "smartphone",
+            "tone": "emerald",
+            "title": { "ar": "تطبيق وإشعارات", "en": "An app with notifications" },
+            "text": {
+                "ar": "ثبّت المنصة على موبايلك كتطبيق، وتصلك تذكيرات الحصص ونتائج التسميع حتى لو كان التطبيق مغلقًا.",
+                "en": "Install the platform on your phone as an app and receive session reminders and results even when it is closed."
+            }
+        }
+    ],
+    "audiences": [
+        {
+            "icon": "user-round",
+            "title": { "ar": "لنفسك", "en": "For yourself" },
+            "text": {
+                "ar": "أنشئ حسابًا مجانيًا واستخدم أدوات القرآن والعبادة بمفردك، بدون أكاديمية.",
+                "en": "Create a free account and use the tools for the Quran and worship on your own, without an academy."
+            },
+            "points": [
+                { "ar": "المصحف المرتل والتفسير والتسميع بالصوت", "en": "The recited mushaf, its tafsir and voice recitation" },
+                { "ar": "الأذكار وتذكير قيام الليل", "en": "Adhkar and the night prayer reminder" },
+                { "ar": "محاسبة النفس وتقاريرها", "en": "Self-accounting and its reports" }
+            ]
+        },
+        {
+            "icon": "graduation-cap",
+            "title": { "ar": "طالبًا في أكاديمية", "en": "As a student of an academy" },
+            "text": {
+                "ar": "اختر أكاديمية وأرسل لها طلب انضمام، وبعد القبول تدرس في حلقة مع معلم.",
+                "en": "Choose an academy and ask to join it; once accepted you study in a halaqa with a teacher."
+            },
+            "points": [
+                { "ar": "حصص مباشرة بجدول أسبوعي", "en": "Live sessions on a weekly schedule" },
+                { "ar": "متابعة الحفظ والمراجعة والحضور", "en": "Memorization, revision and attendance tracked" },
+                { "ar": "محادثة الحلقة ورسائل المعلم", "en": "The halaqa chat and the teacher's messages" }
+            ]
+        },
+        {
+            "icon": "building-2",
+            "title": { "ar": "لأكاديمية أو دار تحفيظ", "en": "For an academy or a Quran school" },
+            "text": {
+                "ar": "أدر أكاديميتك على المنصة: مسؤول بحسابه الخاص، ومعلمون وطلاب وحلقات وتقارير.",
+                "en": "Run your academy on the platform: a manager with their own account, teachers, students, halaqat and reports."
+            },
+            "points": [
+                { "ar": "إنشاء الحلقات وتوليد الحصص تلقائيًا", "en": "Halaqat with sessions created automatically" },
+                { "ar": "استقبال طلبات انضمام الطلاب", "en": "Join requests from new students" },
+                { "ar": "تقارير الحضور والحفظ", "en": "Attendance and memorization reports" }
+            ]
+        }
+    ],
+    "steps": [
+        {
+            "title": { "ar": "أنشئ حسابك", "en": "Create your account" },
+            "text": { "ar": "بالبريد أو رقم الهاتف في أقل من دقيقة، ومجانًا.", "en": "With your email or phone number, in less than a minute, for free." }
+        },
+        {
+            "title": { "ar": "اختر طريقك", "en": "Choose your way" },
+            "text": {
+                "ar": "استخدم أدوات القرآن والعبادة بمفردك، أو اطلب الانضمام لأكاديمية تناسبك.",
+                "en": "Use the tools for the Quran and worship on your own, or ask to join an academy that suits you."
+            }
+        },
+        {
+            "title": { "ar": "ابدأ رحلتك", "en": "Start your journey" },
+            "text": {
+                "ar": "احضر حلقتك، وسمّع وردك، وتابع تقدمك يومًا بعد يوم.",
+                "en": "Attend your halaqa, recite your portion and follow your progress day after day."
+            }
+        }
+    ],
+    "about": {
+        "story": [
+            {
+                "ar": "«رتّل» منصة لتحفيظ القرآن الكريم وتعليمه عن بُعد، تجمع الأكاديميات ودور التحفيظ ومعلميها وطلابها في مكان واحد، وتوفر لكل مسلم أدوات تعينه على صحبة القرآن والعبادة في يومه.",
+                "en": "Rattil is a platform for memorizing and learning the Quran online. It gathers academies and Quran schools, their teachers and students in one place, and gives every Muslim tools that help them keep company with the Quran and worship every day."
+            },
+            {
+                "ar": "بدأنا من حاجة المعلمين والطلاب إلى نظام بسيط يرتّب الحصص والحضور ويحفظ سجل الحفظ والمراجعة، ثم كبرت المنصة لتشمل المصحف المرتل والتفسير والأذكار والصلاة ومحاسبة النفس.",
+                "en": "We started from the need of teachers and students for a simple system that organizes sessions and attendance and keeps the record of memorization and revision. The platform then grew to include the recited mushaf, tafsir, adhkar, prayer and self-accounting."
+            }
+        ],
+        "mission": {
+            "ar": "أن نيسّر تعلّم القرآن الكريم وحفظه لكل من أراده، أينما كان، مع معلم متقن ومتابعة صادقة.",
+            "en": "To make learning and memorizing the Quran easy for everyone who wants it, wherever they are, with a skilled teacher and sincere follow-up."
+        },
+        "vision": {
+            "ar": "أن يكون في كل بيت حافظٌ لكتاب الله، يتلوه حق تلاوته ويعمل به.",
+            "en": "A memorizer of the Book of Allah in every home, who recites it as it should be recited and lives by it."
+        },
+        "values": [
+            {
+                "icon": "heart-handshake",
+                "title": { "ar": "الإخلاص", "en": "Sincerity" },
+                "text": { "ar": "نعمل ابتغاء وجه الله، ونسأله القبول.", "en": "We work for the sake of Allah and ask Him to accept it." }
+            },
+            {
+                "icon": "badge-check",
+                "title": { "ar": "الإتقان", "en": "Mastery" },
+                "text": { "ar": "حفظ متقن وتلاوة صحيحة قبل الكثرة والسرعة.", "en": "Solid memorization and correct recitation before quantity and speed." }
+            },
+            {
+                "icon": "sparkles",
+                "title": { "ar": "اليسر", "en": "Ease" },
+                "text": { "ar": "أدوات بسيطة يستخدمها الصغير والكبير بلا تعقيد.", "en": "Simple tools that the young and the old use without trouble." }
+            },
+            {
+                "icon": "shield-check",
+                "title": { "ar": "الأمانة", "en": "Trust" },
+                "text": { "ar": "نحفظ بياناتك ولا نستخدمها إلا لخدمتك.", "en": "We keep your data safe and use it only to serve you." }
+            }
+        ]
+    },
+    "faq": [
+        {
+            "category": { "ar": "عن المنصة", "en": "About the platform" },
+            "items": [
+                {
+                    "q": { "ar": "ما هي منصة «رتّل»؟", "en": "What is Rattil?" },
+                    "a": {
+                        "ar": "منصة لتحفيظ القرآن الكريم عن بُعد تضم أكاديميات ودور تحفيظ بمعلميها وحلقاتها، وتقدم لكل مستخدم أدوات القرآن والعبادة: المصحف المرتل والتفسير والأذكار والصلاة ومحاسبة النفس.",
+                        "en": "An online platform for memorizing the Quran that hosts academies and Quran schools with their teachers and halaqat, and offers every user tools for the Quran and worship: the recited mushaf, tafsir, adhkar, prayer and self-accounting."
+                    }
+                },
+                {
+                    "q": { "ar": "هل التسجيل في المنصة مجاني؟", "en": "Is registration free?" },
+                    "a": {
+                        "ar": "نعم، إنشاء الحساب واستخدام أدوات القرآن والعبادة مجاني. أما الدراسة في الأكاديميات فتخضع لنظام كل أكاديمية، ويمكنك التواصل معها لمعرفة التفاصيل.",
+                        "en": "Yes, creating an account and using the tools for the Quran and worship is free. Studying at an academy follows that academy's own terms, which you can ask it about."
+                    }
+                },
+                {
+                    "q": { "ar": "هل أحتاج لتحميل برنامج؟", "en": "Do I need to download a program?" },
+                    "a": {
+                        "ar": "لا، تعمل المنصة من المتصفح على الموبايل والكمبيوتر، ويمكنك تثبيتها على الشاشة الرئيسية كتطبيق من زر «تثبيت التطبيق» لتصلك الإشعارات.",
+                        "en": "No, the platform works in the browser on phones and computers. You can install it on your home screen as an app with the \"Install the app\" button to receive notifications."
+                    }
+                },
+                {
+                    "q": { "ar": "هل يمكنني استخدام المنصة بدون الانضمام لأكاديمية؟", "en": "Can I use the platform without joining an academy?" },
+                    "a": {
+                        "ar": "نعم، بعد إنشاء حسابك تستخدم المصحف المرتل والتسميع بالصوت والأذكار وتذكير قيام الليل ومحاسبة النفس بمفردك، وتنضم لأكاديمية متى أردت.",
+                        "en": "Yes. After creating your account you use the recited mushaf, voice recitation, adhkar, the night prayer reminder and self-accounting on your own, and join an academy whenever you want."
+                    }
+                }
+            ]
+        },
+        {
+            "category": { "ar": "الانضمام للأكاديميات", "en": "Joining an academy" },
+            "items": [
+                {
+                    "q": { "ar": "كيف أنضم لأكاديمية؟", "en": "How do I join an academy?" },
+                    "a": {
+                        "ar": "افتح صفحة الأكاديميات واختر الأكاديمية المناسبة، ثم اضغط «طلب الانضمام» واكتب كلمة عن نفسك. يرد مسؤول الأكاديمية على طلبك ويصلك إشعار بالرد.",
+                        "en": "Open the academies page, choose the one that suits you, press \"Ask to join\" and write a word about yourself. The academy's manager answers and you are notified."
+                    }
+                },
+                {
+                    "q": { "ar": "هل يمكنني الانضمام لأكثر من أكاديمية؟", "en": "Can I join more than one academy?" },
+                    "a": {
+                        "ar": "تدرس في أكاديمية واحدة في كل مرة، وترسل طلبًا واحدًا في كل مرة. إذا أردت الانتقال فاخرج من أكاديميتك أولًا ثم اطلب الانضمام لغيرها.",
+                        "en": "You study at one academy at a time and send one request at a time. To move, leave your academy first, then ask to join another one."
+                    }
+                },
+                {
+                    "q": { "ar": "ماذا يحدث لسجل حفظي إذا خرجت من الأكاديمية؟", "en": "What happens to my record if I leave the academy?" },
+                    "a": {
+                        "ar": "يبقى سجل حفظك وتقدمك محفوظًا في حسابك، ويُحذف اسمك من حلقات الأكاديمية فقط.",
+                        "en": "Your memorization record and progress stay in your account; you are only removed from the academy's halaqat."
+                    }
+                },
+                {
+                    "q": { "ar": "رُفض طلبي، فماذا أفعل؟", "en": "My request was declined. What can I do?" },
+                    "a": {
+                        "ar": "قد تكون حلقات الأكاديمية مكتملة أو لا تناسب فئتك. يمكنك طلب الانضمام لأكاديمية أخرى مباشرة.",
+                        "en": "The academy's halaqat may be full or not suit your category. You can ask another academy right away."
+                    }
+                }
+            ]
+        },
+        {
+            "category": { "ar": "الحلقات والحصص", "en": "Halaqat and sessions" },
+            "items": [
+                {
+                    "q": { "ar": "كيف تتم الحصص؟", "en": "How are the sessions held?" },
+                    "a": {
+                        "ar": "الحصص مباشرة عبر الإنترنت في مواعيد الحلقة الأسبوعية، ويظهر زر الدخول قبل موعد الحصة بربع ساعة، ويُسجَّل حضورك تلقائيًا.",
+                        "en": "Sessions are live online at the halaqa's weekly times. The join button appears fifteen minutes before the session and your attendance is recorded automatically."
+                    }
+                },
+                {
+                    "q": { "ar": "كيف أعرف تقدمي في الحفظ؟", "en": "How do I know my progress?" },
+                    "a": {
+                        "ar": "من صفحة «تقدمي» ترى خريطة حفظك لكل جزء، وسجل التسميع بتقديرات المعلم وملاحظاته، ونسبة حضورك.",
+                        "en": "On \"My progress\" you see your map of every juz, your recitations with the teacher's grades and notes, and your attendance rate."
+                    }
+                },
+                {
+                    "q": { "ar": "هل يمكنني إرسال تسميعي لمعلمي قبل الحصة؟", "en": "Can I send my recitation to my teacher before the session?" },
+                    "a": {
+                        "ar": "نعم، من صفحة الحلقة تحدد ما ستسمّعه من حفظ ومراجعة، فيراه المعلم ويسجّل نتيجتك.",
+                        "en": "Yes, on the halaqa's page you set what you will recite for memorization and revision; your teacher sees it and records your result."
+                    }
+                }
+            ]
+        },
+        {
+            "category": { "ar": "للأكاديميات", "en": "For academies" },
+            "items": [
+                {
+                    "q": { "ar": "كيف تنضم أكاديميتنا للمنصة؟", "en": "How can our academy join the platform?" },
+                    "a": {
+                        "ar": "راسلنا من صفحة التواصل ببيانات الأكاديمية، وتنشئ الإدارة لكم أكاديمية بحساب خاص لمسؤولها، يضيف منه المعلمين والطلاب والحلقات.",
+                        "en": "Write to us from the contact page with your academy's details. The administration creates your academy with its own manager account, from which you add teachers, students and halaqat."
+                    }
+                },
+                {
+                    "q": { "ar": "هل ترى الأكاديميات الأخرى بيانات أكاديميتنا؟", "en": "Can other academies see our data?" },
+                    "a": {
+                        "ar": "لا، كل أكاديمية ترى معلميها وطلابها وحلقاتها فقط.",
+                        "en": "No, every academy sees only its own teachers, students and halaqat."
+                    }
+                }
+            ]
+        },
+        {
+            "category": { "ar": "الحساب والخصوصية", "en": "Account and privacy" },
+            "items": [
+                {
+                    "q": { "ar": "نسيت كلمة المرور، فماذا أفعل؟", "en": "I forgot my password. What do I do?" },
+                    "a": {
+                        "ar": "اضغط «نسيت كلمة المرور؟» في صفحة الدخول واكتب بريدك، فيصلك رابط لتعيين كلمة مرور جديدة.",
+                        "en": "Press \"Forgot your password?\" on the sign-in page and enter your email; you will receive a link to set a new password."
+                    }
+                },
+                {
+                    "q": { "ar": "من يرى ما أسجله في محاسبة النفس؟", "en": "Who sees what I record in self-accounting?" },
+                    "a": {
+                        "ar": "لا أحد غيرك؛ سجل الحسنات والذنوب خاص بك وحدك ولا يطّلع عليه المعلم ولا الأكاديمية ولا الإدارة.",
+                        "en": "Nobody but you: the record of your good deeds and sins is private to you and is not visible to your teacher, your academy or the administration."
+                    }
+                },
+                {
+                    "q": { "ar": "كيف أفعّل الإشعارات على موبايلي؟", "en": "How do I turn on notifications on my phone?" },
+                    "a": {
+                        "ar": "ثبّت التطبيق من زر «تثبيت التطبيق»، ثم فعّل الإشعارات من «التطبيق والإشعارات» في قائمة حسابك.",
+                        "en": "Install the app with the \"Install the app\" button, then turn notifications on from \"App and notifications\" in your account menu."
+                    }
+                }
+            ]
+        }
+    ],
+    "terms": [
+        {
+            "id": "acceptance",
+            "title": { "ar": "قبول الشروط", "en": "Acceptance of the terms" },
+            "paragraphs": [
+                {
+                    "ar": "باستخدامك منصة «رتّل» أو إنشائك حسابًا فيها فإنك توافق على هذه الشروط والسياسات. إن لم توافق عليها فيرجى عدم استخدام المنصة.",
+                    "en": "By using Rattil or creating an account on it you agree to these terms and policies. If you do not agree, please do not use the platform."
+                }
+            ]
+        },
+        {
+            "id": "accounts",
+            "title": { "ar": "الحسابات", "en": "Accounts" },
+            "paragraphs": [
+                {
+                    "ar": "تلتزم بإدخال بيانات صحيحة، وبالحفاظ على سرية كلمة المرور، وبألا تستخدم حساب غيرك. الحساب شخصي لصاحبه.",
+                    "en": "You agree to give correct information, to keep your password secret and not to use someone else's account. An account is personal to its owner."
+                },
+                {
+                    "ar": "يستخدم الأطفال المنصة بإشراف ولي أمرهم، ويمكن تسجيل رقم ولي الأمر ليصله ما يخص الطالب.",
+                    "en": "Children use the platform under the supervision of their guardian, whose phone number can be recorded to receive what concerns the student."
+                }
+            ]
+        },
+        {
+            "id": "use",
+            "title": { "ar": "الاستخدام المقبول", "en": "Acceptable use" },
+            "paragraphs": [
+                {
+                    "ar": "المنصة مخصصة لتعلّم القرآن الكريم والعبادة. يُمنع نشر أي محتوى مسيء أو مخالف للشرع أو للآداب في المحادثات والرسائل الصوتية والحصص، كما يُمنع إزعاج الآخرين أو انتحال صفة غيرك.",
+                    "en": "The platform is meant for learning the Quran and for worship. Offensive content, content against the sharia or good manners, harassing others or impersonating someone are not allowed in the chats, voice messages or sessions."
+                },
+                {
+                    "ar": "يحق للإدارة إيقاف أي حساب أو أكاديمية تخالف هذه الشروط.",
+                    "en": "The administration may suspend any account or academy that breaks these terms."
+                }
+            ]
+        },
+        {
+            "id": "academies",
+            "title": { "ar": "الأكاديميات", "en": "Academies" },
+            "paragraphs": [
+                {
+                    "ar": "تتولى كل أكاديمية إدارة معلميها وطلابها وحلقاتها، وهي مسؤولة عن قبول الطلاب وعن نظام الدراسة والرسوم إن وُجدت. المنصة وسيط تقني لا يتحمل التزامات الأكاديميات تجاه طلابها.",
+                    "en": "Every academy runs its own teachers, students and halaqat, and is responsible for accepting students and for its study terms and fees, if any. The platform is a technical intermediary and does not bear the academies' commitments to their students."
+                },
+                {
+                    "ar": "يرى مسؤول الأكاديمية ومعلموها بيانات طلابها اللازمة للتعليم فقط: الاسم وبيانات التواصل والحضور وسجل الحفظ.",
+                    "en": "An academy's manager and teachers see only the data of its students needed for teaching: name, contact details, attendance and memorization record."
+                }
+            ]
+        },
+        {
+            "id": "content",
+            "title": { "ar": "المحتوى", "en": "Content" },
+            "paragraphs": [
+                {
+                    "ar": "نص القرآن الكريم بالرسم العثماني، والتفسير من التفسير الميسر، والأذكار والأدعية من القرآن والسنة الصحيحة. إن لاحظت خطأً فنرجو إبلاغنا لتصحيحه.",
+                    "en": "The Quran text is in the Uthmani script, the tafsir is from Al-Muyassar, and the adhkar and duas are from the Quran and the authentic Sunnah. If you notice a mistake, please tell us so we can correct it."
+                },
+                {
+                    "ar": "قسم محاسبة النفس وسيلة مساعدة للتأمل وتحسين الإيمان فقط؛ فحساب الحسنات والسيئات علمه عند الله وحده، ولا تمثل أرقام المنصة حكمًا على أحد.",
+                    "en": "Self-accounting is only a help for reflection and for improving one's faith; the reckoning of good and bad deeds is known to Allah alone, and the platform's numbers are not a judgment on anyone."
+                }
+            ]
+        },
+        {
+            "id": "privacy",
+            "title": { "ar": "سياسة الخصوصية", "en": "Privacy policy" },
+            "paragraphs": [
+                {
+                    "ar": "نجمع ما يلزم لتقديم الخدمة: الاسم، والبريد أو الهاتف، والجنس وتاريخ الميلاد إن أدخلتهما، وسجلات الحضور والحفظ، وما تسجله في أدواتك الشخصية.",
+                    "en": "We collect what is needed to provide the service: your name, email or phone, gender and date of birth if you give them, attendance and memorization records, and what you record in your personal tools."
+                },
+                {
+                    "ar": "لا نبيع بياناتك ولا نشاركها مع أي جهة خارجية لأغراض تجارية. ما تسجله في محاسبة النفس خاص بك وحدك. ونستخدم ملفات تعريف الارتباط لتسجيل الدخول وحفظ تفضيلاتك كاللغة والوضع الليلي فقط.",
+                    "en": "We do not sell your data or share it with any third party for commercial purposes. What you record in self-accounting is private to you alone. Cookies are used only to keep you signed in and to remember your preferences such as language and dark mode."
+                },
+                {
+                    "ar": "يمكنك تعديل بياناتك من ملفك الشخصي، وطلب حذف حسابك بمراسلتنا من صفحة التواصل.",
+                    "en": "You can edit your data from your profile, and ask for your account to be deleted by writing to us from the contact page."
+                }
+            ]
+        },
+        {
+            "id": "notifications",
+            "title": { "ar": "الإشعارات والتواصل", "en": "Notifications and communication" },
+            "paragraphs": [
+                {
+                    "ar": "نرسل إشعارات تخص دراستك وأدواتك (الحصص، والتسميع، والتذكيرات) داخل المنصة وعلى جهازك إن فعّلت ذلك، وبالبريد أو واتساب إن فعّلته الأكاديمية. يمكنك إيقافها من إعدادات حسابك.",
+                    "en": "We send notifications about your studies and your tools (sessions, recitations, reminders) inside the platform, on your device if you turn that on, and by email or WhatsApp if your academy uses them. You can turn them off from your account settings."
+                }
+            ]
+        },
+        {
+            "id": "changes",
+            "title": { "ar": "التعديلات", "en": "Changes" },
+            "paragraphs": [
+                {
+                    "ar": "قد نحدّث هذه الشروط عند الحاجة، ونعلن عن التغييرات المهمة داخل المنصة. استمرارك في الاستخدام بعد التحديث يعني موافقتك عليه.",
+                    "en": "We may update these terms when needed and announce important changes inside the platform. Continuing to use the platform after an update means you accept it."
+                }
+            ]
+        }
+    ],
+    "guide": [
+        {
+            "role": "everyone",
+            "title": { "ar": "لكل المستخدمين", "en": "For everyone" },
+            "intro": {
+                "ar": "هذه الأقسام متاحة لكل من له حساب، سواء كان في أكاديمية أو يستخدم المنصة بمفرده.",
+                "en": "These sections are open to everyone with an account, whether in an academy or on their own."
+            },
+            "tabs": [
+                {
+                    "icon": "layout-dashboard",
+                    "title": { "ar": "لوحة التحكم", "en": "Dashboard" },
+                    "text": {
+                        "ar": "أول ما تراه بعد الدخول: ملخص يومك حسب دورك، من الحصة القادمة وتقدم الحفظ إلى الإحصائيات والتنبيهات.",
+                        "en": "The first page after signing in: a summary of your day for your role, from your next session and progress to statistics and alerts."
+                    }
+                },
+                {
+                    "icon": "book-open-text",
+                    "title": { "ar": "المصحف المرتل", "en": "The recited mushaf" },
+                    "text": {
+                        "ar": "مصحف بالرسم العثماني تقلّب صفحاته، تستمع فيه لعدد من القراء، وترى التفسير ومعاني الكلمات بالضغط على الآية أو الكلمة.",
+                        "en": "A mushaf in the Uthmani script whose pages you turn, with several reciters, the tafsir and the meaning of the words when you tap an ayah or a word."
+                    },
+                    "points": [
+                        { "ar": "يكمل من آخر صفحة قرأتها", "en": "Continues from the last page you read" },
+                        { "ar": "التسميع بالصوت: تقرأ فيظهر ما أصبت فيه وما فاتك", "en": "Voice recitation: you recite and see what you got right and what you missed" },
+                        { "ar": "تحديد الآيات وتكرار الاستماع للحفظ", "en": "Select ayahs and repeat them while memorizing" }
+                    ]
+                },
+                {
+                    "icon": "smile",
+                    "title": { "ar": "تحفيظ الأطفال", "en": "Kids memorization" },
+                    "text": {
+                        "ar": "قصار السور للصغار بالاستماع والتكرار، مع نجوم ومكافآت تشجعهم.",
+                        "en": "The short surahs for children with listening and repetition, and stars that encourage them."
+                    }
+                },
+                {
+                    "icon": "hand-heart",
+                    "title": { "ar": "الأذكار والأدعية", "en": "Adhkar and duas" },
+                    "text": {
+                        "ar": "أذكار الصباح والمساء والنوم وبعد الصلاة وغيرها، مع عدد كل ذكر وفضله وعدّاد يساعدك على الإتمام.",
+                        "en": "Morning, evening, sleep and after-prayer adhkar and more, with how many times to say each one, its virtue and a counter."
+                    }
+                },
+                {
+                    "icon": "moon-star",
+                    "title": { "ar": "الصلاة", "en": "Prayer" },
+                    "text": {
+                        "ar": "شرح قيام الليل والشفع والوتر والضحى والسنن الرواتب وتحية المسجد والاستخارة وغيرها، مع تذكير يومي بالقيام أو الضحى في الوقت الذي تختاره.",
+                        "en": "How to pray the night prayer, shaf' and witr, duha, the regular sunnah prayers, tahiyyat al-masjid, istikhara and more, with a daily reminder for the night prayer or duha at your chosen time."
+                    }
+                },
+                {
+                    "icon": "scale",
+                    "title": { "ar": "محاسبة النفس", "en": "Self-accounting" },
+                    "text": {
+                        "ar": "تسجل حسناتك وذنوبك بالوقت، فتُصنَّف الذنوب صغيرة أو كبيرة تلقائيًا، وترى طريقة التوبة والكفارة، وتعلّم ما تبت منه. وفيها تقارير يومية وأسبوعية وشهرية بمنحنى لمستواك الإيماني.",
+                        "en": "Record your good deeds and sins with their time; sins are classified as minor or major automatically, you see how to repent and expiate, and you mark what you repented of. Daily, weekly and monthly reports show a chart of your state of faith."
+                    }
+                },
+                {
+                    "icon": "bell",
+                    "title": { "ar": "الإشعارات", "en": "Notifications" },
+                    "text": {
+                        "ar": "كل ما يخصك من تذكيرات ونتائج ورسائل، وتصلك على جهازك إن ثبّت التطبيق وفعّلت الإشعارات.",
+                        "en": "Every reminder, result and message that concerns you, also delivered to your device if you install the app and turn notifications on."
+                    }
+                }
+            ]
+        },
+        {
+            "role": "student",
+            "title": { "ar": "للطالب", "en": "For students" },
+            "intro": {
+                "ar": "بعد انضمامك لأكاديمية تظهر لك أقسام الدراسة مع معلمك.",
+                "en": "Once you join an academy, the sections for studying with your teacher appear."
+            },
+            "tabs": [
+                {
+                    "icon": "school",
+                    "title": { "ar": "أكاديميتي / الانضمام لأكاديمية", "en": "My academy / Join an academy" },
+                    "text": {
+                        "ar": "إن لم تكن في أكاديمية تتصفح الأكاديميات وترسل طلب انضمام وتتابعه، وإن كنت في أكاديمية ترى بياناتها وحلقاتك فيها ويمكنك الخروج منها.",
+                        "en": "Without an academy you browse the academies, ask to join one and follow your request; in an academy you see its details and your halaqat, and you can leave it."
+                    }
+                },
+                {
+                    "icon": "book-open",
+                    "title": { "ar": "حلقاتي", "en": "My halaqat" },
+                    "text": {
+                        "ar": "صفحة كل حلقة: مواعيدها ومعلمها ورسائله، وتحديد ما ستسمّعه قبل الحصة، وفيديوهات الحلقة.",
+                        "en": "The page of every halaqa: its times, teacher and messages, what you will recite before the session, and the halaqa's videos."
+                    }
+                },
+                {
+                    "icon": "calendar-days",
+                    "title": { "ar": "الجلسات", "en": "Sessions" },
+                    "text": {
+                        "ar": "حصصك القادمة بعدّاد تنازلي، ويظهر زر الدخول قبل الحصة بربع ساعة.",
+                        "en": "Your upcoming sessions with a countdown; the join button appears fifteen minutes before each one."
+                    }
+                },
+                {
+                    "icon": "book-open-check",
+                    "title": { "ar": "تقدمي", "en": "My progress" },
+                    "text": {
+                        "ar": "خريطة حفظك للأجزاء الثلاثين، وسجل التسميع بتقديرات المعلم، ونسبة حضورك.",
+                        "en": "Your map of the thirty ajza, your recitations with the teacher's grades, and your attendance rate."
+                    }
+                },
+                {
+                    "icon": "messages-square",
+                    "title": { "ar": "المحادثات", "en": "Chat" },
+                    "text": {
+                        "ar": "محادثة جماعية لكل حلقة مع معلمها وزملائك، بالرسائل والتسجيلات الصوتية.",
+                        "en": "A group chat for every halaqa with its teacher and your classmates, with text and voice messages."
+                    }
+                },
+                {
+                    "icon": "circle-play",
+                    "title": { "ar": "مكتبة الفيديو", "en": "Video library" },
+                    "text": {
+                        "ar": "دروس ومقاطع عامة وأخرى خاصة بحلقاتك.",
+                        "en": "General lessons and videos for your halaqat."
+                    }
+                }
+            ]
+        },
+        {
+            "role": "teacher",
+            "title": { "ar": "للمعلم", "en": "For teachers" },
+            "intro": {
+                "ar": "يدير المعلم حلقاته وحصصه ويتابع طلابه.",
+                "en": "Teachers run their halaqat and sessions and follow their students."
+            },
+            "tabs": [
+                {
+                    "icon": "book-open",
+                    "title": { "ar": "حلقاتي", "en": "My halaqat" },
+                    "text": {
+                        "ar": "طلاب كل حلقة وتقدمهم، ورسائل للطلاب، وما أرسله الطلاب للتسميع.",
+                        "en": "The students of every halaqa and their progress, messages to the students, and the recitations they sent."
+                    }
+                },
+                {
+                    "icon": "calendar-days",
+                    "title": { "ar": "الجلسات", "en": "Sessions" },
+                    "text": {
+                        "ar": "بدء الحصة المباشرة برابطها، وتسجيل الحضور والغياب، وإضافة حصص إضافية أو إلغاؤها.",
+                        "en": "Start the live session with its link, take attendance, and add extra sessions or cancel one."
+                    }
+                },
+                {
+                    "icon": "book-open-check",
+                    "title": { "ar": "التسميع", "en": "Recitations" },
+                    "text": {
+                        "ar": "تسجيل الحفظ والمراجعة لكل طالب بالسور والآيات والتقدير والملاحظات، فيصل الطالب إشعار بالنتيجة.",
+                        "en": "Record memorization and revision for every student with surahs, ayahs, grade and notes; the student is notified of the result."
+                    }
+                },
+                {
+                    "icon": "chart-column",
+                    "title": { "ar": "التقارير", "en": "Reports" },
+                    "text": {
+                        "ar": "تقارير الحضور والحفظ لحلقاتك وطلابك، قابلة للطباعة.",
+                        "en": "Attendance and memorization reports for your halaqat and students, ready to print."
+                    }
+                }
+            ]
+        },
+        {
+            "role": "manager",
+            "title": { "ar": "لمسؤول الأكاديمية", "en": "For academy managers" },
+            "intro": {
+                "ar": "يدير مسؤول الأكاديمية كل ما فيها بحسابه الخاص، ولا يرى بيانات الأكاديميات الأخرى.",
+                "en": "The academy manager runs everything in it with their own account, and sees nothing of the other academies."
+            },
+            "tabs": [
+                {
+                    "icon": "book-open",
+                    "title": { "ar": "الحلقات", "en": "Halaqat" },
+                    "text": {
+                        "ar": "إنشاء الحلقات بمعلميها وطلابها وجدولها الأسبوعي، فتُنشأ الحصص وروابطها تلقائيًا.",
+                        "en": "Create halaqat with their teachers, students and weekly schedule; sessions and their links are created automatically."
+                    }
+                },
+                {
+                    "icon": "users",
+                    "title": { "ar": "المعلمون والطلاب", "en": "Teachers and students" },
+                    "text": {
+                        "ar": "إضافة حسابات المعلمين والطلاب وإرسال بيانات الدخول لهم، وإيقاف الحسابات عند الحاجة.",
+                        "en": "Add the accounts of teachers and students, send them their sign-in details, and deactivate accounts when needed."
+                    }
+                },
+                {
+                    "icon": "user-plus",
+                    "title": { "ar": "طلبات الانضمام", "en": "Join requests" },
+                    "text": {
+                        "ar": "قبول أو رفض طلبات الطلاب الراغبين في الانضمام، مع كلمة لكل طالب.",
+                        "en": "Accept or decline the requests of students who want to join, with a word to each one."
+                    }
+                },
+                {
+                    "icon": "school",
+                    "title": { "ar": "ملف الأكاديمية", "en": "Academy profile" },
+                    "text": {
+                        "ar": "اسم الأكاديمية وشعارها ووصفها وبيانات التواصل، وإيقاف استقبال الطلبات مؤقتًا.",
+                        "en": "The academy's name, logo, description and contact details, and pausing new join requests."
+                    }
+                }
+            ]
+        },
+        {
+            "role": "admin",
+            "title": { "ar": "لإدارة المنصة", "en": "For the administration" },
+            "intro": {
+                "ar": "ترى الإدارة المنصة كلها وتستطيع فعل كل شيء في أي أكاديمية.",
+                "en": "The administration sees the whole platform and can do everything in any academy."
+            },
+            "tabs": [
+                {
+                    "icon": "building-2",
+                    "title": { "ar": "الأكاديميات", "en": "Academies" },
+                    "text": {
+                        "ar": "إضافة الأكاديميات بحسابات مسؤوليها، وتعديلها وإيقافها وأرشفتها وحذفها، والدخول إلى أي أكاديمية بحساب مسؤولها.",
+                        "en": "Add academies with their managers' accounts, edit, deactivate, archive or delete them, and enter any academy with its manager's account."
+                    }
+                },
+                {
+                    "icon": "users",
+                    "title": { "ar": "المستخدمون", "en": "Users" },
+                    "text": {
+                        "ar": "كل حسابات المنصة مع اختيار أكاديمية كل حساب.",
+                        "en": "Every account of the platform, choosing the academy of each one."
+                    }
+                },
+                {
+                    "icon": "inbox",
+                    "title": { "ar": "رسائل التواصل", "en": "Contact messages" },
+                    "text": {
+                        "ar": "رسائل الزوار من صفحة التواصل مع الرد عليها بالبريد أو واتساب.",
+                        "en": "The visitors' messages from the contact page, answered by email or WhatsApp."
+                    }
+                },
+                {
+                    "icon": "settings",
+                    "title": { "ar": "الإعدادات", "en": "Settings" },
+                    "text": {
+                        "ar": "اسم المنصة وشعارها، ومزودو الحصص المباشرة، والإشعارات وواتساب.",
+                        "en": "The platform's name and logo, the live session providers, notifications and WhatsApp."
+                    }
+                }
+            ]
+        }
+    ]
+}

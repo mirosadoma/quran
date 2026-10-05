@@ -1,4 +1,4 @@
-import { Head, usePage } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import { BookOpenCheck, MessagesSquare, Video } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { IslamicPattern, Logo, StarOrnament } from '@/components/brand';
@@ -32,7 +32,9 @@ export default function AuthLayout({ title, subtitle, children }: AuthLayoutProp
 
             <div className="relative flex flex-col px-5 py-6 sm:px-10">
                 <div className="flex items-center justify-between">
-                    <Logo />
+                    <Link href={route('home')} aria-label={t('Home')}>
+                        <Logo />
+                    </Link>
                     <div className="flex items-center">
                         <AppButton />
                         <LanguageSwitch />

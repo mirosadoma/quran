@@ -20,6 +20,8 @@ class HalaqaResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'academy_id' => $this->academy_id,
+            'academy' => $this->whenLoaded('academy', fn (): ?array => $this->academy ? ['id' => $this->academy->id, 'name' => $this->academy->name] : null),
             'name' => $this->name,
             'description' => $this->description,
             'color' => $this->color,

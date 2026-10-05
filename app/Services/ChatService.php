@@ -97,11 +97,12 @@ class ChatService
     }
 
     /**
-     * Total unread messages for the sidebar badge. Admins only count chats they follow.
+     * Total unread messages for the sidebar badge. The administration and academy managers only count
+     * the chats they follow.
      */
     public function unreadCount(User $user): int
     {
-        $halaqaIds = $user->isAdmin()
+        $halaqaIds = $user->managesAcademies()
             ? ChatRead::query()->where('user_id', $user->id)->pluck('halaqa_id')->all()
             : $user->accessibleHalaqat()->pluck('id')->all();
 

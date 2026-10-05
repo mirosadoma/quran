@@ -4,6 +4,7 @@ namespace Database\Factories;
 
 use App\Enums\Gender;
 use App\Enums\UserRole;
+use App\Models\Academy;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
@@ -46,9 +47,27 @@ class UserFactory extends Factory
         return $this->state(fn (array $attributes) => ['role' => UserRole::Admin]);
     }
 
+    /**
+     * The manager of an academy (its manager_id is set when the academy is given).
+     */
+    public function manager(?Academy $academy = null): static
+    {
+        return $this->state(fn (array $attributes) => ['role' => UserRole::Manager, 'academy_id' => $academy?->id ?? Academy::factory()])
+            ->afterCreating(function (User $user): void {
+                if ($user->academy !== null && $user->academy->manager_id === null) {
+                    $user->academy->forceFill(['manager_id' => $user->id])->save();
+                }
+            });
+    }
+
     public function teacher(): static
     {
         return $this->state(fn (array $attributes) => ['role' => UserRole::Teacher]);
+    }
+
+    public function inAcademy(Academy $academy): static
+    {
+        return $this->state(fn (array $attributes) => ['academy_id' => $academy->id]);
     }
 
     public function student(): static

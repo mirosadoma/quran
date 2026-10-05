@@ -18,7 +18,33 @@ class UserRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return (bool) $this->user()?->isAdmin();
+        $user = $this->route('user');
+
+        return $user instanceof User ? $this->user()->can('update', $user) : $this->user()->can('create', User::class);
+    }
+
+    /**
+     * Roles the signed-in user may give: every role for the administration, teachers and students
+     * for an academy manager.
+     *
+     * @return list<UserRole>
+     */
+    public function assignableRoles(): array
+    {
+        return $this->user()->isAdmin() ? UserRole::cases() : [UserRole::Teacher, UserRole::Student];
+    }
+
+    /**
+     * The academy of the account: the manager's own; chosen by the administration (none for the
+     * administration's accounts, optional for a student who may study on their own).
+     */
+    public function academyId(): ?int
+    {
+        if ($this->user()->isManager()) {
+            return $this->user()->academy_id;
+        }
+
+        return $this->input('role') === UserRole::Admin->value ? null : ($this->integer('academy_id') ?: null);
     }
 
     /**
@@ -47,7 +73,13 @@ class UserRequest extends FormRequest
             'email' => ['nullable', 'required_without:phone', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user)],
             'phone' => ['nullable', 'required_without:email', 'string', 'regex:/^\+?[0-9]{7,15}$/', Rule::unique('users', 'phone')->ignore($user)],
             'password' => [$user ? 'nullable' : 'required', 'string', Password::min(8)],
-            'role' => ['required', Rule::enum(UserRole::class)],
+            'role' => ['required', Rule::enum(UserRole::class)->only($this->assignableRoles())],
+            'academy_id' => [
+                Rule::requiredIf($this->user()->isAdmin() && in_array($this->input('role'), [UserRole::Manager->value, UserRole::Teacher->value], true)),
+                'nullable',
+                'integer',
+                Rule::exists('academies', 'id')->whereNull('deleted_at'),
+            ],
             'gender' => ['nullable', Rule::enum(Gender::class)],
             'birth_date' => ['nullable', 'date', 'before:today'],
             'country' => ['nullable', 'string', 'max:80'],
@@ -64,7 +96,8 @@ class UserRequest extends FormRequest
             'avatar' => ['nullable', 'image', 'max:2048'],
             'remove_avatar' => ['boolean'],
             'halaqat' => ['array'],
-            'halaqat.*' => ['integer', 'exists:halaqat,id'],
+            // Halaqat of the student's academy.
+            'halaqat.*' => ['integer', Rule::exists('halaqat', 'id')->where('academy_id', $this->academyId())],
             'send_credentials' => ['boolean'],
         ];
     }

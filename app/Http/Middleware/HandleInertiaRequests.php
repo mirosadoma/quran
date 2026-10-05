@@ -2,6 +2,9 @@
 
 namespace App\Http\Middleware;
 
+use App\Http\Controllers\ImpersonationController;
+use App\Models\AcademyJoinRequest;
+use App\Models\ContactMessage;
 use App\Models\Setting;
 use App\Services\ChatService;
 use App\Services\Realtime;
@@ -48,6 +51,8 @@ class HandleInertiaRequests extends Middleware
                 'name' => Setting::get('academy_name'),
                 'tagline' => Setting::get('academy_tagline'),
                 'logo_url' => ($logo = Setting::get('academy_logo')) ? Storage::disk('public')->url($logo) : null,
+                // Shown on the public website.
+                'contact' => ['email' => Setting::get('contact_email'), 'phone' => Setting::get('contact_phone')],
             ],
             'auth' => [
                 'user' => $user ? [
@@ -59,8 +64,17 @@ class HandleInertiaRequests extends Middleware
                     'gender' => $user->gender?->value,
                     'avatar_url' => $user->avatar_url,
                     'timezone' => $user->displayTimezone(),
+                    'academy' => $user->academy_id !== null && $user->academy ? [
+                        'id' => $user->academy->id,
+                        'name' => $user->academy->name,
+                        'logo_url' => $user->academy->logo_url,
+                    ] : null,
                 ] : null,
             ],
+            // The administration is inside an academy with the account of its manager.
+            'impersonating' => fn (): ?array => $user && $request->session()->has(ImpersonationController::SESSION_KEY)
+                ? ['academy' => $user->academy?->name]
+                : null,
             'push' => fn (): array => [
                 'public_key' => $user && Setting::get('notify_push') && app(WebPush::class)->isConfigured() ? app(WebPush::class)->publicKey() : null,
             ],
@@ -70,6 +84,10 @@ class HandleInertiaRequests extends Middleware
             'counts' => fn (): ?array => $user ? [
                 'notifications' => $user->unreadNotifications()->count(),
                 'chat' => app(ChatService::class)->unreadCount($user),
+                'join_requests' => $user->managesAcademies()
+                    ? AcademyJoinRequest::query()->pending()->when($user->isManager(), fn ($query) => $query->where('academy_id', $user->academy_id))->count()
+                    : 0,
+                'contact_messages' => $user->isAdmin() ? ContactMessage::query()->unread()->count() : 0,
             ] : null,
             'realtime' => fn (): array => [
                 ...Realtime::clientConfig(),

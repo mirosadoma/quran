@@ -41,7 +41,7 @@ class VideoRequest extends FormRequest
     }
 
     /**
-     * Teachers can only publish videos for their own halaqat.
+     * Teachers can only publish videos for their own halaqat, managers for the halaqat of their academy.
      *
      * @return array<int, callable>
      */
@@ -54,6 +54,11 @@ class VideoRequest extends FormRequest
                 if ($user->isTeacher() && $this->filled('halaqa_id')
                     && ! Halaqa::query()->whereKey($this->integer('halaqa_id'))->where('teacher_id', $user->id)->exists()) {
                     $validator->errors()->add('halaqa_id', __('You can only add videos to your own halaqat.'));
+                }
+
+                if ($user->isManager() && $this->filled('halaqa_id')
+                    && ! Halaqa::query()->whereKey($this->integer('halaqa_id'))->where('academy_id', $user->academy_id)->exists()) {
+                    $validator->errors()->add('halaqa_id', __('You can only add videos to the halaqat of your academy.'));
                 }
             },
         ];

@@ -9,6 +9,7 @@ use App\Http\Resources\HalaqaResource;
 use App\Http\Resources\ProgressRecordResource;
 use App\Http\Resources\SessionResource;
 use App\Http\Resources\UserResource;
+use App\Models\Academy;
 use App\Models\Halaqa;
 use App\Models\HalaqaSession;
 use App\Models\ProgressRecord;
@@ -40,32 +41,41 @@ class UserController extends Controller
     {
         $this->authorize('viewAny', User::class);
 
+        $viewer = $request->user();
         $role = UserRole::tryFrom((string) $request->query('role'));
         $status = in_array($request->query('status'), ['active', 'inactive'], true) ? $request->query('status') : null;
         $search = trim((string) $request->query('search'));
+        $academyId = $viewer->isAdmin() ? ($request->integer('academy_id') ?: null) : null;
 
-        $users = User::query()
+        // A manager sees the teachers and students of their academy; the administration everyone.
+        $scope = fn (Builder $query): Builder => $viewer->isManager()
+            ? $query->where('academy_id', $viewer->academy_id)->whereIn('role', [UserRole::Teacher, UserRole::Student])
+            : $query->inAcademy($academyId);
+
+        $users = $scope(User::query())
             ->when($role, fn (Builder $query, UserRole $role) => $query->where('role', $role))
             ->search($search)
             ->when($status === 'active', fn (Builder $query) => $query->where('is_active', true))
             ->when($status === 'inactive', fn (Builder $query) => $query->where('is_active', false))
-            ->with('halaqat:id,name,color')
+            ->with(['halaqat:id,name,color', 'academy:id,name'])
             ->withCount(['halaqat', 'teachingHalaqat'])
             ->orderBy('name')
             ->paginate(15)
             ->withQueryString();
 
-        $counts = User::query()->toBase()->selectRaw('role, COUNT(*) as aggregate')->groupBy('role')->pluck('aggregate', 'role');
+        $counts = $scope(User::query())->toBase()->selectRaw('role, COUNT(*) as aggregate')->groupBy('role')->pluck('aggregate', 'role');
 
         return Inertia::render('users/index', [
             'users' => $this->paginated($users, UserResource::class),
-            'filters' => ['role' => $role?->value, 'status' => $status, 'search' => $search],
+            'filters' => ['role' => $role?->value, 'status' => $status, 'search' => $search, 'academy_id' => $academyId],
             'counts' => [
                 'all' => (int) $counts->sum(),
                 'admin' => (int) ($counts['admin'] ?? 0),
+                'manager' => (int) ($counts['manager'] ?? 0),
                 'teacher' => (int) ($counts['teacher'] ?? 0),
                 'student' => (int) ($counts['student'] ?? 0),
             ],
+            'academies' => $viewer->isAdmin() ? Academy::query()->orderBy('name')->get(['id', 'name']) : [],
         ]);
     }
 
@@ -76,15 +86,18 @@ class UserController extends Controller
     {
         $this->authorize('create', User::class);
 
+        $viewer = $request->user();
+
         return Inertia::render('users/form', [
             'user' => null,
             'defaults' => [
                 'role' => UserRole::tryFrom((string) $request->query('role'))?->value ?? UserRole::Student->value,
-                'timezone' => Setting::get('default_timezone'),
+                'academy_id' => $viewer->isManager() ? $viewer->academy_id : ($request->integer('academy_id') ?: null),
+                'timezone' => $viewer->academy?->timezone ?: Setting::get('default_timezone'),
                 'locale' => config('app.locale'),
                 'halaqa_id' => $request->integer('halaqa_id') ?: null,
             ],
-            ...$this->formOptions(),
+            ...$this->formOptions($viewer),
         ]);
     }
 
@@ -93,9 +106,14 @@ class UserController extends Controller
      */
     public function store(UserRequest $request): RedirectResponse
     {
-        $user = new User($request->safe()->except(['avatar', 'remove_avatar', 'halaqat', 'send_credentials']));
+        $user = new User([
+            ...$request->safe()->except(['avatar', 'remove_avatar', 'halaqat', 'send_credentials', 'academy_id']),
+            'academy_id' => $request->academyId(),
+        ]);
         $user->updateAvatar($request->file('avatar'));
         $user->save();
+
+        $this->linkManager($user);
 
         if ($user->isStudent()) {
             $this->syncHalaqat($user, $request->input('halaqat', []));
@@ -117,7 +135,7 @@ class UserController extends Controller
     {
         $this->authorize('view', $user);
 
-        $props = ['user' => [...(new UserResource($user))->resolve(), ...$this->details($user)]];
+        $props = ['user' => [...(new UserResource($user->load('academy')))->resolve(), ...$this->details($user)]];
 
         if ($user->isStudent()) {
             $props['summary'] = $this->progress->summary($user);
@@ -161,12 +179,13 @@ class UserController extends Controller
                 'email' => $user->email,
                 'phone' => $user->phone,
                 'role' => $user->role->value,
+                'academy_id' => $user->academy_id,
                 'avatar_url' => $user->avatar_url,
                 ...$this->details($user),
                 'halaqat' => $user->halaqat()->pluck('halaqat.id'),
             ],
             'defaults' => null,
-            ...$this->formOptions(),
+            ...$this->formOptions(request()->user()),
         ]);
     }
 
@@ -175,10 +194,13 @@ class UserController extends Controller
      */
     public function update(UserRequest $request, User $user): RedirectResponse
     {
-        $data = $request->safe()->except(['avatar', 'remove_avatar', 'halaqat', 'send_credentials', 'password']);
+        $data = [
+            ...$request->safe()->except(['avatar', 'remove_avatar', 'halaqat', 'send_credentials', 'password', 'academy_id']),
+            'academy_id' => $request->academyId(),
+        ];
 
         if ($request->user()->is($user)) {
-            unset($data['role'], $data['is_active']);
+            unset($data['role'], $data['is_active'], $data['academy_id']);
         }
 
         $user->fill($data);
@@ -189,6 +211,8 @@ class UserController extends Controller
 
         $user->updateAvatar($request->file('avatar'), $request->boolean('remove_avatar'));
         $user->save();
+
+        $this->linkManager($user);
 
         if ($user->isStudent()) {
             $this->syncHalaqat($user, $request->input('halaqat', []));
@@ -261,10 +285,13 @@ class UserController extends Controller
     /**
      * @return array<string, mixed>
      */
-    protected function formOptions(): array
+    protected function formOptions(User $viewer): array
     {
         return [
+            // Halaqat of the viewer's academy (of every academy for the administration, the form keeps
+            // those of the chosen academy).
             'halaqat' => Halaqa::query()
+                ->visibleTo($viewer)
                 ->active()
                 ->with('teacher:id,name')
                 ->withCount('students')
@@ -272,6 +299,7 @@ class UserController extends Controller
                 ->get()
                 ->map(fn (Halaqa $halaqa): array => [
                     'id' => $halaqa->id,
+                    'academy_id' => $halaqa->academy_id,
                     'name' => $halaqa->name,
                     'color' => $halaqa->color,
                     'gender' => $halaqa->gender->value,
@@ -279,8 +307,20 @@ class UserController extends Controller
                     'students_count' => $halaqa->students_count,
                     'capacity' => $halaqa->capacity,
                 ]),
+            'academies' => $viewer->isAdmin() ? Academy::query()->orderBy('name')->get(['id', 'name']) : [],
+            'roles' => array_map(fn (UserRole $role): string => $role->value, $viewer->isAdmin() ? UserRole::cases() : [UserRole::Teacher, UserRole::Student]),
             'timezones' => DateTimeZone::listIdentifiers(),
         ];
+    }
+
+    /**
+     * A manager account becomes the manager of its academy when the academy has none.
+     */
+    protected function linkManager(User $user): void
+    {
+        if ($user->isManager() && $user->academy !== null && $user->academy->manager_id === null) {
+            $user->academy->forceFill(['manager_id' => $user->id])->save();
+        }
     }
 
     /**

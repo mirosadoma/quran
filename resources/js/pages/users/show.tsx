@@ -1,6 +1,7 @@
 import { router } from '@inertiajs/react';
 import {
     BookOpenCheck,
+    Building2,
     CalendarDays,
     ClipboardCheck,
     FileText,
@@ -55,6 +56,9 @@ export default function UserShow({ user, summary, records, halaqat = [], session
     const [deleting, setDeleting] = useState(false);
 
     const details: { icon: typeof Mail; label: string; value: string | null; ltr?: boolean }[] = [
+        ...(user.role !== 'admin'
+            ? [{ icon: Building2, label: t('Academy'), value: user.academy?.name ?? (user.role === 'student' ? t('Independent (without academy)') : null) }]
+            : []),
         { icon: Mail, label: t('Email'), value: user.email, ltr: true },
         { icon: Phone, label: t('Phone'), value: user.phone, ltr: true },
         { icon: UserRound, label: t('Gender'), value: user.gender ? labels.gender[user.gender] : null },

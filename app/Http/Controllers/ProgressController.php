@@ -47,7 +47,11 @@ class ProgressController extends Controller
             return redirect()->route('progress.student', $user);
         }
 
-        $halaqaIds = $user->isAdmin() ? null : $user->teachingHalaqat()->pluck('id')->all();
+        $halaqaIds = match (true) {
+            $user->isAdmin() => null,
+            $user->isManager() => $user->accessibleHalaqat()->pluck('id')->all(),
+            default => $user->teachingHalaqat()->pluck('id')->all(),
+        };
 
         $filters = [
             'halaqa_id' => $request->integer('halaqa_id') ?: null,
@@ -136,7 +140,7 @@ class ProgressController extends Controller
 
         $canRecord = $user->can('recordProgress', $student);
         $recordableHalaqat = $canRecord
-            ? $student->halaqat->filter(fn (Halaqa $halaqa): bool => $user->isAdmin() || $halaqa->teacher_id === $user->id)->values()
+            ? $student->halaqat->filter(fn (Halaqa $halaqa): bool => $user->managesAcademy($halaqa->academy_id) || $halaqa->teacher_id === $user->id)->values()
             : collect();
 
         return Inertia::render('progress/student', [
@@ -315,9 +319,9 @@ class ProgressController extends Controller
         if ($request->filled('halaqa_id')) {
             $halaqa = (clone $query)->whereKey($request->integer('halaqa_id'))->first();
 
-            abort_if($halaqa === null && ! $user->isAdmin(), 403);
+            abort_if($halaqa === null && ! $user->managesAcademies(), 403);
 
-            return $halaqa ?? Halaqa::query()->find($request->integer('halaqa_id'));
+            return $halaqa ?? Halaqa::query()->visibleTo($user)->find($request->integer('halaqa_id'));
         }
 
         return $query->first();

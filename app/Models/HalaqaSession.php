@@ -98,6 +98,7 @@ class HalaqaSession extends Model
     {
         match ($user->role) {
             UserRole::Admin => null,
+            UserRole::Manager => $query->whereIn('halaqa_id', Halaqa::query()->select('id')->where('academy_id', $user->academy_id)),
             UserRole::Teacher => $query->where(function (Builder $query) use ($user): void {
                 $query->where('teacher_id', $user->id)
                     ->orWhereIn('halaqa_id', Halaqa::query()->select('id')->where('teacher_id', $user->id));
@@ -154,11 +155,12 @@ class HalaqaSession extends Model
     }
 
     /**
-     * Determine whether the user manages this session (admin or its teacher).
+     * Determine whether the user manages this session (the administration, the manager of its
+     * academy, or its teacher).
      */
     public function isManagedBy(User $user): bool
     {
-        if ($user->isAdmin()) {
+        if ($user->managesAcademy($this->halaqa?->academy_id)) {
             return true;
         }
 

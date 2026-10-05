@@ -373,7 +373,7 @@ class SessionController extends Controller
     protected function manageableHalaqat(User $user): array
     {
         return Halaqa::query()
-            ->when($user->isTeacher(), fn (Builder $query) => $query->where('teacher_id', $user->id))
+            ->visibleTo($user)
             ->active()
             ->orderBy('name')
             ->get()

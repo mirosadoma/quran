@@ -6,13 +6,18 @@ use App\Enums\AttendanceStatus;
 use App\Enums\ProgressType;
 use App\Enums\SessionStatus;
 use App\Enums\UserRole;
+use App\Http\Resources\AcademyResource;
 use App\Http\Resources\HalaqaAnnouncementResource;
 use App\Http\Resources\HalaqaResource;
+use App\Http\Resources\JoinRequestResource;
 use App\Http\Resources\ProgressRecordResource;
 use App\Http\Resources\RecitationSubmissionResource;
 use App\Http\Resources\SessionResource;
 use App\Http\Resources\VideoResource;
+use App\Models\Academy;
+use App\Models\AcademyJoinRequest;
 use App\Models\Attendance;
+use App\Models\ContactMessage;
 use App\Models\Halaqa;
 use App\Models\HalaqaAnnouncement;
 use App\Models\HalaqaSession;
@@ -20,6 +25,7 @@ use App\Models\ProgressRecord;
 use App\Models\RecitationSubmission;
 use App\Models\User;
 use App\Models\Video;
+use App\Services\DeedStats;
 use App\Services\Reports;
 use App\Services\StudentProgress;
 use Illuminate\Database\Eloquent\Builder;
@@ -33,6 +39,7 @@ class DashboardController extends Controller
     public function __construct(
         protected Reports $reports,
         protected StudentProgress $progress,
+        protected DeedStats $deeds,
     ) {}
 
     /**
@@ -43,18 +50,24 @@ class DashboardController extends Controller
         $user = $request->user();
 
         return match ($user->role) {
-            UserRole::Admin => $this->admin($user),
+            UserRole::Admin => $this->admin($user, null),
+            UserRole::Manager => $this->admin($user, $user->academy_id),
             UserRole::Teacher => $this->teacher($user),
-            UserRole::Student => $this->student($user),
+            UserRole::Student => $user->isIndependent() ? $this->independent($user) : $this->student($user),
         };
     }
 
-    protected function admin(User $user): Response
+    /**
+     * The administration's view of the whole platform, or a manager's view of their academy.
+     */
+    protected function admin(User $user, ?int $academyId): Response
     {
         $timezone = $user->displayTimezone();
         $trendFrom = now()->subWeeks(8)->addDay()->startOfDay();
+        $halaqaIds = $academyId !== null ? Halaqa::query()->where('academy_id', $academyId)->pluck('id')->all() : null;
+        $inHalaqat = fn (Builder $query, string $column = 'halaqa_id'): Builder => $query->when($halaqaIds !== null, fn (Builder $query) => $query->whereIn($column, $halaqaIds));
 
-        $todaySessions = HalaqaSession::query()
+        $todaySessions = $inHalaqat(HalaqaSession::query())
             ->with(['halaqa', 'teacher'])
             ->withCount(['attendances as present_count' => fn (Builder $query) => $query->whereIn('status', [AttendanceStatus::Present, AttendanceStatus::Late])])
             ->whereBetween('starts_at', [now($timezone)->startOfDay()->utc(), now($timezone)->endOfDay()->utc()])
@@ -62,25 +75,51 @@ class DashboardController extends Controller
             ->get();
 
         return Inertia::render('dashboard/admin', [
+            'academy' => $academyId !== null ? $user->academy?->only(['id', 'name', 'logo_url']) : null,
             'stats' => [
-                'students' => User::query()->students()->active()->count(),
-                'teachers' => User::query()->teachers()->active()->count(),
-                'halaqat' => Halaqa::query()->active()->count(),
-                'sessions_week' => $this->sessionsThisWeek(HalaqaSession::query()),
-                'attendance_rate' => $this->reports->attendanceTotals(null, now()->subDays(29)->startOfDay(), now())['rate'],
-                'memorized_month' => (int) ProgressRecord::query()
+                'students' => User::query()->students()->active()->inAcademy($academyId)->count(),
+                'teachers' => User::query()->teachers()->active()->inAcademy($academyId)->count(),
+                'halaqat' => Halaqa::query()->active()->when($academyId !== null, fn (Builder $query) => $query->where('academy_id', $academyId))->count(),
+                'sessions_week' => $this->sessionsThisWeek($inHalaqat(HalaqaSession::query())),
+                'attendance_rate' => $this->reports->attendanceTotals($halaqaIds, now()->subDays(29)->startOfDay(), now())['rate'],
+                'memorized_month' => (int) $inHalaqat(ProgressRecord::query())
                     ->where('type', ProgressType::Memorization)
                     ->whereDate('recorded_on', '>=', now()->startOfMonth())
                     ->sum('ayahs_count'),
             ],
-            'attendanceTrend' => $this->reports->weeklyAttendance(null, $trendFrom, now()),
-            'memorizationTrend' => $this->reports->weeklyMemorization(null, $trendFrom, now()),
+            'platform' => $academyId === null ? [
+                'academies' => Academy::query()->active()->count(),
+                'independent_students' => User::query()->students()->whereNull('academy_id')->count(),
+                'join_requests' => AcademyJoinRequest::query()->pending()->count(),
+                'contact_messages' => ContactMessage::query()->unread()->count(),
+            ] : null,
+            'joinRequests' => $academyId !== null ? AcademyJoinRequest::query()->pending()->where('academy_id', $academyId)->count() : null,
+            'attendanceTrend' => $this->reports->weeklyAttendance($halaqaIds, $trendFrom, now()),
+            'memorizationTrend' => $this->reports->weeklyMemorization(null, $trendFrom, now(), $halaqaIds),
             'todaySessions' => SessionResource::collection($todaySessions)->resolve(),
             'recentRecords' => ProgressRecordResource::collection(
-                ProgressRecord::query()->with(['student', 'teacher', 'halaqa', 'groupRecords'])->latest('id')->limit(6)->get(),
+                $inHalaqat(ProgressRecord::query())->with(['student', 'teacher', 'halaqa', 'groupRecords'])->latest('id')->limit(6)->get(),
             )->resolve(),
-            'topStudents' => $this->topStudents(null),
-            'pendingSubmissions' => $this->pendingSubmissions(null),
+            'topStudents' => $this->topStudents($halaqaIds),
+            'pendingSubmissions' => $this->pendingSubmissions($halaqaIds),
+        ]);
+    }
+
+    /**
+     * A student who joined no academy: their own tools, and the academies they can join.
+     */
+    protected function independent(User $user): Response
+    {
+        $today = $this->deeds->today($user);
+
+        return Inertia::render('dashboard/independent', [
+            'mushafPage' => $user->mushaf_page,
+            'deeds' => $this->deeds->count($today->toDateString(), $user->deeds()->where('done_on', $today->toDateString())->get()),
+            'reminders' => $user->prayerReminders()->where('is_active', true)->pluck('prayer')->map(fn ($prayer): string => $prayer->value),
+            'joinRequest' => ($request = $user->joinRequests()->with('academy')->latest()->first()) ? (new JoinRequestResource($request))->resolve() : null,
+            'academies' => AcademyResource::collection(
+                Academy::query()->open()->withCount(['teachers', 'students', 'halaqat'])->orderByDesc('students_count')->limit(6)->get(),
+            )->resolve(),
         ]);
     }
 

@@ -33,7 +33,7 @@ class ChatController extends Controller
         $user = $request->user();
         $conversations = $this->chat->conversations($user);
 
-        if (! $user->isAdmin() && count($conversations) === 1) {
+        if (! $user->managesAcademies() && count($conversations) === 1) {
             return redirect()->route('chat.show', $conversations[0]['id']);
         }
 
@@ -86,7 +86,7 @@ class ChatController extends Controller
             'messages' => $messages->map(fn (Message $message): array => $message->toChatArray())->all(),
             'hasMore' => $hasMore,
             'members' => $members,
-            'canModerate' => $user->isAdmin() || $halaqa->teacher_id === $user->id,
+            'canModerate' => $user->managesAcademy($halaqa->academy_id) || $halaqa->teacher_id === $user->id,
         ]);
     }
 

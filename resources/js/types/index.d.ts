@@ -1,5 +1,5 @@
 export type Locale = 'ar' | 'en';
-export type Role = 'admin' | 'teacher' | 'student';
+export type Role = 'admin' | 'manager' | 'teacher' | 'student';
 export type Gender = 'male' | 'female';
 export type HalaqaGender = 'male' | 'female' | 'mixed';
 export type HalaqaLevel = 'beginner' | 'intermediate' | 'advanced';
@@ -19,6 +19,8 @@ export interface AuthUser {
     gender: Gender | null;
     avatar_url: string | null;
     timezone: string;
+    /** The academy of a manager, teacher or student (none for the administration and independent students). */
+    academy: { id: number; name: string; logo_url: string | null } | null;
 }
 
 export interface RealtimeConfig {
@@ -33,12 +35,14 @@ export interface RealtimeConfig {
 }
 
 export interface SharedProps {
-    app: { name: string; tagline: string | null; logo_url: string | null };
+    app: { name: string; tagline: string | null; logo_url: string | null; contact: { email: string | null; phone: string | null } };
     auth: { user: AuthUser | null };
     locale: Locale;
     timezone: string;
     csrf_token: string;
-    counts: { notifications: number; chat: number } | null;
+    counts: { notifications: number; chat: number; join_requests: number; contact_messages: number } | null;
+    /** The administration is inside an academy with the account of its manager. */
+    impersonating: { academy: string | null } | null;
     realtime: RealtimeConfig;
     /** VAPID key for push notifications; null when signed out or push is not set up. */
     push: { public_key: string | null };
@@ -89,6 +93,8 @@ export interface UserItem extends UserRef {
     email: string | null;
     phone: string | null;
     role: Role;
+    academy_id: number | null;
+    academy?: { id: number; name: string } | null;
     gender: Gender | null;
     avatar_url: string | null;
     is_active: boolean;
@@ -120,6 +126,8 @@ export interface ScheduleSlot {
 }
 
 export interface HalaqaItem extends HalaqaRef {
+    academy_id: number | null;
+    academy?: { id: number; name: string } | null;
     description: string | null;
     gender: HalaqaGender;
     level: HalaqaLevel | null;
@@ -421,4 +429,50 @@ export interface WeeklyAttendance {
     rate: number | null;
     attended: number;
     absent: number;
+}
+
+export interface AcademyItem {
+    id: number;
+    name: string;
+    slug: string;
+    tagline: string | null;
+    description: string | null;
+    logo_url: string | null;
+    email: string | null;
+    phone: string | null;
+    location: string | null;
+    gender: HalaqaGender;
+    timezone: string | null;
+    is_active: boolean;
+    accepts_requests: boolean;
+    archived: boolean;
+    created_at: string | null;
+    manager?: { id: number; name: string; email: string | null; phone: string | null; avatar_url: string | null; is_active: boolean } | null;
+    counts: { teachers: number | null; students: number | null; halaqat: number | null; pending_requests: number | null };
+}
+
+export type JoinRequestStatus = 'pending' | 'accepted' | 'rejected' | 'cancelled';
+
+export interface JoinRequestItem {
+    id: number;
+    status: JoinRequestStatus;
+    message: string | null;
+    response: string | null;
+    created_at: string | null;
+    decided_at: string | null;
+    academy?: { id: number; name: string; slug: string; logo_url: string | null } | null;
+    user?: { id: number; name: string; email: string | null; phone: string | null; gender: Gender | null; avatar_url: string | null; country: string | null } | null;
+    decider?: { id: number; name: string } | null;
+}
+
+export interface ContactMessageItem {
+    id: number;
+    name: string;
+    email: string | null;
+    phone: string | null;
+    subject: string | null;
+    message: string;
+    read_at: string | null;
+    created_at: string | null;
+    user_id: number | null;
 }

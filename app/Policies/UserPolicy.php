@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Enums\UserRole;
 use App\Models\Halaqa;
 use App\Models\User;
 
@@ -12,7 +13,7 @@ class UserPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->isAdmin();
+        return $user->managesAcademies();
     }
 
     /**
@@ -20,7 +21,7 @@ class UserPolicy
      */
     public function view(User $user, User $model): bool
     {
-        return $user->isAdmin();
+        return $this->manages($user, $model) || $user->is($model);
     }
 
     /**
@@ -28,7 +29,7 @@ class UserPolicy
      */
     public function create(User $user): bool
     {
-        return $user->isAdmin();
+        return $user->managesAcademies();
     }
 
     /**
@@ -36,7 +37,7 @@ class UserPolicy
      */
     public function update(User $user, User $model): bool
     {
-        return $user->isAdmin();
+        return $this->manages($user, $model);
     }
 
     /**
@@ -44,7 +45,7 @@ class UserPolicy
      */
     public function delete(User $user, User $model): bool
     {
-        return $user->isAdmin() && $user->id !== $model->id;
+        return $this->manages($user, $model) && $user->id !== $model->id;
     }
 
     /**
@@ -56,7 +57,7 @@ class UserPolicy
             return false;
         }
 
-        if ($user->isAdmin() || $user->id === $student->id) {
+        if ($this->manages($user, $student) || $user->id === $student->id) {
             return true;
         }
 
@@ -68,7 +69,23 @@ class UserPolicy
      */
     public function recordProgress(User $user, User $student): bool
     {
-        return $student->isStudent() && ($user->isAdmin() || $this->teaches($user, $student));
+        return $student->isStudent() && ($this->manages($user, $student) || $this->teaches($user, $student));
+    }
+
+    /**
+     * The administration manages every account; an academy manager the teachers and students of
+     * their academy.
+     */
+    protected function manages(User $user, User $model): bool
+    {
+        if ($user->isAdmin()) {
+            return true;
+        }
+
+        return $user->isManager()
+            && $user->academy_id !== null
+            && $model->academy_id === $user->academy_id
+            && $model->hasRole(UserRole::Teacher, UserRole::Student);
     }
 
     protected function teaches(User $teacher, User $student): bool

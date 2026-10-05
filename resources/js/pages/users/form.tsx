@@ -1,5 +1,5 @@
 import { useForm } from '@inertiajs/react';
-import { Bell, BookOpen, GraduationCap, KeyRound, Save, ShieldCheck, UserRound, Wand2 } from 'lucide-react';
+import { Bell, BookOpen, GraduationCap, KeyRound, Save, School, ShieldCheck, UserRound, Wand2 } from 'lucide-react';
 import { type FormEvent, useMemo } from 'react';
 import { AvatarUpload } from '@/components/ui/avatar-upload';
 import { Button, LinkButton } from '@/components/ui/button';
@@ -15,6 +15,7 @@ import type { Gender, HalaqaGender, Locale, Role, UserDetails } from '@/types';
 
 interface HalaqaOption {
     id: number;
+    academy_id: number | null;
     name: string;
     color: string;
     gender: HalaqaGender;
@@ -24,18 +25,23 @@ interface HalaqaOption {
 }
 
 interface UserFormProps {
-    user: (UserDetails & { halaqat: number[] }) | null;
-    defaults: { role: Role; timezone: string; locale: Locale; halaqa_id: number | null } | null;
+    user: (UserDetails & { academy_id: number | null; halaqat: number[] }) | null;
+    defaults: { role: Role; academy_id: number | null; timezone: string; locale: Locale; halaqa_id: number | null } | null;
     halaqat: HalaqaOption[];
+    /** The academies the administration chooses from (empty for a manager, whose accounts join their academy). */
+    academies: { id: number; name: string }[];
+    /** The roles the signed-in user may give. */
+    roles: Role[];
     timezones: string[];
 }
 
-const roleIcons = { student: GraduationCap, teacher: BookOpen, admin: ShieldCheck };
+const roleIcons = { student: GraduationCap, teacher: BookOpen, manager: School, admin: ShieldCheck };
 
-export default function UserForm({ user, defaults, halaqat, timezones }: UserFormProps) {
+export default function UserForm({ user, defaults, halaqat, academies, roles, timezones }: UserFormProps) {
     const { t } = useTrans();
     const labels = useLabels();
     const editing = user !== null;
+    const choosesAcademy = academies.length > 0;
 
     const form = useForm({
         _method: editing ? 'put' : 'post',
@@ -44,6 +50,7 @@ export default function UserForm({ user, defaults, halaqat, timezones }: UserFor
         phone: user?.phone ?? '',
         password: '',
         role: user?.role ?? defaults?.role ?? ('student' as Role),
+        academy_id: user?.academy_id ?? defaults?.academy_id ?? ('' as number | ''),
         gender: user?.gender ?? ('' as Gender | ''),
         birth_date: user?.birth_date ?? '',
         country: user?.country ?? '',
@@ -66,6 +73,7 @@ export default function UserForm({ user, defaults, halaqat, timezones }: UserFor
     const halaqaOptions = useMemo(
         () =>
             halaqat
+                .filter((halaqa) => !choosesAcademy || halaqa.academy_id === form.data.academy_id)
                 .filter((halaqa) => halaqa.gender === 'mixed' || !form.data.gender || halaqa.gender === form.data.gender)
                 .map((halaqa) => ({
                     id: halaqa.id,
@@ -74,7 +82,7 @@ export default function UserForm({ user, defaults, halaqat, timezones }: UserFor
                         .filter(Boolean)
                         .join(' · '),
                 })),
-        [halaqat, form.data.gender, t],
+        [halaqat, choosesAcademy, form.data.academy_id, form.data.gender, t],
     );
 
     const submit = (event: FormEvent) => {
@@ -97,8 +105,8 @@ export default function UserForm({ user, defaults, halaqat, timezones }: UserFor
                         <CardHeader title={t('Account')} icon={KeyRound} />
                         <CardBody className="space-y-5">
                             <Field label={t('Role')} error={form.errors.role}>
-                                <div className="grid grid-cols-3 gap-2">
-                                    {(['student', 'teacher', 'admin'] as const).map((role) => {
+                                <div className={cn('grid gap-2', roles.length > 3 ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-2')}>
+                                    {roles.map((role) => {
                                         const Icon = roleIcons[role];
 
                                         return (
@@ -120,6 +128,34 @@ export default function UserForm({ user, defaults, halaqat, timezones }: UserFor
                                     })}
                                 </div>
                             </Field>
+
+                            {choosesAcademy && form.data.role !== 'admin' && (
+                                <Field
+                                    label={t('Academy')}
+                                    error={form.errors.academy_id}
+                                    required={form.data.role !== 'student'}
+                                    hint={form.data.role === 'student' ? t('Leave empty for a student who studies on their own, without academy.') : undefined}
+                                >
+                                    <Select
+                                        value={form.data.academy_id}
+                                        onChange={(event) =>
+                                            form.setData((data) => ({
+                                                ...data,
+                                                academy_id: event.target.value === '' ? '' : Number(event.target.value),
+                                                halaqat: [],
+                                            }))
+                                        }
+                                        aria-invalid={!!form.errors.academy_id}
+                                    >
+                                        <option value="">{form.data.role === 'student' ? t('Without academy (independent)') : t('Choose the academy')}</option>
+                                        {academies.map((academy) => (
+                                            <option key={academy.id} value={academy.id}>
+                                                {academy.name}
+                                            </option>
+                                        ))}
+                                    </Select>
+                                </Field>
+                            )}
 
                             <div className="grid gap-5 sm:grid-cols-2">
                                 <Field label={t('Full name')} error={form.errors.name} required className="sm:col-span-2">
@@ -213,7 +249,11 @@ export default function UserForm({ user, defaults, halaqat, timezones }: UserFor
                                         value={form.data.halaqat}
                                         onChange={(ids) => form.setData('halaqat', ids)}
                                         showAvatars={false}
-                                        emptyText={t('No active halaqat match this student.')}
+                                        emptyText={
+                                            choosesAcademy && form.data.academy_id === ''
+                                                ? t('Choose the academy first to list its halaqat.')
+                                                : t('No active halaqat match this student.')
+                                        }
                                     />
                                 </Field>
                             </CardBody>

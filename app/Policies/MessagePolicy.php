@@ -12,7 +12,7 @@ class MessagePolicy
      */
     public function delete(User $user, Message $message): bool
     {
-        return $user->isAdmin()
+        return $user->managesAcademy($message->halaqa?->academy_id)
             || $message->user_id === $user->id
             || ($user->isTeacher() && $message->halaqa?->teacher_id === $user->id);
     }

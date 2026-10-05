@@ -25,7 +25,8 @@ class HalaqaStudentController extends Controller
 
         $validated = $request->validate([
             'student_ids' => ['required', 'array', 'min:1'],
-            'student_ids.*' => ['integer', Rule::exists('users', 'id')->where('role', UserRole::Student->value)],
+            // Students of the halaqa's academy only.
+            'student_ids.*' => ['integer', Rule::exists('users', 'id')->where('role', UserRole::Student->value)->where('academy_id', $halaqa->academy_id)],
         ]);
 
         $current = $halaqa->students()->pluck('users.id');

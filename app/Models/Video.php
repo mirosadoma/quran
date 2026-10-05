@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['halaqa_id', 'title', 'description', 'url', 'youtube_id', 'is_published', 'created_by'])]
+#[Fillable(['academy_id', 'halaqa_id', 'title', 'description', 'url', 'youtube_id', 'is_published', 'created_by'])]
 class Video extends Model
 {
     /** @use HasFactory<VideoFactory> */
@@ -45,6 +45,16 @@ class Video extends Model
     }
 
     /**
+     * The academy whose library holds the video (none: the platform's library, shown to everyone).
+     *
+     * @return BelongsTo<Academy, $this>
+     */
+    public function academy(): BelongsTo
+    {
+        return $this->belongsTo(Academy::class)->withTrashed();
+    }
+
+    /**
      * @return BelongsTo<Halaqa, $this>
      */
     public function halaqa(): BelongsTo
@@ -61,7 +71,8 @@ class Video extends Model
     }
 
     /**
-     * Videos the user may watch: the general library plus their halaqat.
+     * Videos the user may watch: the platform's library, the general library of their academy, and
+     * their halaqat.
      */
     #[Scope]
     protected function visibleTo(Builder $query, User $user): void
@@ -71,12 +82,24 @@ class Video extends Model
         }
 
         $query->where(function (Builder $query) use ($user): void {
-            $query->whereNull('halaqa_id')
+            $query->where(fn (Builder $query) => $query->whereNull('academy_id')->whereNull('halaqa_id'))
+                ->when($user->academy_id !== null, fn (Builder $query) => $query->orWhere(
+                    fn (Builder $query) => $query->where('academy_id', $user->academy_id)->whereNull('halaqa_id'),
+                ))
                 ->orWhereIn('halaqa_id', $user->accessibleHalaqat()->select('id'));
         });
 
         if ($user->isStudent()) {
             $query->where('is_published', true);
         }
+    }
+
+    /**
+     * The platform's published library, shown on the public site.
+     */
+    #[Scope]
+    protected function public(Builder $query): void
+    {
+        $query->whereNull('academy_id')->whereNull('halaqa_id')->where('is_published', true);
     }
 }

@@ -14,6 +14,7 @@ use App\Http\Resources\ProgressRecordResource;
 use App\Http\Resources\RecitationSubmissionResource;
 use App\Http\Resources\SessionResource;
 use App\Http\Resources\VideoResource;
+use App\Models\Academy;
 use App\Models\Halaqa;
 use App\Models\HalaqaSession;
 use App\Models\Setting;
@@ -51,14 +52,16 @@ class HalaqaController extends Controller
         $search = trim((string) $request->query('search'));
         $status = in_array($request->query('status'), ['active', 'archived', 'all'], true) ? $request->query('status') : 'active';
         $teacherId = $request->integer('teacher_id') ?: null;
+        $academyId = $user->isAdmin() ? ($request->integer('academy_id') ?: null) : null;
 
         $halaqat = Halaqa::query()
             ->visibleTo($user)
+            ->when($academyId, fn (Builder $query, int $id) => $query->where('academy_id', $id))
             ->when($search !== '', fn (Builder $query) => $query->where('name', 'like', "%{$search}%"))
             ->when($status === 'active', fn (Builder $query) => $query->where('is_active', true))
             ->when($status === 'archived', fn (Builder $query) => $query->where('is_active', false))
             ->when($teacherId, fn (Builder $query, int $id) => $query->where('teacher_id', $id))
-            ->with(['teacher', 'sessions' => fn ($query) => $query->upcoming()->orderBy('starts_at')->limit(1)])
+            ->with(['academy', 'teacher', 'sessions' => fn ($query) => $query->upcoming()->orderBy('starts_at')->limit(1)])
             ->withCount('students')
             ->orderByDesc('is_active')
             ->orderBy('name')
@@ -67,8 +70,11 @@ class HalaqaController extends Controller
 
         return Inertia::render('halaqat/index', [
             'halaqat' => $this->paginated($halaqat, HalaqaResource::class),
-            'filters' => ['search' => $search, 'status' => $status, 'teacher_id' => $teacherId],
-            'teachers' => $user->isAdmin() ? User::query()->teachers()->orderBy('name')->get(['id', 'name']) : [],
+            'filters' => ['search' => $search, 'status' => $status, 'teacher_id' => $teacherId, 'academy_id' => $academyId],
+            'teachers' => $user->managesAcademies()
+                ? User::query()->teachers()->inAcademy($user->isManager() ? $user->academy_id : $academyId)->orderBy('name')->get(['id', 'name'])
+                : [],
+            'academies' => $user->isAdmin() ? Academy::query()->orderBy('name')->get(['id', 'name']) : [],
             'can' => ['create' => $user->can('create', Halaqa::class)],
         ]);
     }
@@ -82,7 +88,7 @@ class HalaqaController extends Controller
 
         return Inertia::render('halaqat/form', [
             'halaqa' => null,
-            ...$this->formOptions(),
+            ...$this->formOptions(request()->user()),
         ]);
     }
 
@@ -91,7 +97,10 @@ class HalaqaController extends Controller
      */
     public function store(HalaqaRequest $request): RedirectResponse
     {
-        $halaqa = Halaqa::query()->create($request->safe()->except('student_ids'));
+        $halaqa = Halaqa::query()->create([
+            ...$request->safe()->except(['student_ids', 'academy_id']),
+            'academy_id' => $request->academyId(),
+        ]);
 
         $this->syncStudents($halaqa, $request->input('student_ids', []));
         $created = $this->scheduler->generate($halaqa);
@@ -169,7 +178,7 @@ class HalaqaController extends Controller
                     ->where('starts_at', '>=', $monthAgo)
                     ->count(),
             ],
-            'availableStudents' => $user->isAdmin() ? $this->availableStudents($halaqa) : [],
+            'availableStudents' => $user->managesAcademy($halaqa->academy_id) ? $this->availableStudents($halaqa) : [],
             'submissions' => RecitationSubmissionResource::collection(
                 $halaqa->recitationSubmissions()
                     ->when(! $canManage, fn (Builder $query) => $query->where('student_id', $user->id))
@@ -230,7 +239,7 @@ class HalaqaController extends Controller
                 'meeting_url' => $halaqa->meeting_url,
                 'student_ids' => $halaqa->students()->pluck('users.id'),
             ],
-            ...$this->formOptions(),
+            ...$this->formOptions(request()->user(), $halaqa),
         ]);
     }
 
@@ -239,7 +248,7 @@ class HalaqaController extends Controller
      */
     public function update(HalaqaRequest $request, Halaqa $halaqa): RedirectResponse
     {
-        $halaqa->fill($request->safe()->except('student_ids'));
+        $halaqa->fill($request->safe()->except(['student_ids', 'academy_id']));
 
         $scheduleChanged = $halaqa->isDirty(['schedule', 'duration_minutes', 'timezone', 'meeting_provider', 'starts_on', 'is_active']);
         $teacherChanged = $halaqa->isDirty('teacher_id');
@@ -305,18 +314,24 @@ class HalaqaController extends Controller
     /**
      * @return array<string, mixed>
      */
-    protected function formOptions(): array
+    protected function formOptions(User $user, ?Halaqa $halaqa = null): array
     {
+        // A manager sees their academy; the administration every academy, the form keeps the chosen one.
+        $academyId = $halaqa?->academy_id ?? ($user->isManager() ? $user->academy_id : null);
+
         return [
-            'teachers' => User::query()->teachers()->active()->orderBy('name')->get(['id', 'name', 'gender'])
-                ->map(fn (User $teacher): array => ['id' => $teacher->id, 'name' => $teacher->name, 'gender' => $teacher->gender?->value]),
-            'students' => User::query()->students()->active()->withCount('halaqat')->orderBy('name')->get()
+            'academies' => $user->isAdmin() && $halaqa === null ? Academy::query()->active()->orderBy('name')->get(['id', 'name']) : [],
+            'academyId' => $academyId ?? (request()->integer('academy_id') ?: null),
+            'teachers' => User::query()->teachers()->active()->inAcademy($academyId)->orderBy('name')->get(['id', 'name', 'gender', 'academy_id'])
+                ->map(fn (User $teacher): array => ['id' => $teacher->id, 'name' => $teacher->name, 'gender' => $teacher->gender?->value, 'academy_id' => $teacher->academy_id]),
+            'students' => User::query()->students()->active()->inAcademy($academyId)->whereNotNull('academy_id')->withCount('halaqat')->orderBy('name')->get()
                 ->map(fn (User $student): array => [
                     'id' => $student->id,
                     'name' => $student->name,
                     'gender' => $student->gender?->value,
                     'avatar_url' => $student->avatar_url,
                     'halaqat_count' => $student->halaqat_count,
+                    'academy_id' => $student->academy_id,
                 ]),
             'providers' => $this->meetings->providers(),
             'timezones' => DateTimeZone::listIdentifiers(),
@@ -340,6 +355,7 @@ class HalaqaController extends Controller
         return User::query()
             ->students()
             ->active()
+            ->where('academy_id', $halaqa->academy_id)
             ->whereNotIn('id', $halaqa->students()->select('users.id'))
             ->when($halaqa->gender !== HalaqaGender::Mixed, fn (Builder $query) => $query->where(
                 fn (Builder $query) => $query->whereNull('gender')->orWhere('gender', $halaqa->gender->value),

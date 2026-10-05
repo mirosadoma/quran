@@ -122,7 +122,7 @@ class SessionMeetingController extends Controller
     protected function startsOnJoin(HalaqaSession $session, User $user): bool
     {
         if ($session->teacher_id === null && $session->halaqa->teacher_id === null) {
-            return $user->isAdmin();
+            return $user->managesAcademy($session->halaqa->academy_id);
         }
 
         return $user->id === $session->teacher_id || $user->id === $session->halaqa->teacher_id;

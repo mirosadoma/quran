@@ -7,6 +7,7 @@ use App\Enums\HalaqaGender;
 use App\Enums\HalaqaLevel;
 use App\Enums\MeetingProvider;
 use App\Enums\UserRole;
+use App\Models\Halaqa;
 use App\Models\User;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -27,7 +28,24 @@ class HalaqaRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return (bool) $this->user()?->isAdmin();
+        $halaqa = $this->route('halaqa');
+
+        return $halaqa instanceof Halaqa ? $this->user()->can('update', $halaqa) : $this->user()->can('create', Halaqa::class);
+    }
+
+    /**
+     * The academy of the halaqa: the manager's own, chosen by the administration for a new halaqa,
+     * and fixed once the halaqa exists.
+     */
+    public function academyId(): ?int
+    {
+        $halaqa = $this->route('halaqa');
+
+        return match (true) {
+            $halaqa instanceof Halaqa => $halaqa->academy_id,
+            $this->user()->isManager() => $this->user()->academy_id,
+            default => $this->integer('academy_id') ?: null,
+        };
     }
 
     /**
@@ -38,9 +56,15 @@ class HalaqaRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'academy_id' => [
+                $this->user()->isAdmin() && ! $this->route('halaqa') ? 'required' : 'nullable',
+                'integer',
+                Rule::exists('academies', 'id')->whereNull('deleted_at'),
+            ],
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:2000'],
-            'teacher_id' => ['nullable', 'integer', Rule::exists('users', 'id')->where('role', UserRole::Teacher->value)],
+            // Teachers and students of the halaqa's academy.
+            'teacher_id' => ['nullable', 'integer', Rule::exists('users', 'id')->where('role', UserRole::Teacher->value)->where('academy_id', $this->academyId())],
             'gender' => ['required', Rule::enum(HalaqaGender::class)],
             'level' => ['nullable', Rule::enum(HalaqaLevel::class)],
             'capacity' => ['nullable', 'integer', 'min:1', 'max:500'],
@@ -55,7 +79,7 @@ class HalaqaRequest extends FormRequest
             'starts_on' => ['nullable', 'date'],
             'is_active' => ['boolean'],
             'student_ids' => ['array'],
-            'student_ids.*' => ['integer', Rule::exists('users', 'id')->where('role', UserRole::Student->value)],
+            'student_ids.*' => ['integer', Rule::exists('users', 'id')->where('role', UserRole::Student->value)->where('academy_id', $this->academyId())],
         ];
     }
 

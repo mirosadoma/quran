@@ -10,10 +10,14 @@ import {
     CheckCheck,
     CircleCheck,
     CirclePlay,
+    Mail,
     Megaphone,
     MoonStar,
     Sun,
+    UserCheck,
+    UserPlus,
     Users,
+    UserX,
     Video,
     type LucideIcon,
 } from 'lucide-react';
@@ -38,6 +42,10 @@ export const notificationIcons: Record<string, LucideIcon> = {
     megaphone: Megaphone,
     'moon-star': MoonStar,
     sun: Sun,
+    'user-plus': UserPlus,
+    'user-check': UserCheck,
+    'user-x': UserX,
+    mail: Mail,
     bell: Bell,
 };
 

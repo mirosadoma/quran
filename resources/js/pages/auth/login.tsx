@@ -1,5 +1,5 @@
 import { Link, useForm } from '@inertiajs/react';
-import { GraduationCap, LogIn, ShieldCheck, UserRound } from 'lucide-react';
+import { GraduationCap, LogIn, School, ShieldCheck, UserPlus, UserRound } from 'lucide-react';
 import type { FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { Checkbox, Field, Input, Label } from '@/components/ui/form';
@@ -14,7 +14,7 @@ interface LoginProps {
     demoAccounts: { role: Role; login: string }[];
 }
 
-const roleIcons = { admin: ShieldCheck, teacher: GraduationCap, student: UserRound };
+const roleIcons = { admin: ShieldCheck, manager: School, teacher: GraduationCap, student: UserRound };
 
 export default function Login({ status, demoAccounts }: LoginProps) {
     const { t } = useTrans();
@@ -77,14 +77,20 @@ export default function Login({ status, demoAccounts }: LoginProps) {
                 </Button>
             </form>
 
-            <p className="mt-6 text-center text-sm text-muted">{t('Accounts are created by the academy administration.')}</p>
+            <p className="mt-6 text-center text-sm text-muted">
+                {t('New here?')}{' '}
+                <Link href={route('register')} className="inline-flex items-center gap-1 font-semibold text-primary-700 hover:underline dark:text-primary-300">
+                    <UserPlus className="size-4" />
+                    {t('Create a free account')}
+                </Link>
+            </p>
 
             {demoAccounts.length > 0 && (
                 <div className="mt-8 rounded-2xl border border-dashed border-gold-300 bg-gold-50/60 p-4 dark:border-gold-500/30 dark:bg-gold-500/5">
                     <p className="text-xs font-semibold text-gold-800 dark:text-gold-300">
                         {t('Demo accounts (password: :password)', { password: 'password' })}
                     </p>
-                    <div className="mt-3 grid grid-cols-3 gap-2">
+                    <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
                         {demoAccounts.map((account) => {
                             const Icon = roleIcons[account.role];
 

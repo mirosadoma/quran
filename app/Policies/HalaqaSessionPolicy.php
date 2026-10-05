@@ -28,7 +28,7 @@ class HalaqaSessionPolicy
      */
     public function create(User $user): bool
     {
-        return $user->isAdmin() || $user->isTeacher();
+        return $user->managesAcademies() || $user->isTeacher();
     }
 
     /**

@@ -18,7 +18,7 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         User::query()->updateOrCreate(['email' => 'admin@rattil.test'], [
-            'name' => 'إدارة الأكاديمية',
+            'name' => 'إدارة المنصة',
             'phone' => '+201000000000',
             'password' => 'password',
             'role' => UserRole::Admin,
@@ -40,9 +40,13 @@ class DatabaseSeeder extends Seeder
 
         if (app()->environment('local')) {
             $this->call([
+                AcademySeeder::class,
                 DemoSeeder::class,
                 RecitationSubmissionSeeder::class,
                 HalaqaAnnouncementSeeder::class,
+                DeedSeeder::class,
+                AcademyJoinRequestSeeder::class,
+                ContactMessageSeeder::class,
             ]);
         }
     }

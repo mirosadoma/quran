@@ -20,7 +20,7 @@ use Illuminate\Support\Facades\DB;
 
 #[Table('halaqat')]
 #[Fillable([
-    'name', 'description', 'teacher_id', 'gender', 'level', 'capacity', 'schedule', 'duration_minutes',
+    'academy_id', 'name', 'description', 'teacher_id', 'gender', 'level', 'capacity', 'schedule', 'duration_minutes',
     'timezone', 'meeting_provider', 'meeting_url', 'color', 'starts_on', 'is_active',
 ])]
 class Halaqa extends Model
@@ -45,6 +45,14 @@ class Halaqa extends Model
             'starts_on' => 'date',
             'is_active' => 'boolean',
         ];
+    }
+
+    /**
+     * @return BelongsTo<Academy, $this>
+     */
+    public function academy(): BelongsTo
+    {
+        return $this->belongsTo(Academy::class)->withTrashed();
     }
 
     /**
@@ -119,6 +127,7 @@ class Halaqa extends Model
     {
         match ($user->role) {
             UserRole::Admin => null,
+            UserRole::Manager => $query->where('academy_id', $user->academy_id),
             UserRole::Teacher => $query->where('teacher_id', $user->id),
             UserRole::Student => $query->whereIn(
                 'id',
@@ -134,12 +143,14 @@ class Halaqa extends Model
     }
 
     /**
-     * Determine whether the user belongs to this halaqa (admins always do).
+     * Determine whether the user belongs to this halaqa (the administration and the manager of its
+     * academy always do).
      */
     public function hasMember(User $user): bool
     {
         return match ($user->role) {
             UserRole::Admin => true,
+            UserRole::Manager => $user->academy_id !== null && $this->academy_id === $user->academy_id,
             UserRole::Teacher => $this->teacher_id === $user->id,
             UserRole::Student => in_array($this->id, $user->enrolledHalaqaIds(), true),
         };

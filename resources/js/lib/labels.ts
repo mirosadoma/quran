@@ -6,6 +6,7 @@ import type {
     Grade,
     HalaqaGender,
     HalaqaLevel,
+    JoinRequestStatus,
     MeetingProvider,
     ProgressType,
     Role,
@@ -38,8 +39,16 @@ export const sessionTone: Record<SessionStatus, Tone> = {
 
 export const roleTone: Record<Role, Tone> = {
     admin: 'violet',
+    manager: 'sky',
     teacher: 'gold',
     student: 'emerald',
+};
+
+export const joinRequestTone: Record<JoinRequestStatus, Tone> = {
+    pending: 'amber',
+    accepted: 'emerald',
+    rejected: 'rose',
+    cancelled: 'slate',
 };
 
 export const grades: Grade[] = ['excellent', 'very_good', 'good', 'acceptable', 'weak'];
@@ -55,6 +64,7 @@ export function useLabels() {
         () => ({
             role: {
                 admin: t('Admin'),
+                manager: t('Academy manager'),
                 teacher: t('Teacher'),
                 student: t('Student'),
             } satisfies Record<Role, string>,
@@ -95,6 +105,12 @@ export function useLabels() {
                 acceptable: t('Acceptable'),
                 weak: t('Needs repetition'),
             } satisfies Record<Grade, string>,
+            joinRequest: {
+                pending: t('Waiting for an answer'),
+                accepted: t('Accepted'),
+                rejected: t('Declined'),
+                cancelled: t('Cancelled'),
+            } satisfies Record<JoinRequestStatus, string>,
             provider: {
                 google_meet: 'Google Meet',
                 zoom: 'Zoom',

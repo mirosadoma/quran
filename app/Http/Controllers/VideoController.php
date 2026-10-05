@@ -43,7 +43,7 @@ class VideoController extends Controller
             : null;
 
         $manageable = match (true) {
-            $user->isAdmin() => Halaqa::query()->orderBy('name')->get(['id', 'name', 'color']),
+            $user->managesAcademies() => $user->accessibleHalaqat()->orderBy('name')->get(['id', 'name', 'color']),
             $user->isTeacher() => $user->teachingHalaqat()->orderBy('name')->get(['id', 'name', 'color']),
             default => collect(),
         };
@@ -56,7 +56,7 @@ class VideoController extends Controller
             'openVideo' => $openVideo ? (new VideoResource($openVideo))->resolve() : null,
             'can' => [
                 'create' => $user->can('create', Video::class),
-                'general' => $user->isAdmin(),
+                'general' => $user->managesAcademies(),
             ],
         ]);
     }
@@ -71,6 +71,7 @@ class VideoController extends Controller
             'description' => $request->input('description'),
             'url' => $request->input('url'),
             'youtube_id' => Video::youtubeId($request->input('url')),
+            'academy_id' => $this->academyOf($request),
             'halaqa_id' => $request->integer('halaqa_id') ?: null,
             'is_published' => $request->boolean('is_published', true),
             'created_by' => $request->user()->id,
@@ -99,6 +100,7 @@ class VideoController extends Controller
             'description' => $request->input('description'),
             'url' => $request->input('url'),
             'youtube_id' => Video::youtubeId($request->input('url')),
+            'academy_id' => $this->academyOf($request, $video),
             'halaqa_id' => $request->integer('halaqa_id') ?: null,
             'is_published' => $request->boolean('is_published', true),
         ]);
@@ -126,11 +128,24 @@ class VideoController extends Controller
         return back();
     }
 
+    /**
+     * The library of the video: its halaqa's academy; otherwise the platform's library for the
+     * administration (or the library it already was in), the manager's academy for a manager.
+     */
+    protected function academyOf(VideoRequest $request, ?Video $video = null): ?int
+    {
+        if ($request->integer('halaqa_id')) {
+            return Halaqa::query()->whereKey($request->integer('halaqa_id'))->value('academy_id');
+        }
+
+        return $request->user()->isAdmin() ? $video?->academy_id : $request->user()->academy_id;
+    }
+
     protected function notifyStudents(Video $video): void
     {
         $students = $video->halaqa_id
             ? $video->halaqa->students()->active()->get()
-            : User::query()->students()->active()->get();
+            : User::query()->students()->active()->inAcademy($video->academy_id)->get();
 
         $this->notifier->send($students, new VideoPublished($video));
     }

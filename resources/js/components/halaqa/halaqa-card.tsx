@@ -1,5 +1,5 @@
 import { Link } from '@inertiajs/react';
-import { Archive, CalendarDays, Users } from 'lucide-react';
+import { Archive, Building2, CalendarDays, Users } from 'lucide-react';
 import { IslamicPattern } from '@/components/brand';
 import { ScheduleChips } from '@/components/halaqa/schedule-chips';
 import { Avatar } from '@/components/ui/avatar';
@@ -10,7 +10,7 @@ import { useLabels } from '@/lib/labels';
 import { cn, colorOf } from '@/lib/utils';
 import type { HalaqaItem } from '@/types';
 
-export function HalaqaCard({ halaqa }: { halaqa: HalaqaItem }) {
+export function HalaqaCard({ halaqa, showAcademy = false }: { halaqa: HalaqaItem; showAcademy?: boolean }) {
     const { t } = useTrans();
     const labels = useLabels();
     const dates = useDates();
@@ -57,9 +57,17 @@ export function HalaqaCard({ halaqa }: { halaqa: HalaqaItem }) {
                     <p className="mb-1 truncate text-xs text-muted">{halaqa.teacher?.name ?? t('No teacher assigned')}</p>
                 </div>
 
-                <h3 className="text-lg font-bold leading-snug text-ink transition group-hover:text-primary-700 dark:group-hover:text-primary-300">
-                    {halaqa.name}
-                </h3>
+                <div>
+                    <h3 className="text-lg font-bold leading-snug text-ink transition group-hover:text-primary-700 dark:group-hover:text-primary-300">
+                        {halaqa.name}
+                    </h3>
+                    {showAcademy && halaqa.academy && (
+                        <p className="mt-1 flex items-center gap-1.5 text-xs font-medium text-muted">
+                            <Building2 className="size-3.5 shrink-0" />
+                            <span className="truncate">{halaqa.academy.name}</span>
+                        </p>
+                    )}
+                </div>
 
                 <ScheduleChips schedule={halaqa.schedule} compact />
 

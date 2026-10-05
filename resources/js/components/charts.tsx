@@ -5,6 +5,9 @@ import {
     Bar,
     BarChart,
     CartesianGrid,
+    ComposedChart,
+    Line,
+    ReferenceLine,
     ResponsiveContainer,
     Tooltip,
     XAxis,
@@ -13,6 +16,7 @@ import {
 import { useTheme } from '@/hooks/use-theme';
 import { useDates } from '@/lib/dates';
 import { useTrans } from '@/lib/i18n';
+import type { DayCounts } from '@/lib/deeds';
 import { cn, formatNumber } from '@/lib/utils';
 import type { WeeklyAttendance, WeeklyMemorization } from '@/types';
 
@@ -195,6 +199,95 @@ export function MemorizationTrendChart({ data, className }: { data: WeeklyMemori
                             <Bar dataKey="memorized" fill={colors.first} radius={[4, 4, 0, 0]} maxBarSize={22} />
                             <Bar dataKey="revised" fill={colors.second} radius={[4, 4, 0, 0]} maxBarSize={22} />
                         </BarChart>
+                    </ResponsiveContainer>
+                </div>
+            )}
+        </div>
+    );
+}
+
+/**
+ * Day by day: good deeds and repented sins rise above the line, sins not repented of yet go below
+ * it, and the net line shows whether the days get better or worse.
+ */
+export function DeedsTrendChart({ data, className }: { data: DayCounts[]; className?: string }) {
+    const { t, locale } = useTrans();
+    const dates = useDates();
+    const colors = useChartColors();
+    const { isDark } = useTheme();
+    const [table, setTable] = useState(false);
+    const negative = isDark ? '#e0607a' : '#c8344f';
+    const label = (value: string) => dates.day(value, { year: undefined });
+    const hasData = data.some((day) => day.good + day.bad > 0);
+    const rows = data.map((day) => ({ ...day, positive: day.good + day.repented, negative: -day.unrepented }));
+
+    return (
+        <div className={className}>
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted">
+                    <span className="inline-flex items-center gap-1.5">
+                        <span className="size-2.5 rounded-sm" style={{ backgroundColor: colors.first }} />
+                        {t('Good deeds and repented sins')}
+                    </span>
+                    <span className="inline-flex items-center gap-1.5">
+                        <span className="size-2.5 rounded-sm" style={{ backgroundColor: negative }} />
+                        {t('Sins not repented of yet')}
+                    </span>
+                    <span className="inline-flex items-center gap-1.5">
+                        <span className="h-0.5 w-3 rounded-full" style={{ backgroundColor: colors.second }} />
+                        {t('Net')}
+                    </span>
+                </div>
+                <DataToggle open={table} onToggle={() => setTable((value) => !value)} />
+            </div>
+            {table ? (
+                <DataTable
+                    headers={[t('Day'), t('Good deeds'), t('Sins'), t('Repented'), t('Not repented yet'), t('Net')]}
+                    rows={data.map((day) => [
+                        label(day.date),
+                        formatNumber(day.good, locale),
+                        formatNumber(day.bad, locale),
+                        formatNumber(day.repented, locale),
+                        formatNumber(day.unrepented, locale),
+                        formatNumber(day.net, locale),
+                    ])}
+                />
+            ) : !hasData ? (
+                <p className="flex h-64 items-center justify-center text-center text-sm text-muted">{t('Nothing recorded in this period yet.')}</p>
+            ) : (
+                <div className="h-64" dir="ltr">
+                    <ResponsiveContainer width="100%" height="100%">
+                        <ComposedChart data={rows} margin={{ top: 8, right: 8, bottom: 0, left: -18 }} stackOffset="sign" barCategoryGap="24%">
+                            <CartesianGrid vertical={false} stroke={colors.grid} />
+                            <XAxis dataKey="date" tickFormatter={label} tick={{ fill: colors.axis, fontSize: 11 }} tickLine={false} axisLine={false} minTickGap={12} />
+                            <YAxis allowDecimals={false} tick={{ fill: colors.axis, fontSize: 11 }} tickLine={false} axisLine={false} />
+                            <ReferenceLine y={0} stroke={colors.axis} strokeOpacity={0.5} />
+                            <Tooltip
+                                cursor={{ fill: colors.grid, opacity: 0.5 }}
+                                content={({ active, payload }) => {
+                                    const day = payload?.[0]?.payload as DayCounts | undefined;
+
+                                    if (!active || !day) {
+                                        return null;
+                                    }
+
+                                    return (
+                                        <TooltipBox
+                                            title={label(day.date)}
+                                            rows={[
+                                                { label: t('Good deeds'), value: formatNumber(day.good, locale), color: colors.first },
+                                                { label: t('Repented sins'), value: formatNumber(day.repented, locale), color: colors.first },
+                                                { label: t('Sins not repented of yet'), value: formatNumber(day.unrepented, locale), color: negative },
+                                                { label: t('Net'), value: formatNumber(day.net, locale), color: colors.second },
+                                            ]}
+                                        />
+                                    );
+                                }}
+                            />
+                            <Bar dataKey="positive" stackId="deeds" fill={colors.first} radius={[4, 4, 0, 0]} maxBarSize={26} isAnimationActive={false} />
+                            <Bar dataKey="negative" stackId="deeds" fill={negative} radius={[0, 0, 4, 4]} maxBarSize={26} isAnimationActive={false} />
+                            <Line type="linear" dataKey="net" stroke={colors.second} strokeWidth={2.5} dot={{ r: 3, fill: colors.second, strokeWidth: 0 }} activeDot={{ r: 5 }} isAnimationActive={false} />
+                        </ComposedChart>
                     </ResponsiveContainer>
                 </div>
             )}

@@ -1,0 +1,472 @@
+{
+    "repentance": {
+        "ar": [
+            "أن تُقلع عن الذنب في الحال.",
+            "أن تندم على ما فعلت.",
+            "أن تعزم ألا تعود إليه.",
+            "إن كان الذنب في حق إنسان: أن تردّ إليه حقه أو تستسمحه."
+        ],
+        "en": [
+            "Stop the sin right away.",
+            "Regret what you did.",
+            "Resolve not to return to it.",
+            "If it wronged a person: return their right or ask them to forgive you."
+        ]
+    },
+    "istighfar": [
+        {
+            "title": { "ar": "سيد الاستغفار", "en": "The master of seeking forgiveness" },
+            "text": "اللَّهُمَّ أَنْتَ رَبِّي لَا إِلَهَ إِلَّا أَنْتَ، خَلَقْتَنِي وَأَنَا عَبْدُكَ، وَأَنَا عَلَى عَهْدِكَ وَوَعْدِكَ مَا اسْتَطَعْتُ، أَعُوذُ بِكَ مِنْ شَرِّ مَا صَنَعْتُ، أَبُوءُ لَكَ بِنِعْمَتِكَ عَلَيَّ، وَأَبُوءُ لَكَ بِذَنْبِي فَاغْفِرْ لِي، فَإِنَّهُ لَا يَغْفِرُ الذُّنُوبَ إِلَّا أَنْتَ",
+            "source": "رواه البخاري"
+        },
+        {
+            "title": { "ar": "استغفار جامع", "en": "A comprehensive istighfar" },
+            "text": "أَسْتَغْفِرُ اللَّهَ الْعَظِيمَ الَّذِي لَا إِلَهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ وَأَتُوبُ إِلَيْهِ",
+            "source": "رواه أبو داود والترمذي"
+        },
+        {
+            "title": { "ar": "كفارة المجلس", "en": "Expiation of a gathering" },
+            "text": "سُبْحَانَكَ اللَّهُمَّ وَبِحَمْدِكَ، أَشْهَدُ أَنْ لَا إِلَهَ إِلَّا أَنْتَ، أَسْتَغْفِرُكَ وَأَتُوبُ إِلَيْكَ",
+            "source": "رواه الترمذي"
+        }
+    ],
+    "sins": [
+        {
+            "key": "missed-prayer",
+            "name": { "ar": "ترك الصلاة أو تأخيرها عن وقتها", "en": "Missing a prayer or delaying it past its time" },
+            "severity": "major",
+            "keywords": ["مصليتش", "ماصليتش", "ما صليت", "لم اصل", "تركت الصلاه", "ترك الصلاه", "فاتتني الصلاه", "فاتتني صلاه", "فوت الصلاه", "فوتت الصلاه", "فوتت صلاه", "ضيعت الصلاه", "اخرت الصلاه", "اخرت صلاه", "اخرت العصر", "اخرت الظهر", "اخرت المغرب", "اخرت العشا", "نمت عن الفجر", "نمت عن الصلاه", "فاتني الفجر", "فاتتني الفجر", "فاتني العصر", "صليت متاخر"],
+            "repent": {
+                "ar": "صلِّ ما فاتك فورًا قضاءً بالترتيب، وتب إلى الله، واعزم على المحافظة على كل صلاة في وقتها. وإن فاتتك بنوم أو نسيان من غير تفريط فلا إثم عليك، وصلِّها حين تذكر.",
+                "en": "Make up what you missed right away and in order, repent to Allah, and resolve to pray every prayer on time. If sleep or forgetting made you miss it without negligence there is no sin: pray it when you remember."
+            },
+            "kaffarah": {
+                "ar": "كفارة الصلاة المنسية أو التي نام عنها أن يصليها إذا ذكرها.",
+                "en": "The expiation of a prayer forgotten or slept through is to pray it when one remembers."
+            },
+            "evidence": { "text": "«من نسي صلاة أو نام عنها فكفارتها أن يصليها إذا ذكرها»", "source": "رواه مسلم" }
+        },
+        {
+            "key": "missed-jumuah",
+            "name": { "ar": "ترك صلاة الجمعة بلا عذر", "en": "Missing the Friday prayer without excuse" },
+            "severity": "major",
+            "keywords": ["فاتتني الجمعه", "مصليتش الجمعه", "ماصليتش الجمعه", "تركت الجمعه", "مرحتش الجمعه", "ما رحت الجمعه"],
+            "repent": {
+                "ar": "صلِّها ظهرًا أربع ركعات، وتب إلى الله، واعزم على شهود الجمعة كل أسبوع.",
+                "en": "Pray it as Dhuhr (four rak'ahs), repent to Allah, and resolve to attend the Friday prayer every week."
+            },
+            "kaffarah": null,
+            "evidence": { "text": "«من ترك ثلاث جمع تهاونًا بها طبع الله على قلبه»", "source": "رواه أبو داود والترمذي والنسائي" }
+        },
+        {
+            "key": "ramadan-fast",
+            "name": { "ar": "الفطر في نهار رمضان بلا عذر", "en": "Breaking the Ramadan fast without excuse" },
+            "severity": "major",
+            "keywords": ["فطرت في رمضان", "افطرت في رمضان", "فاطر في رمضان", "كلت في رمضان", "اكلت في رمضان", "شربت في رمضان", "ما صمت رمضان", "مصمتش رمضان", "مصمتش يوم في رمضان"],
+            "repent": {
+                "ar": "اقضِ اليوم الذي أفطرته، وتب إلى الله توبة صادقة.",
+                "en": "Make up the day you did not fast and repent sincerely to Allah."
+            },
+            "kaffarah": {
+                "ar": "إن كان الفطر بالجماع في نهار رمضان: عتق رقبة، فإن لم يجد فصيام شهرين متتابعين، فإن لم يستطع فإطعام ستين مسكينًا، مع قضاء اليوم.",
+                "en": "If the fast was broken by intercourse: free a slave; if not possible, fast two consecutive months; if not able, feed sixty poor people; and make up the day."
+            },
+            "evidence": { "text": "حديث الرجل الذي وقع على امرأته في رمضان فأمره النبي ﷺ بالعتق ثم الصيام ثم الإطعام", "source": "متفق عليه" }
+        },
+        {
+            "key": "zakat",
+            "name": { "ar": "منع الزكاة الواجبة", "en": "Withholding the obligatory zakat" },
+            "severity": "major",
+            "keywords": ["مطلعتش الزكاه", "ما طلعت الزكاه", "مدفعتش الزكاه", "ما دفعت الزكاه", "اخرت الزكاه", "منعت الزكاه", "مزكيتش"],
+            "repent": {
+                "ar": "أخرج الزكاة الواجبة فورًا، ومعها زكاة كل سنة فاتتك، وتب إلى الله.",
+                "en": "Pay the zakat due right away, including every year you missed, and repent to Allah."
+            },
+            "kaffarah": null,
+            "evidence": { "text": "﴿وَالَّذِينَ يَكْنِزُونَ الذَّهَبَ وَالْفِضَّةَ وَلَا يُنفِقُونَهَا فِي سَبِيلِ اللَّهِ فَبَشِّرْهُم بِعَذَابٍ أَلِيمٍ﴾", "source": "التوبة: 34" }
+        },
+        {
+            "key": "parents",
+            "name": { "ar": "عقوق الوالدين", "en": "Disobeying or hurting the parents" },
+            "severity": "major",
+            "keywords": ["عقوق", "زعقت لامي", "زعقت لابويا", "زعقت في امي", "زعقت في ابويا", "زعلت امي", "زعلت ابويا", "زعلت والدي", "زعلت والدتي", "رديت على امي", "رديت على ابويا", "عليت صوتي على امي", "عليت صوتي على ابويا", "اهنت امي", "اهنت ابويا", "قلت لامي اف", "عصيت امي", "عصيت ابويا", "عصيت والدي", "خاصمت امي", "خاصمت ابويا", "شتمت امي", "شتمت ابويا"],
+            "repent": {
+                "ar": "استسمح والديك وقبّل أيديهما، وأحسن إليهما بالقول والفعل. وإن كانا متوفيين فادعُ لهما واستغفر لهما وصِل أقاربهما وأصدقاءهما وتصدّق عنهما.",
+                "en": "Ask your parents to forgive you and be kind to them in word and deed. If they have passed away, pray and ask forgiveness for them, keep ties with their relatives and friends, and give charity on their behalf."
+            },
+            "kaffarah": null,
+            "evidence": { "text": "«ألا أنبئكم بأكبر الكبائر؟» قالوا: بلى يا رسول الله، قال: «الإشراك بالله، وعقوق الوالدين...»", "source": "متفق عليه" }
+        },
+        {
+            "key": "kinship",
+            "name": { "ar": "قطيعة الرحم", "en": "Cutting the ties of kinship" },
+            "severity": "major",
+            "keywords": ["قطيعه", "قطعت رحمي", "قاطعت اخويا", "قاطعت اختي", "قاطعت قرايبي", "قاطع اخويا", "مش بكلم اخويا", "مش بكلم اختي", "مبكلمش اخويا", "مبكلمش اختي", "خاصمت اخويا", "خاصمت اختي", "خاصمت عمي", "خاصمت خالي", "مقاطع"],
+            "repent": {
+                "ar": "صِل رحمك ولو بالسلام أو اتصال أو هدية، وابدأ أنت ولو قطعوك.",
+                "en": "Reconnect with your relatives, even with a greeting, a call or a gift, and be the first even if they cut you off."
+            },
+            "kaffarah": null,
+            "evidence": { "text": "«لا يدخل الجنة قاطع» يعني قاطع رحم", "source": "متفق عليه" }
+        },
+        {
+            "key": "backbiting",
+            "name": { "ar": "الغيبة", "en": "Backbiting (gheebah)" },
+            "severity": "major",
+            "keywords": ["اغتبت", "غيبه", "اتكلمت على", "اتكلمت عن فلان", "اتكلمت في حق", "جبت سيره", "جبت في سيره", "اتكلمت في سيره", "اتكلمت من ورا", "اتكلمت عليه", "اتكلمت عليها", "قعدت اتكلم على"],
+            "repent": {
+                "ar": "استغفر الله، واذكر من اغتبته بخير في المجالس التي ذكرته فيها بسوء، وادعُ له، واستسمحه إن لم يترتب على إخباره ضرر أكبر.",
+                "en": "Ask Allah's forgiveness, mention the person well where you spoke ill of them, pray for them, and ask their forgiveness unless telling them would cause greater harm."
+            },
+            "kaffarah": null,
+            "evidence": { "text": "﴿وَلَا يَغْتَب بَّعْضُكُم بَعْضًا أَيُحِبُّ أَحَدُكُمْ أَن يَأْكُلَ لَحْمَ أَخِيهِ مَيْتًا فَكَرِهْتُمُوهُ﴾", "source": "الحجرات: 12" }
+        },
+        {
+            "key": "talebearing",
+            "name": { "ar": "النميمة", "en": "Talebearing (nameemah)" },
+            "severity": "major",
+            "keywords": ["نميمه", "نقلت الكلام", "نقلت كلام", "وقعت بين", "وقعت بينهم", "فتنت بين", "عملت مشاكل بين", "وصلت الكلام"],
+            "repent": {
+                "ar": "أصلح ما أفسدت بين الناس، وبيّن الحق إن نقلت كلامًا خاطئًا، واستغفر الله.",
+                "en": "Mend what you spoiled between people, clarify the truth if you passed on something false, and ask Allah's forgiveness."
+            },
+            "kaffarah": null,
+            "evidence": { "text": "«لا يدخل الجنة نمّام»", "source": "رواه مسلم" }
+        },
+        {
+            "key": "false-oath",
+            "name": { "ar": "اليمين الكاذبة (الغموس)", "en": "A false oath" },
+            "severity": "major",
+            "keywords": ["حلفت كذب", "حلفت بالكذب", "حلفت كدب", "حلفت وانا كداب", "حلفت وانا كذاب", "يمين كاذب", "يمين كاذبه", "حلفت على حاجه مش صح", "حلفت بالله كذب"],
+            "repent": {
+                "ar": "تب إلى الله توبة صادقة، ورُدّ أي حق أخذته بهذه اليمين، وبيّن الحقيقة لمن خدعته.",
+                "en": "Repent sincerely, return any right you took with the oath, and tell the truth to whoever you misled."
+            },
+            "kaffarah": {
+                "ar": "عند جمهور العلماء لا كفارة لها إلا التوبة وردّ الحقوق، وأوجب فيها الشافعية كفارة اليمين احتياطًا.",
+                "en": "For most scholars its only expiation is repentance and returning rights; the Shafi'is also require the expiation of an oath."
+            },
+            "evidence": { "text": "«الكبائر: الإشراك بالله، وعقوق الوالدين، وقتل النفس، واليمين الغموس»", "source": "رواه البخاري" }
+        },
+        {
+            "key": "broken-oath",
+            "name": { "ar": "عدم الوفاء باليمين أو النذر", "en": "Breaking an oath or a vow" },
+            "severity": "minor",
+            "keywords": ["حلفت ومعملتش", "حلفت وما عملت", "حنثت", "كسرت يميني", "كسرت اليمين", "حلفت ومنفذتش", "نذرت ومعملتش", "نذرت ومنفذتش", "ما وفيت بالنذر", "موفيتش بالنذر", "عليا يمين"],
+            "repent": {
+                "ar": "أدِّ كفارة اليمين. وإن حلفت على أمر ورأيت غيره خيرًا منه فافعل الخير وكفّر عن يمينك.",
+                "en": "Pay the expiation of the oath. If you swore to something and saw better than it, do the better and expiate your oath."
+            },
+            "kaffarah": {
+                "ar": "إطعام عشرة مساكين أو كسوتهم أو تحرير رقبة، فمن لم يجد فصيام ثلاثة أيام. وكفارة النذر كفارة اليمين.",
+                "en": "Feed ten poor people or clothe them or free a slave; whoever cannot find that fasts three days. The expiation of a vow is that of an oath."
+            },
+            "evidence": { "text": "﴿فَكَفَّارَتُهُ إِطْعَامُ عَشَرَةِ مَسَاكِينَ مِنْ أَوْسَطِ مَا تُطْعِمُونَ أَهْلِيكُمْ أَوْ كِسْوَتُهُمْ أَوْ تَحْرِيرُ رَقَبَةٍ فَمَن لَّمْ يَجِدْ فَصِيَامُ ثَلَاثَةِ أَيَّامٍ﴾", "source": "المائدة: 89" }
+        },
+        {
+            "key": "oath-not-by-allah",
+            "name": { "ar": "الحلف بغير الله", "en": "Swearing by other than Allah" },
+            "severity": "major",
+            "keywords": ["حلفت بالنبي", "حلفت بحياتي", "حلفت بحياه", "حلفت بامي", "حلفت بابويا", "حلفت بالمصحف", "حلفت بشرفي", "وحياه", "والنبي", "بحياه امي"],
+            "repent": {
+                "ar": "قل «لا إله إلا الله»، واستغفر الله، ولا تحلف إلا بالله.",
+                "en": "Say “La ilaha illallah”, ask Allah's forgiveness, and swear only by Allah."
+            },
+            "kaffarah": {
+                "ar": "أن يقول: لا إله إلا الله.",
+                "en": "To say: La ilaha illallah."
+            },
+            "evidence": { "text": "«من حلف فقال في حلفه: واللات والعزى، فليقل: لا إله إلا الله»", "source": "متفق عليه" }
+        },
+        {
+            "key": "lying",
+            "name": { "ar": "الكذب", "en": "Lying" },
+            "severity": "minor",
+            "keywords": ["كذبت", "كدبت", "كذب", "كدب", "قلت كدبه", "قلت كذبه", "كدبت على", "كذبت على", "اتكلمت كدب", "مكنتش صادق"],
+            "repent": {
+                "ar": "استغفر الله، وصحّح الكلام لمن كذبت عليه إن أمكن. وإن ترتب على الكذب ضرر أو أكل حق أو صار عادة فهو كبيرة، ويلزم ردّ الحق.",
+                "en": "Ask Allah's forgiveness and correct what you said if you can. A lie that harms someone, takes a right or becomes a habit is a major sin, and the right must be returned."
+            },
+            "kaffarah": null,
+            "evidence": { "text": "«إن الصدق يهدي إلى البر... وإن الكذب يهدي إلى الفجور، وإن الفجور يهدي إلى النار»", "source": "متفق عليه" }
+        },
+        {
+            "key": "cursing",
+            "name": { "ar": "السبّ والشتم واللعن", "en": "Insulting and cursing" },
+            "severity": "major",
+            "keywords": ["شتمت", "سبيت", "سبيته", "سبيتها", "لعنت", "شتيمه", "شتايم", "قلت الفاظ", "قلت كلام وحش", "قلت كلام قبيح", "دعيت عليه", "دعيت عليها", "اتلفظت"],
+            "repent": {
+                "ar": "اعتذر لمن سببته واستسمحه، واستغفر الله، وادعُ له بخير، وعوّد لسانك الكلام الطيب.",
+                "en": "Apologize to the person and ask their forgiveness, ask Allah's forgiveness, pray for them, and train your tongue to speak well."
+            },
+            "kaffarah": null,
+            "evidence": { "text": "«سباب المسلم فسوق، وقتاله كفر»", "source": "متفق عليه" }
+        },
+        {
+            "key": "mockery",
+            "name": { "ar": "السخرية من الناس واحتقارهم", "en": "Mocking or belittling people" },
+            "severity": "minor",
+            "keywords": ["تريقت", "اتريقت", "سخرت", "استهزات", "استهزأت", "تريقه", "قللت من", "احرجت", "حرجت"],
+            "repent": {
+                "ar": "اعتذر لمن سخرت منه، واذكره بخير، واستغفر الله.",
+                "en": "Apologize to the person, mention them well, and ask Allah's forgiveness."
+            },
+            "kaffarah": null,
+            "evidence": { "text": "﴿يَا أَيُّهَا الَّذِينَ آمَنُوا لَا يَسْخَرْ قَوْمٌ مِّن قَوْمٍ عَسَىٰ أَن يَكُونُوا خَيْرًا مِّنْهُمْ﴾", "source": "الحجرات: 11" }
+        },
+        {
+            "key": "anger",
+            "name": { "ar": "الغضب والإساءة لمن حولك", "en": "Anger and hurting those around you" },
+            "severity": "minor",
+            "keywords": ["اتعصبت", "عصبيه", "زعقت", "زعقت في", "اتخانقت", "خناقه", "ضربت", "اسات", "اذيت حد", "جرحت حد", "زعلت حد", "زعلت صاحبي", "زعلت مراتي", "زعلت جوزي"],
+            "repent": {
+                "ar": "اعتذر لمن أسأت إليه، واستغفر الله. وعند الغضب: استعذ بالله من الشيطان، وغيّر هيئتك، وتوضأ، واسكت.",
+                "en": "Apologize to whoever you hurt and ask Allah's forgiveness. When angry: seek refuge in Allah from Satan, change your position, make wudu and keep silent."
+            },
+            "kaffarah": null,
+            "evidence": { "text": "«ليس الشديد بالصُّرَعة، إنما الشديد الذي يملك نفسه عند الغضب»", "source": "متفق عليه" }
+        },
+        {
+            "key": "neighbor",
+            "name": { "ar": "إيذاء الجار", "en": "Harming the neighbour" },
+            "severity": "major",
+            "keywords": ["اذيت جاري", "ضايقت جاري", "ضايقت الجيران", "اذيت الجيران", "زعلت جاري", "اتخانقت مع جاري"],
+            "repent": {
+                "ar": "استسمح جارك وأصلح ما أفسدت، وأحسن إليه.",
+                "en": "Ask your neighbour's forgiveness, repair the harm and be good to them."
+            },
+            "kaffarah": null,
+            "evidence": { "text": "«لا يدخل الجنة من لا يأمن جاره بوائقه»", "source": "رواه مسلم" }
+        },
+        {
+            "key": "injustice",
+            "name": { "ar": "ظلم الناس وأكل حقوقهم", "en": "Wronging people and taking their rights" },
+            "severity": "major",
+            "keywords": ["ظلمت", "اكلت حق", "اكلت حقه", "اكلت حقها", "خدت حق", "خدت حقه", "خدت حقها", "ضيعت حق", "هضمت حق", "ماديتوش حقه", "ماعطيتوش حقه", "مدتوش حقه"],
+            "repent": {
+                "ar": "ردّ الحق إلى صاحبه أو استسمحه، فإن تعذّر فتصدّق عنه وادعُ له، وتب إلى الله.",
+                "en": "Return the right to its owner or ask their forgiveness; if impossible, give charity on their behalf and pray for them, and repent."
+            },
+            "kaffarah": null,
+            "evidence": { "text": "«من كانت له مظلمة لأخيه من عرضه أو شيء فليتحلله منه اليوم قبل أن لا يكون دينار ولا درهم»", "source": "رواه البخاري" }
+        },
+        {
+            "key": "theft",
+            "name": { "ar": "السرقة", "en": "Stealing" },
+            "severity": "major",
+            "keywords": ["سرقت", "سرقه", "اخدت حاجه مش بتاعتي", "خدت حاجه مش بتاعتي", "خدت فلوس من غير", "اخدت فلوس من غير", "خدت من غير اذن", "اخدت من غير اذن"],
+            "repent": {
+                "ar": "ردّ ما أخذت إلى صاحبه أو قيمته ولو بطريقة لا تفضحك، وتب إلى الله توبة صادقة.",
+                "en": "Return what you took, or its value, even discreetly, and repent sincerely."
+            },
+            "kaffarah": null,
+            "evidence": { "text": "﴿وَالسَّارِقُ وَالسَّارِقَةُ فَاقْطَعُوا أَيْدِيَهُمَا جَزَاءً بِمَا كَسَبَا﴾", "source": "المائدة: 38" }
+        },
+        {
+            "key": "cheating",
+            "name": { "ar": "الغش", "en": "Cheating" },
+            "severity": "major",
+            "keywords": ["غشيت", "غش", "غشيت في الامتحان", "غشيت في البيع", "غشيت الزبون", "غشيت في الشغل", "دلست", "تدليس"],
+            "repent": {
+                "ar": "تب إلى الله، وردّ ما أخذت بالغش، وبيّن العيب لمن غششته.",
+                "en": "Repent, return what you gained by cheating, and disclose the defect to whoever you cheated."
+            },
+            "kaffarah": null,
+            "evidence": { "text": "«من غشّنا فليس منا»", "source": "رواه مسلم" }
+        },
+        {
+            "key": "betrayal",
+            "name": { "ar": "خيانة الأمانة وإخلاف العهد", "en": "Betraying a trust or a covenant" },
+            "severity": "major",
+            "keywords": ["خنت", "خيانه", "خيانة الامانه", "ضيعت الامانه", "فشيت سر", "فضحت سر", "قلت سر", "نقضت العهد"],
+            "repent": {
+                "ar": "أدِّ الأمانة إلى أهلها، واعتذر لمن خنته، واستغفر الله.",
+                "en": "Return the trust to its owners, apologize to whoever you betrayed and ask Allah's forgiveness."
+            },
+            "kaffarah": null,
+            "evidence": { "text": "﴿إِنَّ اللَّهَ يَأْمُرُكُمْ أَن تُؤَدُّوا الْأَمَانَاتِ إِلَىٰ أَهْلِهَا﴾", "source": "النساء: 58" }
+        },
+        {
+            "key": "broken-promise",
+            "name": { "ar": "إخلاف الوعد", "en": "Breaking a promise" },
+            "severity": "minor",
+            "keywords": ["وعدت ومعملتش", "وعدت وما وفيت", "مجيتش في المعاد", "اخلفت الوعد", "اخلفت وعدي", "ما وفيت بوعدي", "موفيتش بوعدي"],
+            "repent": {
+                "ar": "اعتذر لصاحب الوعد، وأوفِ به إن أمكن، ولا تعد إلا بما تستطيع.",
+                "en": "Apologize, keep the promise if you still can, and promise only what you are able to do."
+            },
+            "kaffarah": null,
+            "evidence": { "text": "«آية المنافق ثلاث: إذا حدّث كذب، وإذا وعد أخلف، وإذا اؤتمن خان»", "source": "متفق عليه" }
+        },
+        {
+            "key": "riba",
+            "name": { "ar": "التعامل بالربا", "en": "Dealing in usury (riba)" },
+            "severity": "major",
+            "keywords": ["ربا", "الربا", "فوايد البنك", "فايده البنك", "قرض بفايده", "اخدت قرض بفوايد", "فايده ربويه"],
+            "repent": {
+                "ar": "أقلع عن المعاملة الربوية، وخذ رأس مالك فقط، وتخلّص من الزيادة في وجوه الخير دون نية الأجر.",
+                "en": "Stop the usurious dealing, keep only your capital, and give away the excess to good causes without seeking reward."
+            },
+            "kaffarah": null,
+            "evidence": { "text": "﴿وَإِن تُبْتُمْ فَلَكُمْ رُءُوسُ أَمْوَالِكُمْ لَا تَظْلِمُونَ وَلَا تُظْلَمُونَ﴾", "source": "البقرة: 279" }
+        },
+        {
+            "key": "bribery",
+            "name": { "ar": "الرشوة", "en": "Bribery" },
+            "severity": "major",
+            "keywords": ["رشوه", "دفعت رشوه", "اخدت رشوه", "خدت رشوه", "رشيت", "ارتشيت"],
+            "repent": {
+                "ar": "تب إلى الله، وردّ ما أخذته رشوة، ولا تأخذ ولا تدفع رشوة لتأخذ ما ليس لك.",
+                "en": "Repent, return any bribe you took, and neither take nor give a bribe to get what is not yours."
+            },
+            "kaffarah": null,
+            "evidence": { "text": "«لعن رسول الله ﷺ الراشي والمرتشي»", "source": "رواه أبو داود والترمذي" }
+        },
+        {
+            "key": "gambling",
+            "name": { "ar": "القمار والمراهنات", "en": "Gambling and betting" },
+            "severity": "major",
+            "keywords": ["قمار", "قمرت", "راهنت", "رهان", "مراهنات", "بيتنج", "كازينو"],
+            "repent": {
+                "ar": "اترك القمار فورًا، وتخلّص مما كسبته منه في وجوه الخير، واستغفر الله.",
+                "en": "Quit gambling right away, give away what you won to good causes, and ask Allah's forgiveness."
+            },
+            "kaffarah": null,
+            "evidence": { "text": "﴿إِنَّمَا الْخَمْرُ وَالْمَيْسِرُ وَالْأَنصَابُ وَالْأَزْلَامُ رِجْسٌ مِّنْ عَمَلِ الشَّيْطَانِ فَاجْتَنِبُوهُ﴾", "source": "المائدة: 90" }
+        },
+        {
+            "key": "intoxicants",
+            "name": { "ar": "شرب الخمر والمخدرات", "en": "Alcohol and drugs" },
+            "severity": "major",
+            "keywords": ["شربت خمر", "خمره", "خمور", "بيره", "سكرت", "حشيش", "مخدرات", "برشام", "شربت حشيش", "تعاطيت"],
+            "repent": {
+                "ar": "اتركها فورًا، وابتعد عن رفقتها وأماكنها، واستعن بالله ثم بمختص إن احتجت، وتب إلى الله.",
+                "en": "Stop right away, keep away from its company and places, seek Allah's help and a specialist if needed, and repent."
+            },
+            "kaffarah": null,
+            "evidence": { "text": "«كل مسكر خمر، وكل خمر حرام»", "source": "رواه مسلم" }
+        },
+        {
+            "key": "zina",
+            "name": { "ar": "الزنا ومقدماته", "en": "Fornication and what leads to it" },
+            "severity": "major",
+            "keywords": ["زنيت", "زنا", "علاقه محرمه", "علاقه حرام", "واعدت بنت", "واعدت شاب", "خلوه"],
+            "repent": {
+                "ar": "توبة نصوح، واستر على نفسك، واقطع كل سبيل يوصل إليه، وأكثر من الحسنات.",
+                "en": "Sincere repentance; conceal it, cut off every path that leads to it, and do many good deeds."
+            },
+            "kaffarah": null,
+            "evidence": { "text": "﴿وَلَا تَقْرَبُوا الزِّنَىٰ إِنَّهُ كَانَ فَاحِشَةً وَسَاءَ سَبِيلًا﴾", "source": "الإسراء: 32" }
+        },
+        {
+            "key": "unlawful-sight",
+            "name": { "ar": "النظر إلى المحرّم", "en": "Looking at what is forbidden" },
+            "severity": "minor",
+            "keywords": ["بصيت", "بصيت على", "نظرت لحرام", "نظره حرام", "شفت حاجه حرام", "اتفرجت على حاجه حرام", "مشاهد محرمه", "صور حرام", "فيديو حرام", "افلام اباحيه", "اباحي", "غض البصر"],
+            "repent": {
+                "ar": "غُضّ بصرك، واستغفر الله، وقطع الأسباب (احذف المحتوى واستعمل الحجب)، وأتبع السيئة الحسنة. والإصرار عليها يجعلها كبيرة.",
+                "en": "Lower your gaze, ask Allah's forgiveness, cut off the causes (delete the content, use blocking), and follow the bad deed with a good one. Persisting turns it into a major sin."
+            },
+            "kaffarah": null,
+            "evidence": { "text": "﴿قُل لِّلْمُؤْمِنِينَ يَغُضُّوا مِنْ أَبْصَارِهِمْ وَيَحْفَظُوا فُرُوجَهُمْ﴾", "source": "النور: 30" }
+        },
+        {
+            "key": "showing-off",
+            "name": { "ar": "الرياء", "en": "Showing off in worship (riya')" },
+            "severity": "major",
+            "keywords": ["رياء", "عملت عشان الناس", "عشان الناس تشوف", "عشان يقولوا", "اتفاخرت", "تفاخرت", "سمعه"],
+            "repent": {
+                "ar": "جدّد نيتك وأخلص عملك لله، وأخفِ من عملك الصالح ما تستطيع.",
+                "en": "Renew your intention and make your deeds for Allah alone, and hide what you can of your good deeds."
+            },
+            "kaffarah": {
+                "ar": "من الدعاء الوارد: «اللهم إني أعوذ بك أن أشرك بك وأنا أعلم، وأستغفرك لما لا أعلم».",
+                "en": "From the reported du'a: “O Allah, I seek refuge in You from associating anything with You knowingly, and I ask Your forgiveness for what I do not know.”"
+            },
+            "evidence": { "text": "«إن أخوف ما أخاف عليكم الشرك الأصغر» قالوا: وما الشرك الأصغر؟ قال: «الرياء»", "source": "رواه أحمد" }
+        },
+        {
+            "key": "arrogance",
+            "name": { "ar": "الكِبر واحتقار الناس", "en": "Arrogance" },
+            "severity": "major",
+            "keywords": ["تكبرت", "اتكبرت", "اتعاليت", "تعاليت", "احتقرت", "اتنكت على", "شايف نفسي"],
+            "repent": {
+                "ar": "تواضع للناس، واخدم غيرك، واذكر أن كل نعمة من الله.",
+                "en": "Be humble with people, serve others, and remember that every blessing is from Allah."
+            },
+            "kaffarah": null,
+            "evidence": { "text": "«لا يدخل الجنة من كان في قلبه مثقال ذرة من كبر»", "source": "رواه مسلم" }
+        },
+        {
+            "key": "fortune-telling",
+            "name": { "ar": "إتيان العرّافين والدجالين", "en": "Consulting fortune tellers" },
+            "severity": "major",
+            "keywords": ["عراف", "دجال", "رحت لدجال", "رحت لشيخ يعمل عمل", "سحر", "عملت عمل", "قريت الفنجان", "قاريه فنجان", "الابراج", "حظك اليوم"],
+            "repent": {
+                "ar": "تب إلى الله، ولا تصدّق ما قالوه، وتحصّن بالأذكار والرقية الشرعية.",
+                "en": "Repent, do not believe what they said, and protect yourself with the remembrances and lawful ruqyah."
+            },
+            "kaffarah": null,
+            "evidence": { "text": "«من أتى عرّافًا فسأله عن شيء لم تُقبل له صلاة أربعين ليلة»", "source": "رواه مسلم" }
+        },
+        {
+            "key": "envy",
+            "name": { "ar": "الحسد والحقد", "en": "Envy and resentment" },
+            "severity": "minor",
+            "keywords": ["حسدت", "حسد", "غيرت من", "حقدت", "حقد", "اتمنيت زوال"],
+            "repent": {
+                "ar": "ادعُ لمن حسدته بالبركة، وقل: «ما شاء الله تبارك الله»، وارضَ بما قسم الله لك.",
+                "en": "Pray for blessing for the person you envied, say “Masha Allah, tabarak Allah”, and be content with what Allah gave you."
+            },
+            "kaffarah": null,
+            "evidence": { "text": "«لا تحاسدوا، ولا تباغضوا، ولا تدابروا، وكونوا عباد الله إخوانًا»", "source": "رواه مسلم" }
+        },
+        {
+            "key": "suspicion",
+            "name": { "ar": "سوء الظن والتجسس", "en": "Suspicion and spying" },
+            "severity": "minor",
+            "keywords": ["ظنيت", "سوء ظن", "ظن سيء", "تجسست", "اتجسست", "فتشت في", "فتشت موبايل", "قريت رسايل"],
+            "repent": {
+                "ar": "احمل كلام الناس وأفعالهم على أحسن الوجوه، واستغفر الله، واحذف ما اطلعت عليه بغير حق.",
+                "en": "Think the best of people, ask Allah's forgiveness, and delete what you looked into without right."
+            },
+            "kaffarah": null,
+            "evidence": { "text": "﴿يَا أَيُّهَا الَّذِينَ آمَنُوا اجْتَنِبُوا كَثِيرًا مِّنَ الظَّنِّ إِنَّ بَعْضَ الظَّنِّ إِثْمٌ وَلَا تَجَسَّسُوا﴾", "source": "الحجرات: 12" }
+        },
+        {
+            "key": "idle-talk",
+            "name": { "ar": "اللغو وكثرة الكلام فيما لا ينفع", "en": "Idle and useless talk" },
+            "severity": "minor",
+            "keywords": ["كلام فاضي", "لغو", "رغي", "هزار زياده", "قعدت ارغي", "كلام مالوش لازمه", "ضيعت وقتي في الكلام"],
+            "repent": {
+                "ar": "اختم مجلسك بكفارة المجلس، واشغل لسانك بالذكر.",
+                "en": "End your gathering with the expiation of the gathering and keep your tongue busy with remembrance."
+            },
+            "kaffarah": {
+                "ar": "كفارة المجلس: «سبحانك اللهم وبحمدك، أشهد أن لا إله إلا أنت، أستغفرك وأتوب إليك».",
+                "en": "The expiation of a gathering: “Glory be to You, O Allah, and praise; I testify that there is no god but You; I ask Your forgiveness and repent to You.”"
+            },
+            "evidence": { "text": "«من كان يؤمن بالله واليوم الآخر فليقل خيرًا أو ليصمت»", "source": "متفق عليه" }
+        }
+    ],
+    "good": [
+        { "key": "prayer-on-time", "name": { "ar": "الصلاة في وقتها", "en": "Praying on time" }, "keywords": ["صليت في وقت", "صلاه في وقتها", "صليت الفجر", "صليت الظهر", "صليت العصر", "صليت المغرب", "صليت العشا", "صليت في المسجد", "صليت جماعه", "الصلوات الخمس"], "virtue": { "text": "سُئل النبي ﷺ: أي العمل أحب إلى الله؟ قال: «الصلاة على وقتها»", "source": "متفق عليه" } },
+        { "key": "sunnah-prayers", "name": { "ar": "السنن الرواتب", "en": "Regular Sunnah prayers" }, "keywords": ["سنه", "السنن", "الرواتب", "صليت السنه", "سنه الفجر"], "virtue": { "text": "«من صلى اثنتي عشرة ركعة في يوم وليلة بُني له بهن بيت في الجنة»", "source": "رواه مسلم" } },
+        { "key": "qiyam", "name": { "ar": "قيام الليل والوتر", "en": "Night prayer and witr" }, "keywords": ["قيام", "قمت الليل", "تهجد", "اتهجدت", "وتر", "اوترت", "صليت الوتر"], "virtue": { "text": "«أفضل الصلاة بعد الفريضة صلاة الليل»", "source": "رواه مسلم" } },
+        { "key": "duha", "name": { "ar": "صلاة الضحى", "en": "Duha prayer" }, "keywords": ["ضحى", "الضحى", "صليت الضحى"], "virtue": { "text": "«ويجزئ من ذلك ركعتان يركعهما من الضحى»", "source": "رواه مسلم" } },
+        { "key": "quran", "name": { "ar": "قراءة القرآن وحفظه", "en": "Reading and memorizing the Quran" }, "keywords": ["قريت قران", "قرات قران", "قراءه القران", "ورد", "وردي", "ختمه", "ختمت", "حفظت", "راجعت", "سورة", "جزء", "صفحه من المصحف"], "virtue": { "text": "«من قرأ حرفًا من كتاب الله فله به حسنة، والحسنة بعشر أمثالها»", "source": "رواه الترمذي" } },
+        { "key": "dhikr", "name": { "ar": "الذكر والأذكار", "en": "Remembrance of Allah (dhikr)" }, "keywords": ["اذكار", "ذكر", "اذكار الصباح", "اذكار المسا", "سبحت", "تسبيح", "استغفرت", "استغفار", "هللت", "حوقله"], "virtue": { "text": "«ألا أنبئكم بخير أعمالكم... ذكر الله»", "source": "رواه الترمذي" } },
+        { "key": "salawat", "name": { "ar": "الصلاة على النبي ﷺ", "en": "Sending prayers upon the Prophet ﷺ" }, "keywords": ["صليت على النبي", "صلاه على النبي", "الصلاه على النبي"], "virtue": { "text": "«من صلى عليّ صلاة صلى الله عليه بها عشرًا»", "source": "رواه مسلم" } },
+        { "key": "charity", "name": { "ar": "الصدقة", "en": "Charity" }, "keywords": ["اتصدقت", "تصدقت", "صدقه", "تبرعت", "اديت فلوس", "اديت لمحتاج", "اطعمت", "اكلت مسكين", "فطرت صايم"], "virtue": { "text": "«ما نقصت صدقة من مال»", "source": "رواه مسلم" } },
+        { "key": "fasting", "name": { "ar": "صيام التطوع", "en": "Voluntary fasting" }, "keywords": ["صمت", "صايم", "صيام", "صمت الاثنين", "صمت الخميس", "الايام البيض"], "virtue": { "text": "«من صام يومًا في سبيل الله باعد الله وجهه عن النار سبعين خريفًا»", "source": "متفق عليه" } },
+        { "key": "parents", "name": { "ar": "بر الوالدين", "en": "Kindness to parents" }, "keywords": ["بريت", "بر", "ساعدت امي", "ساعدت ابويا", "زرت امي", "زرت ابويا", "اتصلت بامي", "اتصلت بابويا", "فرحت امي", "فرحت ابويا", "دعيت لامي", "دعيت لابويا"], "virtue": { "text": "«رضا الرب في رضا الوالد، وسخط الرب في سخط الوالد»", "source": "رواه الترمذي" } },
+        { "key": "kinship", "name": { "ar": "صلة الرحم", "en": "Keeping family ties" }, "keywords": ["صله الرحم", "وصلت رحمي", "زرت قرايبي", "زرت اخويا", "زرت اختي", "زرت عمتي", "زرت خالتي", "اتصلت بقرايبي"], "virtue": { "text": "«من أحب أن يُبسط له في رزقه ويُنسأ له في أثره فليصل رحمه»", "source": "متفق عليه" } },
+        { "key": "helping", "name": { "ar": "مساعدة الناس وقضاء حوائجهم", "en": "Helping people" }, "keywords": ["ساعدت", "قضيت حاجه", "خدمت", "وقفت جنب", "عاونت"], "virtue": { "text": "«والله في عون العبد ما كان العبد في عون أخيه»", "source": "رواه مسلم" } },
+        { "key": "visiting-sick", "name": { "ar": "عيادة المريض", "en": "Visiting the sick" }, "keywords": ["زرت مريض", "زرت عيان", "عيادة مريض", "اطمنت على"], "virtue": { "text": "«من عاد مريضًا لم يزل في خُرفة الجنة حتى يرجع»", "source": "رواه مسلم" } },
+        { "key": "forgiving", "name": { "ar": "العفو عن الناس", "en": "Forgiving people" }, "keywords": ["سامحت", "عفوت", "صالحت", "تصالحت"], "virtue": { "text": "﴿وَلْيَعْفُوا وَلْيَصْفَحُوا أَلَا تُحِبُّونَ أَن يَغْفِرَ اللَّهُ لَكُمْ﴾", "source": "النور: 22" } },
+        { "key": "reconciling", "name": { "ar": "الإصلاح بين الناس", "en": "Reconciling between people" }, "keywords": ["صلحت بين", "اصلحت بين", "صالحت بين"], "virtue": { "text": "«ألا أخبركم بأفضل من درجة الصيام والصلاة والصدقة؟» قالوا: بلى، قال: «صلاح ذات البين»", "source": "رواه أبو داود والترمذي" } },
+        { "key": "teaching", "name": { "ar": "تعليم الخير", "en": "Teaching good" }, "keywords": ["علمت", "شرحت", "حفظت حد", "نصحت", "دليت على خير"], "virtue": { "text": "«من دلّ على خير فله مثل أجر فاعله»", "source": "رواه مسلم" } },
+        { "key": "kind-word", "name": { "ar": "الكلمة الطيبة والابتسامة", "en": "A kind word or a smile" }, "keywords": ["ابتسمت", "كلمه طيبه", "شجعت", "جبرت خاطر", "طيبت خاطر"], "virtue": { "text": "«تبسّمك في وجه أخيك لك صدقة»", "source": "رواه الترمذي" } },
+        { "key": "removing-harm", "name": { "ar": "إماطة الأذى عن الطريق", "en": "Removing harm from the road" }, "keywords": ["شلت اذى", "شيلت اذى", "شيلت حاجه من الطريق", "شلت حاجه من الطريق", "اماطه الاذى"], "virtue": { "text": "«وإماطة الأذى عن الطريق صدقة»", "source": "متفق عليه" } }
+    ]
+}

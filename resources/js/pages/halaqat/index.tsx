@@ -17,19 +17,23 @@ interface Filters {
     search: string;
     status: 'active' | 'archived' | 'all';
     teacher_id: number | null;
+    academy_id: number | null;
 }
 
 interface HalaqatIndexProps {
     halaqat: Paginated<HalaqaItem>;
     filters: Filters;
     teachers: { id: number; name: string }[];
+    academies: { id: number; name: string }[];
     can: { create: boolean };
 }
 
-export default function HalaqatIndex({ halaqat, filters, teachers, can }: HalaqatIndexProps) {
+export default function HalaqatIndex({ halaqat, filters, teachers, academies, can }: HalaqatIndexProps) {
     const { t } = useTrans();
     const { auth } = usePage().props;
     const isAdmin = auth.user?.role === 'admin';
+    // The administration and the academy managers manage halaqat; teachers and students see theirs.
+    const manages = isAdmin || auth.user?.role === 'manager';
 
     const apply = (changes: Partial<Filters>) => {
         router.get(route('halaqat.index'), cleanQuery({ ...filters, ...changes }), { preserveState: true, preserveScroll: true, replace: true });
@@ -37,11 +41,11 @@ export default function HalaqatIndex({ halaqat, filters, teachers, can }: Halaqa
 
     return (
         <AppLayout
-            title={isAdmin ? t('Halaqat') : t('My halaqat')}
-            description={isAdmin ? t('Manage the halaqat, their teachers, schedules and students.') : t('The halaqat you belong to.')}
+            title={manages ? t('Halaqat') : t('My halaqat')}
+            description={manages ? t('Manage the halaqat, their teachers, schedules and students.') : t('The halaqat you belong to.')}
             actions={
                 can.create && (
-                    <LinkButton href={route('halaqat.create')}>
+                    <LinkButton href={route('halaqat.create', cleanQuery({ academy_id: filters.academy_id }))}>
                         <Plus />
                         {t('New halaqa')}
                     </LinkButton>
@@ -59,18 +63,40 @@ export default function HalaqatIndex({ halaqat, filters, teachers, can }: Halaqa
                         { value: 'all', label: t('All') },
                     ]}
                 />
-                {isAdmin && teachers.length > 0 && (
-                    <div className="lg:ms-auto lg:w-64">
-                        <Select value={filters.teacher_id ?? ''} onChange={(event) => apply({ teacher_id: Number(event.target.value) || null })}>
-                            <option value="">{t('All teachers')}</option>
-                            {teachers.map((teacher) => (
-                                <option key={teacher.id} value={teacher.id}>
-                                    {teacher.name}
-                                </option>
-                            ))}
-                        </Select>
-                    </div>
-                )}
+                <div className="flex flex-col gap-3 sm:flex-row lg:ms-auto">
+                    {academies.length > 0 && (
+                        <div className="sm:w-60">
+                            <Select
+                                value={filters.academy_id ?? ''}
+                                onChange={(event) => apply({ academy_id: Number(event.target.value) || null, teacher_id: null })}
+                                aria-label={t('Academy')}
+                            >
+                                <option value="">{t('All academies')}</option>
+                                {academies.map((academy) => (
+                                    <option key={academy.id} value={academy.id}>
+                                        {academy.name}
+                                    </option>
+                                ))}
+                            </Select>
+                        </div>
+                    )}
+                    {manages && teachers.length > 0 && (
+                        <div className="sm:w-60">
+                            <Select
+                                value={filters.teacher_id ?? ''}
+                                onChange={(event) => apply({ teacher_id: Number(event.target.value) || null })}
+                                aria-label={t('Teacher')}
+                            >
+                                <option value="">{t('All teachers')}</option>
+                                {teachers.map((teacher) => (
+                                    <option key={teacher.id} value={teacher.id}>
+                                        {teacher.name}
+                                    </option>
+                                ))}
+                            </Select>
+                        </div>
+                    )}
+                </div>
             </div>
 
             {halaqat.data.length === 0 ? (
@@ -92,7 +118,7 @@ export default function HalaqatIndex({ halaqat, filters, teachers, can }: Halaqa
             ) : (
                 <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
                     {halaqat.data.map((halaqa) => (
-                        <HalaqaCard key={halaqa.id} halaqa={halaqa} />
+                        <HalaqaCard key={halaqa.id} halaqa={halaqa} showAcademy={isAdmin} />
                     ))}
                 </div>
             )}

@@ -1,4 +1,4 @@
-import { Link, router } from '@inertiajs/react';
+import { Link, router, usePage } from '@inertiajs/react';
 import { Eye, EllipsisVertical, Pencil, Power, Trash, UserPlus, Users } from 'lucide-react';
 import { useState } from 'react';
 import { RoleBadge } from '@/components/badges';
@@ -24,18 +24,23 @@ interface Filters {
     role: Role | null;
     status: 'active' | 'inactive' | null;
     search: string;
+    academy_id: number | null;
 }
 
 interface UsersIndexProps {
     users: Paginated<UserItem>;
     filters: Filters;
-    counts: { all: number; admin: number; teacher: number; student: number };
+    counts: Record<'all' | Role, number>;
+    /** Every academy, for the administration's filter (empty for a manager). */
+    academies: { id: number; name: string }[];
 }
 
-export default function UsersIndex({ users, filters, counts }: UsersIndexProps) {
+export default function UsersIndex({ users, filters, counts, academies }: UsersIndexProps) {
     const { t, locale } = useTrans();
+    const { auth } = usePage().props;
     const dates = useDates();
     const [deleting, setDeleting] = useState<UserItem | null>(null);
+    const isAdmin = auth.user?.role === 'admin';
 
     const apply = (changes: Partial<Filters>) => {
         router.get(route('users.index'), cleanQuery({ ...filters, ...changes }), { preserveState: true, preserveScroll: true, replace: true });
@@ -43,10 +48,10 @@ export default function UsersIndex({ users, filters, counts }: UsersIndexProps) 
 
     return (
         <AppLayout
-            title={t('Users')}
-            description={t('Teachers, students and administrators of the academy.')}
+            title={isAdmin ? t('Users') : t('Teachers and students')}
+            description={isAdmin ? t('The accounts of the platform: administration, academy managers, teachers and students.') : t('The teachers and students of your academy.')}
             actions={
-                <LinkButton href={route('users.create', cleanQuery({ role: filters.role }))}>
+                <LinkButton href={route('users.create', cleanQuery({ role: filters.role, academy_id: filters.academy_id }))}>
                     <UserPlus />
                     {t('Add a user')}
                 </LinkButton>
@@ -60,7 +65,12 @@ export default function UsersIndex({ users, filters, counts }: UsersIndexProps) 
                         { value: 'all', label: t('All'), count: counts.all },
                         { value: 'student', label: t('Students'), count: counts.student },
                         { value: 'teacher', label: t('Teachers'), count: counts.teacher },
-                        { value: 'admin', label: t('Admins'), count: counts.admin },
+                        ...(isAdmin
+                            ? [
+                                  { value: 'manager', label: t('Academy managers'), count: counts.manager },
+                                  { value: 'admin', label: t('Admins'), count: counts.admin },
+                              ]
+                            : []),
                     ]}
                 />
                 <div className="flex flex-1 flex-col gap-3 sm:flex-row lg:justify-end">
@@ -70,6 +80,22 @@ export default function UsersIndex({ users, filters, counts }: UsersIndexProps) 
                         placeholder={t('Name, email or phone...')}
                         className="sm:w-72"
                     />
+                    {academies.length > 0 && (
+                        <div className="sm:w-56">
+                            <Select
+                                value={filters.academy_id ?? ''}
+                                onChange={(event) => apply({ academy_id: Number(event.target.value) || null })}
+                                aria-label={t('Academy')}
+                            >
+                                <option value="">{t('All academies')}</option>
+                                {academies.map((academy) => (
+                                    <option key={academy.id} value={academy.id}>
+                                        {academy.name}
+                                    </option>
+                                ))}
+                            </Select>
+                        </div>
+                    )}
                     <div className="sm:w-44">
                         <Select value={filters.status ?? ''} onChange={(event) => apply({ status: (event.target.value || null) as Filters['status'] })}>
                             <option value="">{t('All statuses')}</option>
@@ -89,6 +115,7 @@ export default function UsersIndex({ users, filters, counts }: UsersIndexProps) 
                             <tr>
                                 <Th>{t('Name')}</Th>
                                 <Th>{t('Role')}</Th>
+                                {isAdmin && <Th>{t('Academy')}</Th>}
                                 <Th>{t('Halaqat')}</Th>
                                 <Th>{t('Memorized')}</Th>
                                 <Th>{t('Status')}</Th>
@@ -113,6 +140,17 @@ export default function UsersIndex({ users, filters, counts }: UsersIndexProps) 
                                     <Td>
                                         <RoleBadge role={user.role} />
                                     </Td>
+                                    {isAdmin && (
+                                        <Td className="text-sm">
+                                            {user.academy ? (
+                                                <span className="block max-w-44 truncate text-ink">{user.academy.name}</span>
+                                            ) : user.role === 'student' ? (
+                                                <span className="text-xs text-muted">{t('Independent')}</span>
+                                            ) : (
+                                                <span className="text-xs text-muted">—</span>
+                                            )}
+                                        </Td>
+                                    )}
                                     <Td>
                                         {user.role === 'student' ? (
                                             <div className="flex max-w-56 flex-wrap gap-1">

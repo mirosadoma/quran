@@ -28,7 +28,7 @@ class HalaqaPolicy
      */
     public function create(User $user): bool
     {
-        return $user->isAdmin();
+        return $user->managesAcademies();
     }
 
     /**
@@ -36,7 +36,7 @@ class HalaqaPolicy
      */
     public function update(User $user, Halaqa $halaqa): bool
     {
-        return $user->isAdmin();
+        return $user->managesAcademy($halaqa->academy_id);
     }
 
     /**
@@ -44,15 +44,15 @@ class HalaqaPolicy
      */
     public function delete(User $user, Halaqa $halaqa): bool
     {
-        return $user->isAdmin();
+        return $user->managesAcademy($halaqa->academy_id);
     }
 
     /**
-     * Determine whether the user teaches or administers the halaqa.
+     * Determine whether the user teaches the halaqa or manages its academy.
      */
     public function manage(User $user, Halaqa $halaqa): bool
     {
-        return $user->isAdmin() || ($user->isTeacher() && $halaqa->teacher_id === $user->id);
+        return $user->managesAcademy($halaqa->academy_id) || ($user->isTeacher() && $halaqa->teacher_id === $user->id);
     }
 
     /**

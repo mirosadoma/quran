@@ -13,6 +13,7 @@ use App\Enums\ProgressType;
 use App\Enums\SessionSource;
 use App\Enums\SessionStatus;
 use App\Enums\UserRole;
+use App\Models\Academy;
 use App\Models\Attendance;
 use App\Models\ChatRead;
 use App\Models\Halaqa;
@@ -82,9 +83,16 @@ class DemoSeeder extends Seeder
         DB::transaction(fn () => $this->seed());
     }
 
+    /**
+     * The academy of the demo teachers, students and halaqat (created by AcademySeeder).
+     */
+    protected ?Academy $academy = null;
+
     protected function seed(): void
     {
         mt_srand(1447);
+
+        $this->academy = Academy::query()->firstWhere('slug', 'rattil');
 
         $teachers = [
             'ahmed' => $this->user('الشيخ أحمد عبد الرحمن', 'teacher@rattil.test', '+201000000001', UserRole::Teacher, Gender::Male, [
@@ -194,6 +202,7 @@ class DemoSeeder extends Seeder
                 'phone' => $phone,
                 'password' => 'password',
                 'role' => $role,
+                'academy_id' => $role === UserRole::Admin ? null : $this->academy?->id,
                 'gender' => $gender,
                 'timezone' => config('app.user_timezone'),
                 'locale' => 'ar',
@@ -233,6 +242,7 @@ class DemoSeeder extends Seeder
         Collection $students,
     ): Halaqa {
         $halaqa = Halaqa::query()->create([
+            'academy_id' => $this->academy?->id,
             'name' => $name,
             'description' => $description,
             'teacher_id' => $teacher->id,
@@ -484,7 +494,9 @@ class DemoSeeder extends Seeder
         ];
 
         foreach ($videos as $index => [$halaqa, $title, $youtubeId, $description]) {
+            // Videos without halaqa go to the platform's library, shown to everyone and on the website.
             $video = new Video([
+                'academy_id' => $halaqa?->academy_id,
                 'halaqa_id' => $halaqa?->id,
                 'title' => $title,
                 'description' => $description,

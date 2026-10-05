@@ -12,7 +12,7 @@ class ProgressRecordPolicy
      */
     public function update(User $user, ProgressRecord $progressRecord): bool
     {
-        if ($user->isAdmin()) {
+        if ($user->managesAcademy($progressRecord->halaqa?->academy_id ?? $progressRecord->student?->academy_id)) {
             return true;
         }
 

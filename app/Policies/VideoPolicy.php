@@ -12,7 +12,7 @@ class VideoPolicy
      */
     public function create(User $user): bool
     {
-        return $user->isAdmin() || $user->isTeacher();
+        return $user->managesAcademies() || $user->isTeacher();
     }
 
     /**
@@ -22,6 +22,13 @@ class VideoPolicy
     {
         if ($user->isAdmin()) {
             return true;
+        }
+
+        // The manager of the academy whose library or halaqa holds it (not the platform's library).
+        $academyId = $video->academy_id ?? $video->halaqa?->academy_id;
+
+        if ($user->isManager() && $academyId !== null) {
+            return $academyId === $user->academy_id;
         }
 
         return $user->isTeacher()

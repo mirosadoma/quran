@@ -15,8 +15,11 @@ import type { Gender, HalaqaGender, HalaqaItem, HalaqaLevel, MeetingProvider, Pr
 
 interface HalaqaFormProps {
     halaqa: (HalaqaItem & { teacher_id: number | null; meeting_url: string | null; student_ids: number[] }) | null;
-    teachers: { id: number; name: string; gender: Gender | null }[];
-    students: { id: number; name: string; gender: Gender | null; avatar_url: string | null; halaqat_count: number }[];
+    teachers: { id: number; name: string; gender: Gender | null; academy_id: number | null }[];
+    students: { id: number; name: string; gender: Gender | null; avatar_url: string | null; halaqat_count: number; academy_id: number | null }[];
+    /** The academies the administration chooses from for a new halaqa (empty for a manager, or once the halaqa exists). */
+    academies: { id: number; name: string }[];
+    academyId: number | null;
     providers: ProviderOption[];
     timezones: string[];
     defaults: { timezone: string; meeting_provider: MeetingProvider; duration_minutes: number; color: string; gender: HalaqaGender };
@@ -26,13 +29,16 @@ const weekOrder = [6, 0, 1, 2, 3, 4, 5];
 const colors = ['emerald', 'teal', 'sky', 'indigo', 'violet', 'rose', 'amber', 'lime'];
 const durations = [30, 45, 60, 75, 90, 120];
 
-export default function HalaqaForm({ halaqa, teachers, students, providers, timezones, defaults }: HalaqaFormProps) {
+export default function HalaqaForm({ halaqa, teachers, students, academies, academyId, providers, timezones, defaults }: HalaqaFormProps) {
     const { t } = useTrans();
     const labels = useLabels();
     const dates = useDates();
     const editing = halaqa !== null;
 
+    const choosesAcademy = academies.length > 0;
+
     const form = useForm({
+        academy_id: academyId ?? ('' as number | ''),
         name: halaqa?.name ?? '',
         description: halaqa?.description ?? '',
         teacher_id: halaqa?.teacher_id ?? ('' as number | ''),
@@ -68,9 +74,18 @@ export default function HalaqaForm({ halaqa, teachers, students, providers, time
         );
     };
 
+    // The administration picks the academy first: its teachers and students only.
+    const inAcademy = (academy: number | null) => !choosesAcademy || academy === form.data.academy_id;
+    const academyTeachers = teachers.filter((teacher) => inAcademy(teacher.academy_id));
+
+    const chooseAcademy = (value: number | '') => {
+        form.setData((data) => ({ ...data, academy_id: value, teacher_id: '', student_ids: [] }));
+    };
+
     const studentOptions = useMemo(
         () =>
             students
+                .filter((student) => !choosesAcademy || student.academy_id === form.data.academy_id)
                 .filter((student) => form.data.gender === 'mixed' || !student.gender || student.gender === form.data.gender)
                 .map((student) => ({
                     id: student.id,
@@ -78,7 +93,7 @@ export default function HalaqaForm({ halaqa, teachers, students, providers, time
                     avatar_url: student.avatar_url,
                     meta: student.halaqat_count > 0 ? t('In :count halaqat', { count: student.halaqat_count }) : t('Not in a halaqa yet'),
                 })),
-        [students, form.data.gender, t],
+        [students, choosesAcademy, form.data.academy_id, form.data.gender, t],
     );
 
     const submit = (event: FormEvent) => {
@@ -104,6 +119,22 @@ export default function HalaqaForm({ halaqa, teachers, students, providers, time
                     <Card>
                         <CardHeader title={t('Basic information')} />
                         <CardBody className="grid gap-5 sm:grid-cols-2">
+                            {choosesAcademy && (
+                                <Field label={t('Academy')} error={form.errors.academy_id} required className="sm:col-span-2" hint={t('The halaqa, its teacher and its students belong to this academy.')}>
+                                    <Select
+                                        value={form.data.academy_id}
+                                        onChange={(event) => chooseAcademy(event.target.value === '' ? '' : Number(event.target.value))}
+                                        aria-invalid={!!form.errors.academy_id}
+                                    >
+                                        <option value="">{t('Choose the academy')}</option>
+                                        {academies.map((academy) => (
+                                            <option key={academy.id} value={academy.id}>
+                                                {academy.name}
+                                            </option>
+                                        ))}
+                                    </Select>
+                                </Field>
+                            )}
                             <Field label={t('Halaqa name')} error={form.errors.name} required className="sm:col-span-2">
                                 <Input
                                     value={form.data.name}
@@ -118,7 +149,7 @@ export default function HalaqaForm({ halaqa, teachers, students, providers, time
                                     onChange={(event) => form.setData('teacher_id', event.target.value === '' ? '' : Number(event.target.value))}
                                 >
                                     <option value="">{t('No teacher yet')}</option>
-                                    {teachers.map((teacher) => (
+                                    {academyTeachers.map((teacher) => (
                                         <option key={teacher.id} value={teacher.id}>
                                             {teacher.name}
                                         </option>
@@ -270,7 +301,11 @@ export default function HalaqaForm({ halaqa, teachers, students, providers, time
                                 options={studentOptions}
                                 value={form.data.student_ids}
                                 onChange={(ids) => form.setData('student_ids', ids)}
-                                emptyText={t('No students available. Add students from the users page first.')}
+                                emptyText={
+                                    choosesAcademy && form.data.academy_id === ''
+                                        ? t('Choose the academy first to list its students.')
+                                        : t('No students available. Add students from the users page first.')
+                                }
                             />
                             {form.errors.student_ids && <p className="mt-2 text-xs font-medium text-rose-600">{form.errors.student_ids}</p>}
                         </CardBody>
