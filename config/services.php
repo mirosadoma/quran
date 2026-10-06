@@ -85,4 +85,15 @@ return [
         ],
     ],
 
+    /*
+     * Speech to text with the diacritics, to check the vowels (fatha, damma, kasra) of a recitation in
+     * the mushaf and kids memorization. Run the service in transcriber/ (npm install && npm start) and
+     * set its address here; without it the recitation check uses the browser and ignores the vowels.
+     */
+    'transcriber' => [
+        'url' => env('TRANSCRIBER_URL'),
+        'token' => env('TRANSCRIBER_TOKEN'),
+        'timeout' => env('TRANSCRIBER_TIMEOUT', 60),
+    ],
+
 ];

@@ -46,6 +46,8 @@ export interface SharedProps {
     realtime: RealtimeConfig;
     /** VAPID key for push notifications; null when signed out or push is not set up. */
     push: { public_key: string | null };
+    /** Texts are read aloud by the man's voice of the server (route "speech"). */
+    narrator: boolean;
     [key: string]: unknown;
 }
 
@@ -475,4 +477,56 @@ export interface ContactMessageItem {
     read_at: string | null;
     created_at: string | null;
     user_id: number | null;
+}
+
+/**
+ * A member as shown in the questions community (no contact details).
+ */
+export interface CommunityAuthor {
+    id: number;
+    name: string;
+    avatar_url: string | null;
+    role: Role;
+}
+
+/**
+ * A question of the questions community.
+ */
+export interface CommunityPostItem {
+    id: number;
+    title: string;
+    body: string;
+    created_at: string | null;
+    edited_at: string | null;
+    /** Null once the account of the member who asked is deleted. */
+    author?: CommunityAuthor | null;
+    answers_count?: number;
+    comments_count?: number;
+    /** The member who asked accepted one of the answers. */
+    solved?: boolean;
+    can: { update: boolean; delete: boolean };
+}
+
+/**
+ * A sheikh's answer (written by a teacher, a manager or the administration) or a student's comment.
+ */
+export interface CommunityReplyItem {
+    id: number;
+    body: string;
+    is_answer: boolean;
+    is_accepted: boolean;
+    created_at: string | null;
+    edited_at: string | null;
+    author?: CommunityAuthor | null;
+    can: { update: boolean; delete: boolean; accept: boolean };
+}
+
+/**
+ * A question in a list of similar questions.
+ */
+export interface CommunityPostSummary {
+    id: number;
+    title: string;
+    answers_count: number;
+    solved: boolean;
 }

@@ -30,6 +30,11 @@ class AppServiceProvider extends ServiceProvider
     {
         DevCommands::artisan('schedule:work', 'scheduler');
 
+        // The vowel check of recitations (transcriber/), once it is set up.
+        if ($this->app->runningInConsole() && filled(config('services.transcriber.url')) && is_dir(base_path('transcriber/node_modules'))) {
+            DevCommands::register('node transcriber/server.mjs', 'transcriber');
+        }
+
         $this->renderErrorPages();
         $this->shareBranding();
     }

@@ -6,20 +6,26 @@ import { EmptyState } from '@/components/ui/empty-state';
 import AppLayout from '@/layouts/app-layout';
 import { useTrans } from '@/lib/i18n';
 import { type KidsProgress, readProgress } from '@/lib/kids';
+import type { RecitationMistake } from '@/lib/recitation-check';
 import type { ReciterItem } from '@/types';
 
 interface KidsProps {
     ready: boolean;
     reciters: ReciterItem[];
+    /** The server can check the vowels of a recitation. */
+    vowelCheck: boolean;
 }
 
 /**
  * Memorizing for children: choose a surah, listen to the sheikh ayah by ayah, recite with the voice.
  */
-export default function Kids({ ready, reciters }: KidsProps) {
+export default function Kids({ ready, reciters, vowelCheck }: KidsProps) {
     const { t } = useTrans();
     const [surah, setSurah] = useState<number | null>(null);
     const [progress, setProgress] = useState<KidsProgress>(readProgress);
+    // The recitation mistakes stay marked on the ayahs until the page is reloaded.
+    const [mistakes, setMistakes] = useState<RecitationMistake[]>([]);
+    const recordMistake = useCallback((mistake: RecitationMistake) => setMistakes((list) => [...list, mistake]), []);
 
     const pick = useCallback((number: number) => {
         setSurah(number);
@@ -42,7 +48,17 @@ export default function Kids({ ready, reciters }: KidsProps) {
                     <SurahPicker progress={progress} onPick={pick} />
                 </>
             ) : (
-                <Lesson key={surah} surah={surah} reciters={reciters} progress={progress} onProgress={setProgress} onBack={() => setSurah(null)} />
+                <Lesson
+                    key={surah}
+                    surah={surah}
+                    reciters={reciters}
+                    progress={progress}
+                    onProgress={setProgress}
+                    vowelCheck={vowelCheck}
+                    mistakes={mistakes}
+                    onMistake={recordMistake}
+                    onBack={() => setSurah(null)}
+                />
             )}
         </AppLayout>
     );

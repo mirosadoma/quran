@@ -3,18 +3,21 @@ import { hasLetters, isJalalah } from '@/lib/arabic';
 import { useTrans } from '@/lib/i18n';
 import { highlightClasses } from '@/lib/mushaf';
 import { arabicDigits, surahName } from '@/lib/quran';
-import type { WordStatus } from '@/lib/recitation-check';
+import { frameMetrics, MushafFrame } from '@/components/mushaf/mushaf-frame';
+import { MarkedWord } from '@/components/recitation/recitation-ui';
+import type { WordMark } from '@/lib/recitation-check';
 import { cn } from '@/lib/utils';
 import type { MushafAyah, MushafHighlightItem } from '@/types';
 
 /**
  * How the words are shown: the name of Allah in red, words with a meaning in green, and the
- * result of a recitation (by ayah id, then word position), with the words not recited yet hidden.
+ * recitation (by ayah id, then word position): the word to say now, the words said, and the
+ * mistakes with their letters; the words not recited yet can be hidden.
  */
 export interface WordDisplay {
     jalalah: boolean;
     meanings: boolean;
-    statuses?: Map<number, Map<number, WordStatus>>;
+    marks?: Map<number, Map<number, WordMark>>;
     hideUnrecited?: boolean;
 }
 
@@ -124,34 +127,36 @@ export const MushafPage = memo(function MushafPage({
         return () => observer.disconnect();
     }, [ayahs, width, height, opening, fontLoaded]);
 
+    const frame = frameMetrics(width);
+    const label = Math.max(10, Math.round(width / 40));
+    const gap = Math.round(width * (width < 420 ? 0.014 : 0.02));
+    const medallion = Math.max(26, frame.band * 2.4);
+    // The text stays clear of the cartouches at the top and the medallion at the bottom.
+    const top = Math.max(frame.inner + gap, Math.round(frame.outer + frame.band / 2 + label + 6));
+    const bottom = Math.max(frame.inner + gap, Math.round(frame.outer + frame.band / 2 + medallion / 2 + 4));
+
     return (
         <div
             className={cn(
-                'mushaf-paper relative overflow-hidden shadow-[0_18px_45px_-20px_rgb(0_0_0/0.45)] select-none',
-                side === 'right' && 'mushaf-gutter-left rounded-e-[1.1rem] rounded-s-md',
-                side === 'left' && 'mushaf-gutter-right rounded-s-[1.1rem] rounded-e-md',
-                side === 'single' && 'rounded-2xl',
+                'mushaf-paper relative overflow-hidden select-none',
+                side === 'right' && 'mushaf-gutter-left mushaf-edge-right rounded-e-[1.1rem] rounded-s-md',
+                side === 'left' && 'mushaf-gutter-right mushaf-edge-left rounded-s-[1.1rem] rounded-e-md',
+                side === 'single' && 'mushaf-edge-single rounded-2xl',
             )}
             style={{ width, height }}
         >
-            <div className="mushaf-frame" />
+            <MushafFrame width={width} height={height} />
 
-            <div
-                className="absolute inset-x-[7%] top-[4.6%] flex items-center justify-between text-gold-700 dark:text-gold-300"
-                style={{ fontSize: Math.max(10, width / 40) }}
-            >
-                <span className="font-quran">{first ? `${t('Surah')} ${surahName(first.surah, 'ar')}` : ''}</span>
-                <span className="font-quran">{first ? `${t('Juz')} ${arabicDigits(first.juz)}` : ''}</span>
+            {/* The surah and the juz in cartouches on the top of the frame. */}
+            <div className="absolute flex items-center justify-between" style={{ insetInline: frame.inner + gap, top: frame.outer + frame.band / 2, transform: 'translateY(-50%)', fontSize: label }}>
+                {first ? <span className="mushaf-cartouche">{`${t('Surah')} ${surahName(first.surah, 'ar')}`}</span> : <span />}
+                {first ? <span className="mushaf-cartouche">{`${t('Juz')} ${arabicDigits(first.juz)}`}</span> : <span />}
             </div>
 
             <div
                 ref={bodyRef}
-                className={cn(
-                    'absolute overflow-hidden',
-                    // Narrow phone pages keep more room for the text.
-                    width < 420 ? 'inset-x-[5.5%] top-[8.8%] bottom-[7.8%]' : 'inset-x-[7.5%] top-[9.5%] bottom-[8.5%]',
-                    opening && 'flex flex-col justify-center',
-                )}
+                className={cn('absolute overflow-hidden', opening && 'flex flex-col justify-center')}
+                style={{ insetInline: frame.inner + gap, top, bottom }}
             >
                 {ayahs ? (
                     <div ref={textRef} className="mushaf-text" dir="rtl" style={opening ? { textAlign: 'center' } : undefined}>
@@ -188,11 +193,9 @@ export const MushafPage = memo(function MushafPage({
                 )}
             </div>
 
-            <div className="absolute inset-x-0 bottom-[3.9%] flex justify-center">
-                <span
-                    className="font-quran rounded-full border border-gold-500/40 px-3 text-gold-700 dark:text-gold-300"
-                    style={{ fontSize: Math.max(10, width / 42) }}
-                >
+            {/* The page number in a medallion on the bottom of the frame. */}
+            <div className="absolute inset-x-0 flex justify-center" style={{ bottom: frame.outer + frame.band / 2, transform: 'translateY(50%)' }}>
+                <span className="mushaf-medallion" style={{ fontSize: label, minWidth: medallion, height: medallion }}>
                     {arabicDigits(number)}
                 </span>
             </div>
@@ -205,8 +208,9 @@ export const MushafPage = memo(function MushafPage({
  * The hizb (۞) and sajda (۩) signs are gold.
  */
 function AyahText({ ayah, display }: { ayah: MushafAyah; display: WordDisplay }) {
+    const { t } = useTrans();
     const words = ayah.text.split(' ');
-    const statuses = display.statuses?.get(ayah.id);
+    const marks = display.marks?.get(ayah.id);
     let tail = words.length - 1;
 
     // Keep the last word with the signs that follow it (... وَٱقْتَرِب ۩).
@@ -222,10 +226,10 @@ function AyahText({ ayah, display }: { ayah: MushafAyah; display: WordDisplay })
             return <span className="text-gold-600 dark:text-gold-400">{word}</span>;
         }
 
-        const status = statuses?.get(index);
-        const hidden = !!display.hideUnrecited && (hasLetters(word) ? status === undefined || status === 'pending' : previousHidden);
+        const mark = marks?.get(index);
+        const hidden = !!display.hideUnrecited && (hasLetters(word) ? !mark?.said : previousHidden);
         previousHidden = hidden;
-        const recited = status !== undefined && status !== 'pending';
+        const recited = mark !== undefined && mark.status !== 'pending';
         const meaning = display.meanings && !recited ? ayah.meanings?.[index] : undefined;
         const jalalah = display.jalalah && !recited && isJalalah(word);
 
@@ -236,10 +240,13 @@ function AyahText({ ayah, display }: { ayah: MushafAyah; display: WordDisplay })
         return (
             <span
                 className={cn('mushaf-word', jalalah && 'mushaf-jalalah', meaning && 'mushaf-meaning', hidden && 'mushaf-hidden')}
-                data-status={recited ? status : undefined}
+                data-status={recited ? mark.status : undefined}
+                data-blocked={mark?.blocked ? 'true' : undefined}
                 data-meaning={meaning && !hidden ? meaning : undefined}
+                title={mark && mark.heard.length > 0 && !hidden ? t('You said: :words', { words: mark.heard.join('، ') }) : undefined}
             >
-                {word}
+                {/* The letters read wrong are not shown while the word is hidden. */}
+                {hidden || !mark ? word : <MarkedWord word={word} letters={mark.letters} vowels={mark.vowels} />}
             </span>
         );
     };
@@ -301,9 +308,7 @@ function SurahHeading({ surah }: { surah: number }) {
     return (
         <div className="my-[0.3em] flex items-center gap-[0.4em]" aria-label={surahName(surah, 'ar')}>
             <Ornament />
-            <div className="relative flex-1 rounded-[0.45em] border border-gold-500/70 bg-linear-to-l from-gold-100/80 via-gold-50/70 to-gold-100/80 py-[0.05em] text-center text-[0.95em] text-gold-800 shadow-[inset_0_0_0_3px_color-mix(in_oklab,var(--color-gold-200)_60%,transparent)] dark:from-gold-500/15 dark:via-gold-500/5 dark:to-gold-500/15 dark:text-gold-200 dark:shadow-none">
-                سُورَةُ {surahName(surah, 'ar')}
-            </div>
+            <div className="mushaf-surah-title relative flex-1 rounded-[0.45em] py-[0.08em] text-center text-[0.95em]">سُورَةُ {surahName(surah, 'ar')}</div>
             <Ornament />
         </div>
     );
@@ -311,7 +316,7 @@ function SurahHeading({ surah }: { surah: number }) {
 
 function Ornament() {
     return (
-        <svg viewBox="0 0 24 24" className="size-[1.1em] shrink-0 text-gold-500" aria-hidden>
+        <svg viewBox="0 0 24 24" className="size-[1.1em] shrink-0 text-(--frame-ornament)" aria-hidden>
             <path fill="currentColor" d="M12 1.5 14.4 9.6 22.5 12 14.4 14.4 12 22.5 9.6 14.4 1.5 12 9.6 9.6Z" />
         </svg>
     );

@@ -1,0 +1,16 @@
+{
+    "name": "rattil-transcriber",
+    "private": true,
+    "type": "module",
+    "description": "Speech to text with diacritics (checking Quran recitation) and text to speech with a man's voice (reading aloud), used by the Laravel app.",
+    "scripts": {
+        "start": "node server.mjs"
+    },
+    "engines": {
+        "node": ">=20.12"
+    },
+    "dependencies": {
+        "@breezystack/lamejs": "^1.2.7",
+        "@huggingface/transformers": "^4.3.0"
+    }
+}

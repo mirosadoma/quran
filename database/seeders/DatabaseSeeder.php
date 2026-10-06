@@ -47,6 +47,7 @@ class DatabaseSeeder extends Seeder
                 DeedSeeder::class,
                 AcademyJoinRequestSeeder::class,
                 ContactMessageSeeder::class,
+                CommunityPostSeeder::class,
             ]);
         }
     }

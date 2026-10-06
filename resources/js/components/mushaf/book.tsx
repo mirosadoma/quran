@@ -12,6 +12,7 @@ import {
 } from 'react';
 import { spreadOf } from '@/lib/mushaf';
 import { cn } from '@/lib/utils';
+import { MushafFrame } from './mushaf-frame';
 import type { PageSide } from './mushaf-page';
 
 export interface BookHandle {
@@ -194,8 +195,8 @@ export function Book({ ref, page, double, pageWidth, pageHeight, renderPage, onP
 
     if (double) {
         const current = spreadOf(turn ? turn.from : page);
-        const right = (number: number | null) => (number ? renderPage(number, 'right') : <BlankPage side="right" />);
-        const left = (number: number | null) => (number ? renderPage(number, 'left') : <BlankPage side="left" />);
+        const right = (number: number | null) => (number ? renderPage(number, 'right') : <BlankPage side="right" width={pageWidth} height={pageHeight} />);
+        const left = (number: number | null) => (number ? renderPage(number, 'left') : <BlankPage side="left" width={pageWidth} height={pageHeight} />);
 
         if (!turn) {
             content = (
@@ -229,12 +230,12 @@ export function Book({ ref, page, double, pageWidth, pageHeight, renderPage, onP
             turn.direction === 'next' ? (
                 <>
                     {slot(0, renderPage(turn.to, 'single'), true)}
-                    {leaf(0, 'right', 0, 180, renderPage(turn.from, 'single'), <BlankPage side="single" />)}
+                    {leaf(0, 'right', 0, 180, renderPage(turn.from, 'single'), <BlankPage side="single" width={pageWidth} height={pageHeight} />)}
                 </>
             ) : (
                 <>
                     {slot(0, renderPage(turn.from, 'single'))}
-                    {leaf(0, 'right', 180, 0, renderPage(turn.to, 'single'), <BlankPage side="single" />)}
+                    {leaf(0, 'right', 180, 0, renderPage(turn.to, 'single'), <BlankPage side="single" width={pageWidth} height={pageHeight} />)}
                 </>
             );
     }
@@ -266,7 +267,7 @@ export function Book({ ref, page, double, pageWidth, pageHeight, renderPage, onP
 /**
  * The back of a turning page (or an empty side of the last spread).
  */
-function BlankPage({ side }: { side: PageSide }) {
+function BlankPage({ side, width, height }: { side: PageSide; width: number; height: number }) {
     return (
         <div
             className={cn(
@@ -276,7 +277,7 @@ function BlankPage({ side }: { side: PageSide }) {
                 side === 'single' && 'rounded-2xl',
             )}
         >
-            <div className="mushaf-frame opacity-40" />
+            <MushafFrame width={width} height={height} className="opacity-40" />
         </div>
     );
 }

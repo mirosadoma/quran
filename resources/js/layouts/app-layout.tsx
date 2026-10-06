@@ -62,7 +62,7 @@ export default function AppLayout({ title, heading, description, actions, back, 
         <div className="min-h-dvh">
             <Head title={title} />
 
-            <aside className="no-print fixed inset-y-0 start-0 z-30 hidden w-72 lg:block">
+            <aside data-shell="sidebar" className="no-print fixed inset-y-0 start-0 z-30 hidden w-72 lg:block">
                 <Sidebar />
             </aside>
 
@@ -86,9 +86,10 @@ export default function AppLayout({ title, heading, description, actions, back, 
                 </div>
             </Dialog>
 
-            <div className="lg:ps-72 print:ps-0">
+            {/* data-shell: the parts hidden while the mushaf is read full screen (see app.css). */}
+            <div data-shell="content" className="lg:ps-72 print:ps-0">
                 <Topbar onMenu={() => setMenuOpen(true)} />
-                <main className={cn('mx-auto px-4 pt-6 sm:px-6 lg:px-8 lg:pt-8', flush ? 'pb-4' : 'pb-16', wide ? 'max-w-420' : 'max-w-360')}>
+                <main data-shell="main" className={cn('mx-auto px-4 pt-6 sm:px-6 lg:px-8 lg:pt-8', flush ? 'pb-4' : 'pb-16', wide ? 'max-w-420' : 'max-w-360')}>
                     {!hideHeader && <PageHeader title={heading ?? title} description={description} actions={actions} back={back} />}
                     <div className="animate-fade-in">{children}</div>
                 </main>

@@ -2,9 +2,12 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 /**
  * unsupported = the browser has no speech recognition (Firefox), insecure = not opened over HTTPS,
- * denied = the microphone is blocked, network = the recognition service could not be reached.
+ * denied = the microphone is blocked, network = the recognition service could not be reached,
+ * service = the recognition on the platform's server (with the vowels) failed.
  */
-export type SpeechError = 'unsupported' | 'insecure' | 'denied' | 'no-microphone' | 'network' | 'language' | 'failed';
+export type SpeechError = 'unsupported' | 'insecure' | 'denied' | 'no-microphone' | 'network' | 'language' | 'failed' | 'service';
+
+const clean = (text: string) => text.replace(/\s+/g, ' ').trim();
 
 interface RecognitionResult {
     readonly isFinal: boolean;
@@ -55,7 +58,12 @@ const ERRORS: Record<string, SpeechError> = {
 export function useSpeechRecognition(lang = 'ar-SA'): {
     supported: boolean;
     listening: boolean;
+    /** Everything heard: the final words, then the words still being recognized. */
     transcript: string;
+    /** Words recognized for good. */
+    final: string;
+    /** Words still being recognized: they may change. */
+    interim: string;
     error: SpeechError | null;
     start: () => void;
     stop: () => void;
@@ -63,7 +71,7 @@ export function useSpeechRecognition(lang = 'ar-SA'): {
     reset: () => void;
 } {
     const [listening, setListening] = useState(false);
-    const [transcript, setTranscript] = useState('');
+    const [heard, setHeard] = useState({ final: '', interim: '' });
     const [error, setError] = useState<SpeechError | null>(null);
     const [supported] = useState(isSpeechRecognitionSupported);
     const recognition = useRef<Recognition | null>(null);
@@ -110,7 +118,7 @@ export function useSpeechRecognition(lang = 'ar-SA'): {
 
             heard = final.trim();
             restarts.current = 0;
-            setTranscript([...finished.current, final, interim].join(' ').replace(/\s+/g, ' ').trim());
+            setHeard({ final: clean([...finished.current, final].join(' ')), interim: clean(interim) });
         };
 
         instance.onerror = (event) => {
@@ -131,7 +139,7 @@ export function useSpeechRecognition(lang = 'ar-SA'): {
                 finished.current.push(heard);
             }
 
-            setTranscript(finished.current.join(' '));
+            setHeard({ final: clean(finished.current.join(' ')), interim: '' });
 
             // The browser ends a recognition after a pause: go on listening until the reader stops.
             if (wanted.current && restarts.current < 30) {
@@ -192,7 +200,7 @@ export function useSpeechRecognition(lang = 'ar-SA'): {
         recognition.current?.abort();
         recognition.current = null;
         finished.current = [];
-        setTranscript('');
+        setHeard({ final: '', interim: '' });
         setError(null);
 
         if (wanted.current) {
@@ -211,5 +219,5 @@ export function useSpeechRecognition(lang = 'ar-SA'): {
         [],
     );
 
-    return { supported, listening, transcript, error, start, stop, reset };
+    return { supported, listening, transcript: clean(`${heard.final} ${heard.interim}`), final: heard.final, interim: heard.interim, error, start, stop, reset };
 }

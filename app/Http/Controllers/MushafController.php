@@ -9,6 +9,7 @@ use App\Models\MushafHighlight;
 use App\Models\Reciter;
 use App\Models\WordMeaning;
 use App\Services\Mushaf;
+use App\Services\Transcriber;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response as HttpResponse;
@@ -22,7 +23,7 @@ class MushafController extends Controller
     /**
      * The mushaf reader, opened at the requested place or where the user stopped.
      */
-    public function index(Request $request): Response
+    public function index(Request $request, Transcriber $transcriber): Response
     {
         $user = $request->user();
         $focus = $request->filled('surah')
@@ -53,6 +54,7 @@ class MushafController extends Controller
                 ->map(fn (MushafHighlight $highlight): array => $highlight->toReaderArray())
                 ->values(),
             'can' => ['editMeanings' => $user->isAdmin()],
+            'vowelCheck' => $transcriber->isConfigured(),
         ]);
     }
 

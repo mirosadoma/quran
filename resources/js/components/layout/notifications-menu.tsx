@@ -12,6 +12,7 @@ import {
     CirclePlay,
     Mail,
     Megaphone,
+    MessageCircleQuestionMark,
     MoonStar,
     Sun,
     UserCheck,
@@ -46,6 +47,7 @@ export const notificationIcons: Record<string, LucideIcon> = {
     'user-check': UserCheck,
     'user-x': UserX,
     mail: Mail,
+    'message-circle-question': MessageCircleQuestionMark,
     bell: Bell,
 };
 

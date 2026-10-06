@@ -267,15 +267,120 @@ WHATSAPP_TEMPLATE_LANGUAGE=ar
 ```
 الرسائل التي تبدأها الأكاديمية (مثل التذكير) تحتاج **قوالب معتمدة من Meta**. أسماء القوالب في `config/services.php` (`session_reminder`, `session_started`, `session_cancelled`, `progress_recorded`)، وكل قالب يحتوي متغيراً واحداً `{{1}}` = نص الرسالة.
 
+### فحص التشكيل في التسميع، والصوت الرجالي لقراءة التفسير والقصص
+خدمة صغيرة على السيرفر في مجلد `transcriber/` تقوم بشيئين:
+- **فحص التشكيل** (الفتحة والضمة والكسرة) في التسميع: نموذج Whisper مدرَّب على تلاوة القرآن (`tarteel-ai/whisper-base-ar-quran`)، يُحمَّل مرة واحدة (حوالي 400 ميجا) ويستهلك حوالي 1 جيجا رام.
+- **صوت رجالي** يقرأ التفسير والقصص على كل الأجهزة: برنامج Piper مفتوح المصدر بصوت «كريم» العربي، يضيف التشكيل بنفسه قبل القراءة. يُحمَّل تلقائياً أول مرة (حوالي 85 ميجا)، وكل جملة تُصنع مرة واحدة وتُحفظ في `storage/app/private/speech`.
+```bash
+cd transcriber && npm install && npm start      # تسمع على http://127.0.0.1:8787
+# أو: composer run dev يشغّلها تلقائياً مع باقي العمليات بعد npm install
+```
+```
+TRANSCRIBER_URL=http://127.0.0.1:8787
+TRANSCRIBER_TOKEN=...      # اختياري: نفس القيمة في متغير البيئة TRANSCRIBER_TOKEN للخدمة
+```
+على السيرفر شغّلها دائماً بـ Supervisor (مثل الطابور). بدون `TRANSCRIBER_URL` يعمل التسميع بالتعرف على الصوت في المتصفح ويفحص الكلمات والحروف فقط.
+
 ---
 
-## 11. النشر على سيرفر
+## 11. النشر على سيرفر (نسخة برودكشن)
 
-- VPS (مثل Hetzner أو DigitalOcean) أو Laravel Cloud أو Forge، مع **HTTPS إجباري**.
-- `composer install --no-dev -o` ثم `npm ci && npm run build` ثم `php artisan migrate --force` ثم `php artisan optimize`.
-- في `.env`: ‏`APP_ENV=production` و `APP_DEBUG=false` و `QUEUE_CONNECTION=database`.
-- Cron كل دقيقة: `* * * * * php /path/artisan schedule:run`.
-- Supervisor لـ `php artisan queue:work --tries=3`.
+**السيرفر:** VPS بنظام Ubuntu 24.04، على الأقل 2 معالج و4 جيجا رام (نموذج فحص التشكيل يأخذ حوالي 1 جيجا وصوت القراءة حوالي 200 ميجا)، والأفضل 4 معالج و8 جيجا مع زيادة الطلاب. مثل Hetzner (CPX31) أو DigitalOcean. Laravel Cloud وحده لا يكفي لأن خدمة `transcriber/` (Node) تحتاج سيرفراً، فالأسهل سيرفر واحد لكل شيء. **HTTPS إجباري** (الميكروفون لا يعمل بدونه).
+
+**1) الدومين:** سجل `A` للدومين و `www` يشير لعنوان IP السيرفر.
+
+**2) تجهيز السيرفر (مرة واحدة):**
+```bash
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y nginx mysql-server supervisor git unzip certbot python3-certbot-nginx \
+  php8.3-fpm php8.3-cli php8.3-mysql php8.3-mbstring php8.3-xml php8.3-curl php8.3-zip php8.3-gd php8.3-intl php8.3-bcmath php8.3-opcache
+curl -sS https://getcomposer.org/installer | sudo php -- --install-dir=/usr/local/bin --filename=composer
+curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash - && sudo apt install -y nodejs
+sudo mysql -e "CREATE DATABASE quran CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; CREATE USER 'quran'@'localhost' IDENTIFIED BY 'كلمة-سر-قوية'; GRANT ALL ON quran.* TO 'quran'@'localhost';"
+sudo ufw allow OpenSSH && sudo ufw allow 'Nginx Full' && sudo ufw enable   # المنفذ 8787 يبقى مغلقاً
+```
+
+**3) رفع المشروع:** ارفعه أولاً على GitHub (مستودع خاص)، ثم:
+```bash
+cd /var/www && sudo git clone <رابط المستودع> quran && sudo chown -R $USER:www-data quran && cd quran
+composer install --no-dev -o
+npm install && npm run build
+cp .env.example .env && php artisan key:generate
+```
+وفي `.env`:
+```
+APP_ENV=production
+APP_DEBUG=false
+APP_URL=https://الدومين
+DB_DATABASE=quran
+DB_USERNAME=quran
+DB_PASSWORD=كلمة-سر-قوية
+QUEUE_CONNECTION=database
+MAIL_MAILER=smtp        # مع بيانات SMTP (القسم 10)
+TRANSCRIBER_URL=http://127.0.0.1:8787
+TRANSCRIBER_TOKEN=...   # ناتج: php -r "echo bin2hex(random_bytes(32));"
+```
+```bash
+php artisan migrate --force
+php artisan db:seed --force    # القرآن والتفسير ومعاني الكلمات والقراء والأذكار + حساب الأدمن
+php artisan webpush:keys       # مفاتيح إشعارات الجوال، ضعها في .env
+php artisan storage:link
+php artisan optimize
+sudo chown -R www-data:www-data storage bootstrap/cache transcriber
+```
+> **مهم:** `db:seed` ينشئ الأدمن `admin@rattil.test` بكلمة المرور `password`: ادخل به فوراً وغيّر البريد وكلمة المرور.
+
+**4) Nginx و HTTPS:** ملف `/etc/nginx/sites-available/quran` ثم `sudo ln -s` إلى `sites-enabled`:
+```nginx
+server {
+    server_name الدومين www.الدومين;
+    root /var/www/quran/public;
+    index index.php;
+    client_max_body_size 20m;   # تسجيلات التسميع والرسائل الصوتية
+    location / { try_files $uri $uri/ /index.php?$query_string; }
+    location ~ \.php$ { include snippets/fastcgi-php.conf; fastcgi_pass unix:/run/php/php8.3-fpm.sock; }
+    location ~ /\.(?!well-known) { deny all; }
+}
+```
+```bash
+sudo nginx -t && sudo systemctl reload nginx
+sudo certbot --nginx -d الدومين -d www.الدومين
+```
+
+**5) العمليات الدائمة (Supervisor):** أولاً `cd transcriber && sudo -u www-data npm install --omit=dev`، ثم ملف `/etc/supervisor/conf.d/quran.conf`:
+```ini
+[program:quran-queue]
+command=php /var/www/quran/artisan queue:work --tries=3 --max-time=3600
+user=www-data
+autostart=true
+autorestart=true
+
+[program:quran-transcriber]
+command=node /var/www/quran/transcriber/server.mjs
+directory=/var/www/quran/transcriber
+user=www-data
+autostart=true
+autorestart=true
+```
+```bash
+sudo supervisorctl reread && sudo supervisorctl update
+curl http://127.0.0.1:8787/health   # أول تشغيل يحمّل حوالي 500 ميجا (نموذج التشكيل والصوت)، انتظر حتى ready
+```
+
+**6) المجدول:** `sudo crontab -u www-data -e` ثم السطر:
+`* * * * * php /var/www/quran/artisan schedule:run >> /dev/null 2>&1`
+
+**7) اختياري:** الشات اللحظي (Pusher أو Reverb) والاجتماعات والواتساب من القسم 10.
+
+**8) نسخ احتياطي:** نسخة يومية لقاعدة البيانات (`mysqldump`) ولمجلد `storage/app`.
+
+**تحديث النسخة بعد أي تعديل:**
+```bash
+cd /var/www/quran && git pull
+composer install --no-dev -o && npm install && npm run build
+php artisan migrate --force && php artisan optimize
+php artisan queue:restart && sudo supervisorctl restart quran-transcriber
+```
 
 ---
 

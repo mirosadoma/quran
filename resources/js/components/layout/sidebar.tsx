@@ -1,6 +1,7 @@
 import { Link, usePage } from '@inertiajs/react';
 import {
     Bell,
+    BookHeart,
     BookOpen,
     BookOpenCheck,
     BookOpenText,
@@ -12,10 +13,12 @@ import {
     Inbox,
     LayoutDashboard,
     LogOut,
+    MessageCircleQuestionMark,
     MessagesSquare,
     MoonStar,
     Scale,
     School,
+    ScrollText,
     Settings,
     Smile,
     UserPlus,
@@ -90,6 +93,7 @@ function useNavigation(): NavGroup[] {
           ];
 
     const communication: NavItem[] = [
+        { label: t('Questions community'), href: route('community.index'), active: current('community.*'), icon: MessageCircleQuestionMark },
         {
             label: t('Notifications'),
             href: route('notifications.index'),
@@ -111,6 +115,8 @@ function useNavigation(): NavGroup[] {
             items: [
                 { label: t('The recited mushaf'), href: route('mushaf.index'), active: current('mushaf.*'), icon: BookOpenText },
                 { label: t('Kids memorization'), href: route('kids.index'), active: current('kids.*'), icon: Smile },
+                { label: t('Kids stories'), href: route('kids-stories.index'), active: current('kids-stories.*'), icon: BookHeart },
+                { label: t("Prophets' stories"), href: route('prophets-stories.index'), active: current('prophets-stories.*'), icon: ScrollText },
                 { label: t('Adhkar and duas'), href: route('adhkar.index'), active: current('adhkar.*'), icon: HandHeart },
                 { label: t('Prayer'), href: route('prayers.index'), active: current('prayers.*'), icon: MoonStar },
                 { label: t('Self-accounting'), href: route('deeds.index'), active: current('deeds.*'), icon: Scale },

@@ -149,7 +149,7 @@ export function PlayerBar({ recitation, reciters, reciter, onReciter }: PlayerBa
     const setOption = <K extends keyof RecitationOptions>(key: K, value: RecitationOptions[K]) => recitation.setOptions({ [key]: value });
 
     return (
-        <div className="fixed inset-x-0 bottom-0 z-30 animate-slide-up border-t border-line bg-surface/95 shadow-[0_-10px_30px_-15px_rgb(0_0_0/0.3)] backdrop-blur lg:start-72">
+        <div className="mushaf-dock fixed inset-x-0 bottom-0 z-30 animate-slide-up border-t border-line bg-surface/95 shadow-[0_-10px_30px_-15px_rgb(0_0_0/0.3)] backdrop-blur lg:start-72">
             <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-2.5">
                 <div className="flex min-w-0 flex-1 items-center gap-3">
                     <Avatar name={reciter?.name ?? '?'} size="sm" />

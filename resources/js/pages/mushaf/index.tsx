@@ -1,14 +1,33 @@
 import { Popover, PopoverButton, PopoverPanel } from '@headlessui/react';
-import { Bookmark, BookmarkCheck, BookOpen, ChevronLeft, ChevronRight, Columns2, Mic, Minus, PanelRight, Plus, RectangleVertical, Settings2, Sparkles } from 'lucide-react';
+import {
+    Bookmark,
+    BookmarkCheck,
+    BookOpen,
+    ChevronLeft,
+    ChevronRight,
+    Columns2,
+    Maximize2,
+    Mic,
+    Minimize2,
+    Minus,
+    PanelRight,
+    Plus,
+    RectangleVertical,
+    Settings2,
+    Sparkles,
+    Trash2,
+} from 'lucide-react';
 import { type MouseEvent, type PointerEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { AyahMenu, type AyahMenuTarget, type ListenScope } from '@/components/mushaf/ayah-menu';
 import { Book, type BookHandle } from '@/components/mushaf/book';
 import { IndexPanel, type IndexTab } from '@/components/mushaf/index-panel';
 import { MeaningsDialog } from '@/components/mushaf/meanings-dialog';
+import { MushafActions } from '@/components/mushaf/mushaf-actions';
 import { MushafPage, type PageSide, type WordDisplay } from '@/components/mushaf/mushaf-page';
+import { PageNavigator } from '@/components/mushaf/page-navigator';
 import { ListenMenu, PlayerBar, RangeDialog } from '@/components/mushaf/player';
-import { RecitePanel } from '@/components/mushaf/recite-panel';
+import { RecitePanel, type ReciteState } from '@/components/mushaf/recite-panel';
 import { TafsirDialog } from '@/components/mushaf/tafsir-dialog';
 import { WordTip, type WordTipTarget } from '@/components/mushaf/word-tip';
 import { Button } from '@/components/ui/button';
@@ -20,8 +39,9 @@ import { http } from '@/lib/http';
 import { useTrans } from '@/lib/i18n';
 import { cachedPage, clampPage, loadPage, pageOfAyah, readPreference, spreadOf, TOTAL_PAGES, updateCachedAyah, useMushafPages, writePreference } from '@/lib/mushaf';
 import { arabicDigits, surahName } from '@/lib/quran';
-import { type RecitationCheck, statusByWord } from '@/lib/recitation-check';
-import { cn } from '@/lib/utils';
+import { type RecitationMistake, wordMarks } from '@/lib/recitation-check';
+import { prepareSounds } from '@/lib/sounds';
+import { cn, formatNumber } from '@/lib/utils';
 import type { HighlightColor, MushafAyah, MushafBookmarkItem, MushafHighlightItem, MushafIndex, ReciterItem } from '@/types';
 
 interface MushafProps {
@@ -34,6 +54,8 @@ interface MushafProps {
     bookmarks: MushafBookmarkItem[];
     highlights: MushafHighlightItem[];
     can: { editMeanings: boolean };
+    /** The server can check the vowels of a recitation. */
+    vowelCheck: boolean;
 }
 
 type LayoutMode = 'auto' | 'single' | 'double';
@@ -43,7 +65,7 @@ const zoomLevels = [0.9, 1, 1.15, 1.3, 1.5];
 /**
  * Proportions of a printed mushaf page.
  */
-const PAGE_RATIO = 1.42;
+const PAGE_RATIO = 1.38;
 
 interface ReciteScope {
     ayahs: MushafAyah[];
@@ -52,7 +74,7 @@ interface ReciteScope {
 
 export default function Mushaf(props: MushafProps) {
     const { index, reciters, tafsirs } = props;
-    const { t } = useTrans();
+    const { t, locale } = useTrans();
     const stageRef = useRef<HTMLDivElement>(null);
     const bookRef = useRef<BookHandle>(null);
     const [stage, setStage] = useState({ width: 0, height: 800 });
@@ -72,10 +94,13 @@ export default function Mushaf(props: MushafProps) {
     const [bookmarks, setBookmarks] = useState(props.bookmarks);
     const [highlights, setHighlights] = useState(props.highlights);
     const [reciterId, setReciterId] = useState<number | null>(() => readPreference('reciter', reciters[0]?.id ?? null));
-    const [slider, setSlider] = useState<number | null>(null);
     const [recite, setRecite] = useState<ReciteScope | null>(null);
-    const [check, setCheck] = useState<RecitationCheck | null>(null);
+    const [reciting, setReciting] = useState<ReciteState | null>(null);
+    // The recitation mistakes stay marked on the pages until the page is reloaded.
+    const [mistakes, setMistakes] = useState<RecitationMistake[]>([]);
     const [hideText, setHideText] = useState(false);
+    // Full screen: only the pages on a desk, the actions behind one floating icon.
+    const [immersive, setImmersive] = useState(false);
     const pointerType = useRef('mouse');
     const tipRef = useRef(tip);
 
@@ -94,13 +119,50 @@ export default function Mushaf(props: MushafProps) {
     // The pages take the whole width; on computers they also fit the height of the screen (with a
     // minimum, so small laptop screens still get a readable page), on phones the text uses the height.
     const phone = stage.width < 640;
-    const reserved = recitation.active ? 290 : 200;
-    const available = Math.max(phone ? 460 : 680, stage.height - reserved);
-    const perPage = double ? stage.width / 2 : Math.min(stage.width, phone ? stage.width : 760);
+    // The leather cover around the pages (not on phones, where the page takes the whole width).
+    const cover = phone ? 0 : 12;
+    // Room for the bars above and below the pages; full screen only a margin.
+    const reserved = immersive ? 24 : recitation.active ? 250 : 150;
+    const available = Math.max(phone ? 460 : immersive ? 400 : 720, stage.height - reserved - 2 * cover);
+    const perPage = double ? (stage.width - 2 * cover) / 2 : Math.min(stage.width - 2 * cover, phone || immersive ? stage.width : 880);
     const pageWidth = Math.max(260, Math.floor(Math.min(perPage, phone ? perPage : available / PAGE_RATIO)));
     const naturalHeight = phone ? Math.min(Math.max(pageWidth * 1.55, available), pageWidth * 2.1) : pageWidth * PAGE_RATIO;
     const pageHeight = Math.floor(naturalHeight * zoom);
-    const arrows = !phone && stage.width - (double ? 2 : 1) * pageWidth >= 136;
+    const arrows = !phone && stage.width - (double ? 2 : 1) * pageWidth - 2 * cover >= 136;
+
+    // Full screen: the browser too when it can (not on iPhone); leaving it (Escape) leaves the mode.
+    useEffect(() => {
+        if (!immersive) {
+            return;
+        }
+
+        const root = document.documentElement;
+        const onFullscreen = () => !document.fullscreenElement && setImmersive(false);
+        const onKeyDown = (event: KeyboardEvent) => event.key === 'Escape' && !document.querySelector('[role="dialog"]') && setImmersive(false);
+
+        root.setAttribute('data-mushaf-immersive', '');
+        document.addEventListener('fullscreenchange', onFullscreen);
+        window.addEventListener('keydown', onKeyDown);
+        window.scrollTo({ top: 0 });
+
+        return () => {
+            root.removeAttribute('data-mushaf-immersive');
+            document.removeEventListener('fullscreenchange', onFullscreen);
+            window.removeEventListener('keydown', onKeyDown);
+
+            if (document.fullscreenElement) {
+                void document.exitFullscreen().catch(() => undefined);
+            }
+        };
+    }, [immersive]);
+
+    const enterImmersive = () => {
+        setMenu(null);
+        setImmersive(true);
+        void document.documentElement.requestFullscreen?.().catch(() => undefined);
+    };
+
+    const exitImmersive = useCallback(() => setImmersive(false), []);
 
     useEffect(() => {
         const element = stageRef.current;
@@ -147,15 +209,17 @@ export default function Mushaf(props: MushafProps) {
         );
     }, []);
 
-    const commitSlider = () => {
-        if (slider !== null) {
-            goTo(slider);
-            setSlider(null);
+    const next = useCallback(() => {
+        if (current + (double ? 2 : 1) <= TOTAL_PAGES) {
+            goTo(current + (double ? 2 : 1));
         }
-    };
+    }, [current, double, goTo]);
 
-    const next = useCallback(() => current + (double ? 2 : 1) <= TOTAL_PAGES && goTo(current + (double ? 2 : 1)), [current, double, goTo]);
-    const previous = useCallback(() => current > 1 && goTo(current - (double ? 2 : 1)), [current, double, goTo]);
+    const previous = useCallback(() => {
+        if (current > 1) {
+            goTo(current - (double ? 2 : 1));
+        }
+    }, [current, double, goTo]);
 
     useEffect(() => {
         if (flash === null) {
@@ -309,11 +373,16 @@ export default function Mushaf(props: MushafProps) {
 
     const closeMenu = useCallback(() => setMenu(null), []);
 
-    const statuses = useMemo(() => (check ? statusByWord(check.words) : undefined), [check]);
-    const display = useMemo<WordDisplay>(
-        () => ({ jalalah: colorJalalah, meanings: showMeanings && !recite, statuses, hideUnrecited: !!recite && hideText }),
-        [colorJalalah, showMeanings, recite, statuses, hideText],
+    const marks = useMemo(
+        () => (reciting || mistakes.length > 0 ? wordMarks(reciting?.expected ?? [], reciting?.progress ?? null, mistakes) : undefined),
+        [reciting, mistakes],
     );
+    const display = useMemo<WordDisplay>(
+        () => ({ jalalah: colorJalalah, meanings: showMeanings && !recite, marks, hideUnrecited: !!recite && hideText }),
+        [colorJalalah, showMeanings, recite, marks, hideText],
+    );
+    const recordMistake = useCallback((mistake: RecitationMistake) => setMistakes((list) => [...list, mistake]), []);
+    const clearMistakes = useCallback(() => setMistakes([]), []);
 
     const renderPage = useCallback(
         (number: number, side: PageSide) => (
@@ -370,6 +439,7 @@ export default function Mushaf(props: MushafProps) {
             return;
         }
 
+        prepareSounds();
         recitation.stop();
         setMenu(null);
         setTip(null);
@@ -378,7 +448,7 @@ export default function Mushaf(props: MushafProps) {
 
     const stopReciting = useCallback(() => {
         setRecite(null);
-        setCheck(null);
+        setReciting(null);
     }, []);
 
     const toggleBookmark = async (target: { page: number; ayah_id: number | null }) => {
@@ -434,7 +504,7 @@ export default function Mushaf(props: MushafProps) {
 
     return (
         <AppLayout title={t('The mushaf')} hideHeader wide>
-            <div className="sticky top-16 z-20 -mx-4 mb-5 border-b border-line bg-canvas/90 px-3 py-2.5 backdrop-blur sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+            <div className={cn('sticky top-16 z-20 -mx-4 mb-5 border-b border-line bg-canvas/90 px-3 py-2.5 backdrop-blur sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8', immersive && 'hidden')}>
                 <div className="flex items-center gap-1.5 sm:gap-2">
                     <Button variant="secondary" size="sm" onClick={() => setIndexOpen(true)} aria-label={t('Index')}>
                         <PanelRight />
@@ -483,6 +553,10 @@ export default function Mushaf(props: MushafProps) {
                         onPlayRange={() => setRangeOpen(true)}
                         surahLabel={surahName(currentSurah, 'ar')}
                     />
+
+                    <Button variant="ghost" size="icon" onClick={enterImmersive} aria-label={t('Full screen')} title={t('Full screen')} className="max-sm:size-9">
+                        <Maximize2 />
+                    </Button>
 
                     <Popover className="relative">
                         <PopoverButton as={Button} variant="ghost" size="icon" aria-label={t('Reading settings')} className="max-sm:size-9">
@@ -564,49 +638,80 @@ export default function Mushaf(props: MushafProps) {
                 </div>
             </div>
 
-            <div ref={stageRef} className="relative" dir="rtl" onPointerDownCapture={(event) => {
+            <div
+                ref={stageRef}
+                className={cn('relative', immersive && 'mushaf-desk flex min-h-dvh flex-col justify-center py-3')}
+                dir="rtl"
+                onPointerDownCapture={(event) => {
                     pointerType.current = event.pointerType;
-                }} onPointerOver={onPointerOver} onPointerOut={onPointerOut}>
+                }}
+                onPointerOver={onPointerOver}
+                onPointerOut={onPointerOut}
+            >
                 {stage.width > 0 && (
                     <div className="flex items-center justify-center gap-4">
                         {arrows && <SideButton direction="previous" disabled={current <= 1} onClick={previous} label={t('Previous page')} />}
-                        <Book
-                            ref={bookRef}
-                            page={current}
-                            double={double}
-                            pageWidth={pageWidth}
-                            pageHeight={pageHeight}
-                            renderPage={renderPage}
-                            onPageChange={setPage}
-                            onSwipe={(direction) => (direction === 'next' ? next() : previous())}
-                        />
+                        <div className={cn(!phone && 'mushaf-cover')}>
+                            <Book
+                                ref={bookRef}
+                                page={current}
+                                double={double}
+                                pageWidth={pageWidth}
+                                pageHeight={pageHeight}
+                                renderPage={renderPage}
+                                onPageChange={setPage}
+                                onSwipe={(direction) => (direction === 'next' ? next() : previous())}
+                            />
+                        </div>
                         {arrows && <SideButton direction="next" disabled={current + (double ? 2 : 1) > TOTAL_PAGES} onClick={next} label={t('Next page')} />}
                     </div>
                 )}
 
-                <div className={cn('mx-auto mt-6 flex max-w-xl items-center gap-3', recite ? 'mb-80' : recitation.active && 'mb-28')}>
-                    <Button variant="secondary" size="icon-sm" onClick={previous} disabled={current <= 1} aria-label={t('Previous page')}>
-                        <ChevronRight className="ltr:rotate-180" />
-                    </Button>
-                    <input
-                        type="range"
-                        min={1}
-                        max={TOTAL_PAGES}
-                        value={slider ?? current}
-                        onChange={(event) => setSlider(Number(event.target.value))}
-                        onPointerUp={commitSlider}
-                        onKeyUp={commitSlider}
-                        className="min-w-0 flex-1 accent-primary-600"
-                        aria-label={t('Page')}
-                    />
-                    <Button variant="secondary" size="icon-sm" onClick={next} disabled={current + (double ? 2 : 1) > TOTAL_PAGES} aria-label={t('Next page')}>
-                        <ChevronLeft className="ltr:rotate-180" />
-                    </Button>
-                    <span className="w-20 shrink-0 text-center text-xs text-muted tabular-nums sm:w-24">
-                        {t(':page of :total', { page: arabicDigits(slider ?? current), total: arabicDigits(TOTAL_PAGES) })}
-                    </span>
-                </div>
+                {immersive ? (
+                    // Room to scroll the pages above the recitation panel or the player.
+                    <div className={cn(recite ? 'h-80' : recitation.active && 'h-28')} />
+                ) : (
+                    <div className={cn(recite ? 'mb-80' : recitation.active && 'mb-28')}>
+                        <PageNavigator page={current} left={double ? spread.left : null} compact={phone} onGo={goTo} onPrevious={previous} onNext={next} />
+                    </div>
+                )}
             </div>
+
+            {immersive && (
+                <>
+                    <button
+                        type="button"
+                        onClick={exitImmersive}
+                        aria-label={t('Exit full screen')}
+                        title={t('Exit full screen')}
+                        className="fixed top-3 z-40 flex size-11 items-center justify-center rounded-full bg-black/45 text-white shadow-lg backdrop-blur transition hover:bg-black/65 ltr:right-3 rtl:left-3"
+                    >
+                        <Minimize2 className="size-5" />
+                    </button>
+                    {!recite && (
+                        <MushafActions
+                            className={recitation.active ? 'bottom-32' : undefined}
+                            bookmarked={!!pageBookmark}
+                            onRecite={() => startReciting()}
+                            onListen={playPage}
+                            onTafsir={() => firstAyah && setTafsirAyah(firstAyah.id)}
+                            onIndex={() => setIndexOpen(true)}
+                            onBookmark={() => void toggleBookmark({ page: current, ayah_id: null })}
+                            onExit={exitImmersive}
+                        />
+                    )}
+                </>
+            )}
+
+            {!recite && !immersive && mistakes.length > 0 && (
+                <div className="mx-auto mt-4 flex max-w-xl flex-wrap items-center justify-center gap-x-3 gap-y-1 rounded-2xl bg-rose-50 px-4 py-2 text-sm text-rose-800 ring-1 ring-rose-200 dark:bg-rose-500/10 dark:text-rose-200 dark:ring-rose-500/30">
+                    <span>{t('Your recitation mistakes are marked on the pages (:count).', { count: formatNumber(mistakes.length, locale) })}</span>
+                    <Button variant="ghost" size="sm" onClick={clearMistakes}>
+                        <Trash2 />
+                        {t('Clear the marks')}
+                    </Button>
+                </div>
+            )}
 
             <WordTip target={tip} />
 
@@ -662,7 +767,18 @@ export default function Mushaf(props: MushafProps) {
             )}
 
             {recite ? (
-                <RecitePanel ayahs={recite.ayahs} label={recite.label} hideText={hideText} onHideText={setHideText} onResult={setCheck} onClose={stopReciting} />
+                <RecitePanel
+                    ayahs={recite.ayahs}
+                    label={recite.label}
+                    hideText={hideText}
+                    onHideText={setHideText}
+                    vowelCheck={props.vowelCheck}
+                    mistakes={mistakes}
+                    onMistake={recordMistake}
+                    onClearMistakes={clearMistakes}
+                    onProgress={setReciting}
+                    onClose={stopReciting}
+                />
             ) : (
                 <PlayerBar recitation={recitation} reciters={reciters} reciter={reciter} onReciter={chooseReciter} />
             )}

@@ -8,6 +8,8 @@ use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\ChatController;
+use App\Http\Controllers\CommunityPostController;
+use App\Http\Controllers\CommunityReplyController;
 use App\Http\Controllers\ContactMessageController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DeedController;
@@ -35,11 +37,14 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProgressController;
 use App\Http\Controllers\PushSubscriptionController;
 use App\Http\Controllers\RecitationSubmissionController;
+use App\Http\Controllers\RecitationTranscriptionController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SessionController;
 use App\Http\Controllers\SessionMeetingController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\SiteController;
+use App\Http\Controllers\SpeechController;
+use App\Http\Controllers\StoryController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\VideoController;
 use App\Http\Controllers\Webhooks\JaasWebhookController;
@@ -206,6 +211,18 @@ Route::middleware(['auth', 'active'])->prefix('admin')->group(function () {
     Route::post('chat/{halaqa}/read', [ChatController::class, 'read'])->name('chat.read');
     Route::delete('chat/messages/{message}', [ChatController::class, 'destroy'])->name('chat.messages.destroy');
 
+    // The questions community, shared by every member of the platform.
+    Route::get('community', [CommunityPostController::class, 'index'])->name('community.index');
+    Route::get('community/similar', [CommunityPostController::class, 'similar'])->middleware('throttle:60,1')->name('community.similar');
+    Route::post('community', [CommunityPostController::class, 'store'])->middleware('throttle:20,1')->name('community.store');
+    Route::get('community/{post}', [CommunityPostController::class, 'show'])->whereNumber('post')->name('community.show');
+    Route::put('community/{post}', [CommunityPostController::class, 'update'])->whereNumber('post')->name('community.update');
+    Route::delete('community/{post}', [CommunityPostController::class, 'destroy'])->whereNumber('post')->name('community.destroy');
+    Route::post('community/{post}/replies', [CommunityReplyController::class, 'store'])->whereNumber('post')->middleware('throttle:20,1')->name('community.replies.store');
+    Route::put('community/replies/{reply}', [CommunityReplyController::class, 'update'])->name('community.replies.update');
+    Route::delete('community/replies/{reply}', [CommunityReplyController::class, 'destroy'])->name('community.replies.destroy');
+    Route::patch('community/replies/{reply}/accept', [CommunityReplyController::class, 'accept'])->name('community.replies.accept');
+
     Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::get('notifications/latest', [NotificationController::class, 'latest'])->name('notifications.latest');
     Route::post('notifications/read-all', [NotificationController::class, 'readAll'])->name('notifications.read-all');
@@ -217,6 +234,13 @@ Route::middleware(['auth', 'active'])->prefix('admin')->group(function () {
     Route::post('push-subscriptions/test', [PushSubscriptionController::class, 'test'])->middleware('throttle:6,1')->name('push-subscriptions.test');
 
     Route::get('kids', KidsController::class)->name('kids.index');
+    Route::post('recitation/transcribe', RecitationTranscriptionController::class)->middleware('throttle:240,1')->name('recitation.transcribe');
+    Route::get('speech', SpeechController::class)->middleware('throttle:300,1')->name('speech');
+
+    Route::get('kids-stories', [StoryController::class, 'kidsIndex'])->name('kids-stories.index');
+    Route::get('kids-stories/{slug}', [StoryController::class, 'kidsShow'])->where('slug', '[a-z0-9-]+')->name('kids-stories.show');
+    Route::get('prophets-stories', [StoryController::class, 'prophetsIndex'])->name('prophets-stories.index');
+    Route::get('prophets-stories/{slug}', [StoryController::class, 'prophetsShow'])->where('slug', '[a-z0-9-]+')->name('prophets-stories.show');
 
     Route::get('prayers', [PrayerController::class, 'index'])->name('prayers.index');
     Route::get('prayers/{slug}', [PrayerController::class, 'show'])->where('slug', '[a-z-]+')->name('prayers.show');

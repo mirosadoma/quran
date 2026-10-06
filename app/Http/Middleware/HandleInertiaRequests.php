@@ -7,6 +7,7 @@ use App\Models\AcademyJoinRequest;
 use App\Models\ContactMessage;
 use App\Models\Setting;
 use App\Services\ChatService;
+use App\Services\Narrator;
 use App\Services\Realtime;
 use App\Services\WebPush\WebPush;
 use Illuminate\Http\Request;
@@ -95,6 +96,8 @@ class HandleInertiaRequests extends Middleware
                     ? $user->accessibleHalaqat()->pluck('id')->all()
                     : [],
             ],
+            // Texts (tafsir, stories) are read aloud by the man's voice of the server.
+            'narrator' => fn (): bool => $user !== null && app(Narrator::class)->isConfigured(),
         ];
     }
 }

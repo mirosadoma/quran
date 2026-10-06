@@ -1,9 +1,11 @@
 import { ChevronLeft, ChevronRight, Copy } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { AyahMarker } from '@/components/mushaf/mushaf-page';
+import { ReadAloudControls } from '@/components/read-aloud/read-aloud-controls';
 import { Button } from '@/components/ui/button';
 import { Modal } from '@/components/ui/modal';
+import { useReadAloud } from '@/hooks/use-read-aloud';
 import { http } from '@/lib/http';
 import { useTrans } from '@/lib/i18n';
 import { readPreference, writePreference } from '@/lib/mushaf';
@@ -25,7 +27,8 @@ interface TafsirDialogProps {
 const cache = new Map<string, TafsirResult>();
 
 /**
- * The ayah with its explanation, from the tafsir book the reader chooses.
+ * The ayah with its explanation, from the tafsir book the reader chooses. The explanation can be read
+ * aloud by the Arabic voice of the device (never the ayah itself), the paragraph being read is lit.
  */
 export function TafsirDialog({ ayahId, editions, onClose }: TafsirDialogProps) {
     const { t } = useTrans();
@@ -33,8 +36,23 @@ export function TafsirDialog({ ayahId, editions, onClose }: TafsirDialogProps) {
     const [edition, setEdition] = useState<string>(() => readPreference('tafsir', editions[0]?.value ?? 'muyassar'));
     const [result, setResult] = useState<TafsirResult | null>(null);
     const [failed, setFailed] = useState(false);
+    const reader = useReadAloud();
+    const { stop } = reader;
+    const paragraphs = useMemo(
+        () =>
+            (result?.text ?? '')
+                .split(/\n+/)
+                .map((paragraph) => paragraph.trim())
+                .filter((paragraph) => paragraph !== ''),
+        [result?.text],
+    );
 
     useEffect(() => setCurrent(ayahId), [ayahId]);
+
+    // Another ayah or book, or the window closed: stop reading.
+    useEffect(() => {
+        stop();
+    }, [current, edition, ayahId, stop]);
 
     useEffect(() => {
         if (current === null) {
@@ -138,9 +156,26 @@ export function TafsirDialog({ ayahId, editions, onClose }: TafsirDialogProps) {
                 {failed ? (
                     <p className="text-sm text-rose-600">{t('The tafsir could not be loaded. Please try again.')}</p>
                 ) : result ? (
-                    <p dir="rtl" className="font-quran text-lg leading-loose whitespace-pre-line text-ink/90">
-                        {result.text ?? t('No tafsir for this ayah in this book.')}
-                    </p>
+                    paragraphs.length > 0 ? (
+                        <div className="space-y-3">
+                            <ReadAloudControls reader={reader} segments={paragraphs} label={t('Listen to the tafsir')} size="sm" />
+                            <div dir="rtl" className="space-y-2 font-quran text-lg leading-loose text-ink/90">
+                                {paragraphs.map((paragraph, index) => (
+                                    <p
+                                        key={index}
+                                        className={cn(
+                                            '-mx-2 rounded-xl px-2 transition-colors',
+                                            reader.speaking && reader.current === index && 'bg-primary-50 text-ink dark:bg-primary-500/15',
+                                        )}
+                                    >
+                                        {paragraph}
+                                    </p>
+                                ))}
+                            </div>
+                        </div>
+                    ) : (
+                        <p className="font-quran text-lg leading-loose text-ink/90">{t('No tafsir for this ayah in this book.')}</p>
+                    )
                 ) : (
                     <div className="space-y-2">
                         {[100, 92, 96, 70].map((width) => (

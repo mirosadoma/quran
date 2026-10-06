@@ -176,27 +176,154 @@
         opacity: 0.5;
     }
 
-    /* Mushaf: a ghee-colored page with a double gold frame and black text (dark green in dark mode);
-       the name of Allah in red and the words that have a meaning in green */
+    /* Mushaf: cream paper with a fine grain, framed by a band of gold lozenges on green like a printed
+       mushaf, black text; at night a dark green paper with light text and the same gold. The name of
+       Allah is red and the words that have a meaning green. */
     .mushaf-paper {
-        --paper: #fbf2d7;
-        --paper-edge: #ecd9a6;
-        --paper-ink: #141210;
+        --paper: #fcf4dc;
+        --paper-edge: #e8d29c;
+        --paper-ink: #17130e;
         --paper-jalalah: #c4161c;
         --paper-meaning: #12773a;
-        --paper-line: color-mix(in oklab, var(--color-gold-600) 55%, transparent);
-        background:
-            radial-gradient(120% 90% at 50% 45%, var(--paper) 55%, var(--paper-edge) 135%);
+        --paper-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.42 0 0 0 0 0.3 0 0 0 0 0.12 0 0 0 0.11 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+        --frame-band: #1d5b48;
+        --frame-ornament: #dcb862;
+        --frame-line: #b08936;
+        --frame-label: #7c5a1c;
+        /* Border of the surah titles: gold lozenges on the band, stars at the corners (9-slice of 30 × 30) */
+        --surah-border: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='30' height='30' viewBox='0 0 30 30'%3E%3Cpath fill='%231d5b48' d='M0 0h30v10H0zM0 20h30v10H0zM0 10h10v10H0zM20 10h10v10H20z'/%3E%3Cpath fill='%23dcb862' d='M15 1.6 18.4 5 15 8.4 11.6 5zM15 21.6 18.4 25 15 28.4 11.6 25zM5 11.6 8.4 15 5 18.4 1.6 15zM25 11.6 28.4 15 25 18.4 21.6 15zM5 1.2 6.2 3.8 8.8 5 6.2 6.2 5 8.8 3.8 6.2 1.2 5 3.8 3.8zM25 1.2 26.2 3.8 28.8 5 26.2 6.2 25 8.8 23.8 6.2 21.2 5 23.8 3.8zM5 21.2 6.2 23.8 8.8 25 6.2 26.2 5 28.8 3.8 26.2 1.2 25 3.8 23.8zM25 21.2 26.2 23.8 28.8 25 26.2 26.2 25 28.8 23.8 26.2 21.2 25 23.8 23.8z'/%3E%3C/svg%3E");
+        background-color: var(--paper);
+        background-image:
+            radial-gradient(125% 95% at 50% 45%, transparent 50%, color-mix(in oklab, var(--paper-edge) 75%, transparent) 130%),
+            var(--paper-grain);
         color: var(--paper-ink);
     }
 
     .dark .mushaf-paper {
-        --paper: #13211d;
-        --paper-edge: #0a1512;
-        --paper-ink: #eef2ee;
+        --paper: #121c18;
+        --paper-edge: #070d0b;
+        --paper-ink: #ede6d4;
         --paper-jalalah: #ff8a80;
         --paper-meaning: #74e3a1;
-        --paper-line: color-mix(in oklab, var(--color-gold-400) 45%, transparent);
+        --paper-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.9 0 0 0 0 0.85 0 0 0 0 0.7 0 0 0 0.05 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+        --frame-band: #10302a;
+        --frame-ornament: #c9a24c;
+        --frame-line: #a3823b;
+        --frame-label: #e3c57e;
+        --surah-border: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='30' height='30' viewBox='0 0 30 30'%3E%3Cpath fill='%2310302a' d='M0 0h30v10H0zM0 20h30v10H0zM0 10h10v10H0zM20 10h10v10H20z'/%3E%3Cpath fill='%23c9a24c' d='M15 1.6 18.4 5 15 8.4 11.6 5zM15 21.6 18.4 25 15 28.4 11.6 25zM5 11.6 8.4 15 5 18.4 1.6 15zM25 11.6 28.4 15 25 18.4 21.6 15zM5 1.2 6.2 3.8 8.8 5 6.2 6.2 5 8.8 3.8 6.2 1.2 5 3.8 3.8zM25 1.2 26.2 3.8 28.8 5 26.2 6.2 25 8.8 23.8 6.2 21.2 5 23.8 3.8zM5 21.2 6.2 23.8 8.8 25 6.2 26.2 5 28.8 3.8 26.2 1.2 25 3.8 23.8zM25 21.2 26.2 23.8 28.8 25 26.2 26.2 25 28.8 23.8 26.2 21.2 25 23.8 23.8z'/%3E%3C/svg%3E");
+    }
+
+    /* The surah and the juz on the top of the frame, the page number in a medallion at the bottom */
+    .mushaf-cartouche,
+    .mushaf-medallion {
+        font-family: var(--font-quran);
+        line-height: 1;
+        color: var(--frame-label);
+        background-color: var(--paper);
+        border: 1px solid var(--frame-line);
+        box-shadow:
+            0 0 0 2px var(--paper),
+            0 0 0 3px color-mix(in oklab, var(--frame-line) 55%, transparent);
+    }
+
+    .mushaf-cartouche {
+        padding: 0.35em 0.9em 0.45em;
+        border-radius: 999px;
+    }
+
+    .mushaf-medallion {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding-inline: 0.5em;
+        border-radius: 999px;
+    }
+
+    /* The edges of the pages under the open ones, on the outer side of the book */
+    .mushaf-edge-right,
+    .mushaf-edge-left,
+    .mushaf-edge-single {
+        --edge-a: color-mix(in oklab, var(--paper-edge) 85%, #8a6a2a);
+        --edge-b: var(--paper);
+    }
+
+    .mushaf-edge-right {
+        box-shadow:
+            2px 1px 0 -1px var(--edge-a),
+            3px 2px 0 -1px var(--edge-b),
+            5px 3px 0 -2px var(--edge-a),
+            6px 4px 0 -2px var(--edge-b),
+            8px 5px 0 -3px var(--edge-a),
+            0 18px 45px -20px rgb(0 0 0 / 0.45);
+    }
+
+    .mushaf-edge-left {
+        box-shadow:
+            -2px 1px 0 -1px var(--edge-a),
+            -3px 2px 0 -1px var(--edge-b),
+            -5px 3px 0 -2px var(--edge-a),
+            -6px 4px 0 -2px var(--edge-b),
+            -8px 5px 0 -3px var(--edge-a),
+            0 18px 45px -20px rgb(0 0 0 / 0.45);
+    }
+
+    .mushaf-edge-single {
+        box-shadow:
+            0 2px 0 -1px var(--edge-a),
+            0 4px 0 -2px var(--edge-b),
+            0 6px 0 -3px var(--edge-a),
+            0 18px 45px -20px rgb(0 0 0 / 0.45);
+    }
+
+    .dark .mushaf-edge-right,
+    .dark .mushaf-edge-left,
+    .dark .mushaf-edge-single {
+        --edge-a: #2b2a22;
+        --edge-b: #171d1a;
+    }
+
+    /* Surah title: a cartouche in the colors of the frame */
+    .mushaf-surah-title {
+        color: var(--frame-band);
+        background: linear-gradient(90deg, color-mix(in oklab, var(--frame-ornament) 24%, var(--paper)), var(--paper) 25% 75%, color-mix(in oklab, var(--frame-ornament) 24%, var(--paper)));
+        border: 0.34em solid var(--frame-band);
+        border-image: var(--surah-border) 10 round;
+        box-shadow: inset 0 0 0 0.06em var(--frame-line);
+    }
+
+    .dark .mushaf-surah-title {
+        color: var(--frame-label);
+        background: linear-gradient(90deg, var(--frame-band), color-mix(in oklab, var(--frame-band) 45%, var(--paper)) 25% 75%, var(--frame-band));
+    }
+
+    /* The hard cover around the pages: green leather with gold lines, like a printed mushaf */
+    .mushaf-cover {
+        padding: 12px;
+        border-radius: 1.5rem;
+        background:
+            radial-gradient(120% 90% at 30% 0%, rgb(255 255 255 / 0.1), transparent 55%),
+            radial-gradient(140% 120% at 50% 0%, #22644f, #0f3a2e 75%);
+        box-shadow:
+            inset 0 0 0 1px rgb(220 184 98 / 0.6),
+            inset 0 0 0 5px #0f3a2e,
+            inset 0 0 0 6px rgb(220 184 98 / 0.35),
+            0 30px 60px -28px rgb(0 0 0 / 0.55);
+    }
+
+    .dark .mushaf-cover {
+        background: radial-gradient(140% 120% at 50% 0%, #17392f, #08130f 75%);
+        box-shadow:
+            inset 0 0 0 1px rgb(201 162 76 / 0.5),
+            inset 0 0 0 5px #08130f,
+            inset 0 0 0 6px rgb(201 162 76 / 0.28),
+            0 30px 60px -28px rgb(0 0 0 / 0.8);
+    }
+
+    /* Full screen: the mushaf lies on a dark desk */
+    .mushaf-desk {
+        background:
+            radial-gradient(90% 70% at 50% 40%, rgb(255 255 255 / 0.07), transparent 70%),
+            linear-gradient(160deg, #1d2c27, #0a1310);
     }
 
     .mushaf-jalalah {
@@ -235,11 +362,23 @@
         background-color: color-mix(in oklab, #ef4444 14%, transparent);
     }
 
-    .mushaf-word[data-status='missing'] {
-        color: #c4161c;
-        background-color: color-mix(in oklab, #ef4444 22%, transparent);
-        text-decoration: underline dotted 0.08em;
-        text-underline-offset: 0.5em;
+    /* Read right after a vowel mistake (a fatha read as a kasra) */
+    .mushaf-word[data-status='vowel'] {
+        color: #6d28d9;
+        background-color: color-mix(in oklab, #8b5cf6 14%, transparent);
+    }
+
+    /* The word to say now; in red after a mistake on it */
+    .mushaf-word[data-status='current'] {
+        background-color: color-mix(in oklab, var(--color-primary-500) 16%, transparent);
+        box-shadow: 0 0 0 0.07em color-mix(in oklab, var(--color-primary-500) 65%, transparent);
+        animation: recitation-current 1.6s ease-in-out infinite;
+    }
+
+    .mushaf-word[data-blocked='true'] {
+        background-color: color-mix(in oklab, #ef4444 20%, transparent);
+        box-shadow: 0 0 0 0.08em color-mix(in oklab, #ef4444 85%, transparent);
+        animation: none;
     }
 
     .dark .mushaf-word[data-status='correct'] {
@@ -250,9 +389,41 @@
         color: #fbd06b;
     }
 
-    .dark .mushaf-word[data-status='wrong'],
-    .dark .mushaf-word[data-status='missing'] {
+    .dark .mushaf-word[data-status='wrong'] {
         color: #ff8a80;
+    }
+
+    .dark .mushaf-word[data-status='vowel'] {
+        color: #c4b5fd;
+    }
+
+    /* Letters of a recited word: read wrong in red, read with another vowel in violet */
+    .recitation-letter {
+        border-radius: 0.15em;
+    }
+
+    .recitation-letter[data-kind='letter'] {
+        color: #c4161c;
+        background-color: color-mix(in oklab, #ef4444 24%, transparent);
+    }
+
+    .recitation-letter[data-kind='vowel'] {
+        color: #6d28d9;
+        background-color: color-mix(in oklab, #8b5cf6 26%, transparent);
+    }
+
+    .dark .recitation-letter[data-kind='letter'] {
+        color: #ff8a80;
+    }
+
+    .dark .recitation-letter[data-kind='vowel'] {
+        color: #ddd6fe;
+    }
+
+    @keyframes recitation-current {
+        50% {
+            box-shadow: 0 0 0 0.16em color-mix(in oklab, var(--color-primary-500) 30%, transparent);
+        }
     }
 
     /* Memorization test: the words not recited yet are blurred */
@@ -262,34 +433,24 @@
         user-select: none;
     }
 
-    .mushaf-frame {
-        position: absolute;
-        inset: 3.2%;
-        border: 1.5px solid var(--paper-line);
-        border-radius: 0.5rem;
-        outline: 1px solid var(--paper-line);
-        outline-offset: 4px;
-        pointer-events: none;
-    }
-
-    /* Shadow of the binding between two facing pages */
+    /* Shadow of the binding between two facing pages: the paper curves down into the spine */
     .mushaf-gutter-left::after,
     .mushaf-gutter-right::after {
         content: '';
         position: absolute;
         inset-block: 0;
-        width: 9%;
+        width: 10%;
         pointer-events: none;
     }
 
     .mushaf-gutter-left::after {
         left: 0;
-        background: linear-gradient(to right, rgb(0 0 0 / 0.16), transparent);
+        background: linear-gradient(to right, rgb(0 0 0 / 0.22), rgb(0 0 0 / 0.07) 30%, rgb(255 255 255 / 0.05) 55%, transparent);
     }
 
     .mushaf-gutter-right::after {
         right: 0;
-        background: linear-gradient(to left, rgb(0 0 0 / 0.16), transparent);
+        background: linear-gradient(to left, rgb(0 0 0 / 0.22), rgb(0 0 0 / 0.07) 30%, rgb(255 255 255 / 0.05) 55%, transparent);
     }
 
     .mushaf-text {
@@ -409,6 +570,26 @@
             background-color: color-mix(in oklab, var(--color-gold-300) 55%, transparent);
         }
     }
+}
+
+/* Reading the mushaf full screen: the sidebar, the top bar and the margins of the page are hidden.
+   Outside the layers, so it wins over the utility classes of these parts. */
+html[data-mushaf-immersive] [data-shell='sidebar'],
+html[data-mushaf-immersive] [data-shell='content'] > header {
+    display: none;
+}
+
+html[data-mushaf-immersive] [data-shell='content'] {
+    padding-inline-start: 0;
+}
+
+html[data-mushaf-immersive] [data-shell='main'] {
+    max-width: none;
+    padding: 0;
+}
+
+html[data-mushaf-immersive] .mushaf-dock {
+    inset-inline-start: 0;
 }
 
 @media print {

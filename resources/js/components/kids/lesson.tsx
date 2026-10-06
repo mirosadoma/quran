@@ -1,19 +1,34 @@
 import { ArrowRight, ChevronLeft, ChevronRight, EyeOff, Headphones, LoaderCircle, Pause, Repeat, RotateCcw, Snail } from 'lucide-react';
-import { Fragment, type ReactNode, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { Fragment, type ReactNode, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { AyahMarker } from '@/components/mushaf/mushaf-page';
-import { HeardText, MicButton, RecitationLimitsNote, ScoreRing, scoreStars, SpeechErrorNotice, Stars, wordStatusClasses } from '@/components/recitation/recitation-ui';
+import {
+    blockedWordClasses,
+    BlockedNotice,
+    MarkedWord,
+    MicButton,
+    MistakeList,
+    RecitationLimitsNote,
+    RecitationOptions,
+    RecitedText,
+    ScoreRing,
+    scoreStars,
+    SpeechErrorNotice,
+    Stars,
+    VowelCheckBusy,
+    wordStatusClasses,
+} from '@/components/recitation/recitation-ui';
 import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/form';
 import { rangeQueue, useRecitation } from '@/hooks/use-recitation';
-import { useSpeechRecognition } from '@/hooks/use-speech-recognition';
+import { useRecitationFollow } from '@/hooks/use-recitation-voice';
 import { hasLetters } from '@/lib/arabic';
 import { http } from '@/lib/http';
 import { useTrans } from '@/lib/i18n';
 import { type KidsProgress, saveScore } from '@/lib/kids';
 import { readPreference, writePreference } from '@/lib/mushaf';
 import { arabicDigits, surahName } from '@/lib/quran';
-import { checkRecitation, expectedWords, statusByWord } from '@/lib/recitation-check';
+import { expectedWords, type RecitationMistake, recitedWords, wordMarks } from '@/lib/recitation-check';
 import { cn } from '@/lib/utils';
 import type { ReciterItem, SurahAyah } from '@/types';
 
@@ -26,14 +41,20 @@ interface LessonProps {
     reciters: ReciterItem[];
     progress: KidsProgress;
     onProgress: (progress: KidsProgress) => void;
+    /** The server can check the vowels of a recitation. */
+    vowelCheck: boolean;
+    /** The recitation mistakes since the page was opened (kept as marks on the ayahs). */
+    mistakes: RecitationMistake[];
+    onMistake: (mistake: RecitationMistake) => void;
     onBack: () => void;
 }
 
 /**
- * One surah, ayah by ayah: listen to the sheikh (with repetition), then recite with the voice and see
- * the words and letters read right or wrong, with a score and stars.
+ * One surah, ayah by ayah: listen to the sheikh (with repetition), then recite with the voice word by
+ * word like with a teacher: at a mistake an alert sounds and the recitation stops at that word until it
+ * is said right; the letters read wrong stay marked, with a score and stars at the end.
  */
-export function Lesson({ surah, reciters, progress, onProgress, onBack }: LessonProps) {
+export function Lesson({ surah, reciters, progress, onProgress, vowelCheck, mistakes, onMistake, onBack }: LessonProps) {
     const { t, locale } = useTrans();
     const [ayahs, setAyahs] = useState<SurahAyah[] | null>(null);
     const [failed, setFailed] = useState(false);
@@ -43,9 +64,7 @@ export function Lesson({ surah, reciters, progress, onProgress, onBack }: Lesson
     const [reciterId, setReciterId] = useState<number | null>(() => readPreference('kids.reciter', reciters[0]?.id ?? null));
     const reciter = reciters.find((item) => item.id === reciterId) ?? reciters[0] ?? null;
     const recitation = useRecitation(reciter, 'kids.player');
-    const speech = useSpeechRecognition();
     const recorder = useVoiceRecorder();
-    const transcript = useDeferredValue(speech.transcript);
     const wasPlaying = useRef(false);
     const saved = useRef('');
 
@@ -66,20 +85,35 @@ export function Lesson({ surah, reciters, progress, onProgress, onBack }: Lesson
 
     const ayah = ayahs?.[index] ?? null;
     const expected = useMemo(() => (ayah ? expectedWords([ayah]) : []), [ayah]);
-    const check = useMemo(() => checkRecitation(expected, transcript, { partial: speech.listening }), [expected, transcript, speech.listening]);
-    const statuses = ayah && transcript ? statusByWord(check.words).get(ayah.id) : undefined;
-    const finished = !speech.listening && transcript !== '';
+    const { voice, progress: recital, begin, restart, prompt, sound, setSound } = useRecitationFollow({ expected, vowelCheckAvailable: vowelCheck, whole: true, onMistake });
+    const started = recital.start !== null;
+    const marks = useMemo(() => (ayah ? wordMarks(expected, started ? recital : null, mistakes).get(ayah.id) : undefined), [ayah, expected, started, recital, mistakes]);
+    const recited = useMemo(() => recitedWords(expected, recital).map((word) => word.written), [expected, recital]);
+    const ayahMistakes = useMemo(() => mistakes.filter((mistake) => mistake.ayahId === ayah?.id), [mistakes, ayah]);
+    // The whole ayah was said right, or the child stopped (and every passage was checked).
+    const finished = started && (recital.finished || (!voice.listening && !voice.busy));
     const playing = recitation.active && recitation.playing;
+    const recording = voice.checksVowels ? voice.recording : recorder.url;
+    const { stop: stopVoice } = voice;
+
+    // The last word said right: stop listening.
+    useEffect(() => {
+        if (recital.finished) {
+            stopVoice();
+            recorder.stop();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [recital.finished, stopVoice]);
 
     // Keep the best score of the ayah once a recitation ends.
     useEffect(() => {
-        const key = `${ayah?.id}:${transcript}`;
+        const key = `${ayah?.id}:${voice.final}`;
 
         if (finished && ayah && saved.current !== key) {
             saved.current = key;
-            onProgress(saveScore(progress, surah, ayah.ayah, check.score));
+            onProgress(saveScore(progress, surah, ayah.ayah, recital.score));
         }
-    }, [finished, ayah, transcript, check.score, progress, surah, onProgress]);
+    }, [finished, ayah, voice.final, recital.score, progress, surah, onProgress]);
 
     // The sheikh finished: the child's turn.
     useEffect(() => {
@@ -90,21 +124,20 @@ export function Lesson({ surah, reciters, progress, onProgress, onBack }: Lesson
         wasPlaying.current = recitation.active;
     }, [recitation.active]);
 
-    const { stop: stopSpeech, reset: resetSpeech } = speech;
     const { stop: stopAudio } = recitation;
     const { stop: stopRecorder, clear: clearRecorder } = recorder;
 
     const goTo = useCallback(
         (target: number) => {
-            stopSpeech();
-            resetSpeech();
+            stopVoice();
+            restart();
             stopRecorder();
             clearRecorder();
             stopAudio();
             setYourTurn(false);
             setIndex(target);
         },
-        [stopSpeech, resetSpeech, stopRecorder, clearRecorder, stopAudio],
+        [stopVoice, restart, stopRecorder, clearRecorder, stopAudio],
     );
 
     const count = ayahs?.length ?? 0;
@@ -139,8 +172,8 @@ export function Lesson({ surah, reciters, progress, onProgress, onBack }: Lesson
             return;
         }
 
-        if (speech.listening) {
-            speech.stop();
+        if (voice.listening) {
+            voice.stop();
             recorder.stop();
         }
 
@@ -149,8 +182,8 @@ export function Lesson({ surah, reciters, progress, onProgress, onBack }: Lesson
     };
 
     const toggleMic = () => {
-        if (speech.listening) {
-            speech.stop();
+        if (voice.listening) {
+            voice.stop();
             recorder.stop();
 
             return;
@@ -158,10 +191,14 @@ export function Lesson({ surah, reciters, progress, onProgress, onBack }: Lesson
 
         recitation.stop();
         setYourTurn(false);
-        speech.reset();
+        restart();
         recorder.clear();
-        speech.start();
-        void recorder.start();
+        begin();
+
+        // With the vowel check the recording is made by the check itself.
+        if (!voice.checksVowels) {
+            void recorder.start();
+        }
     };
 
     const chooseReciter = (item: ReciterItem) => {
@@ -227,13 +264,24 @@ export function Lesson({ surah, reciters, progress, onProgress, onBack }: Lesson
                 {ayah.ayah === 1 && surah !== 1 && surah !== 9 && <p className="mb-4 font-quran text-xl text-muted sm:text-2xl">{BASMALA}</p>}
                 <p dir="rtl" className={cn('font-quran leading-[2.15] text-ink', size)}>
                     {words.map((word, position) => {
-                        const status = statuses?.get(position);
-                        const hidden = hide && (hasLetters(word) ? status === undefined || status === 'pending' : previousHidden);
+                        const mark = marks?.get(position);
+                        const hidden = hide && (hasLetters(word) ? !mark?.said : previousHidden);
                         previousHidden = hidden;
 
                         return (
                             <Fragment key={position}>
-                                <span className={cn('rounded-lg transition-colors duration-300', status && wordStatusClasses[status], hidden && 'mushaf-hidden')}>{word}</span>{' '}
+                                <span
+                                    className={cn(
+                                        'rounded-lg transition-colors duration-300',
+                                        mark && wordStatusClasses[mark.status],
+                                        mark?.blocked && blockedWordClasses,
+                                        hidden && 'mushaf-hidden',
+                                    )}
+                                    title={mark && mark.heard.length > 0 && !hidden ? t('You said: :words', { words: mark.heard.join('، ') }) : undefined}
+                                >
+                                    {/* The letters read wrong are not shown while the word is hidden. */}
+                                    {hidden || !mark ? word : <MarkedWord word={word} letters={mark.letters} vowels={mark.vowels} />}
+                                </span>{' '}
                             </Fragment>
                         );
                     })}
@@ -308,16 +356,16 @@ export function Lesson({ surah, reciters, progress, onProgress, onBack }: Lesson
                 </Panel>
 
                 <Panel title={t('Recite with your voice')} icon={RotateCcw} hideIcon>
-                    {speech.error ? (
-                        <SpeechErrorNotice error={speech.error} />
+                    {voice.error ? (
+                        <SpeechErrorNotice error={voice.error} />
                     ) : (
                         <div className="flex items-center gap-4">
-                            <MicButton listening={speech.listening} onClick={toggleMic} className={cn(yourTurn && !speech.listening && 'animate-bounce')} />
+                            <MicButton listening={voice.listening} onClick={toggleMic} className={cn(yourTurn && !voice.listening && 'animate-bounce')} />
                             <div className="min-w-0 flex-1">
                                 <p className="font-bold text-ink">
-                                    {speech.listening ? t('Listening… recite the ayah') : yourTurn ? t('Your turn! Recite the ayah') : t('Press the microphone and recite the ayah')}
+                                    {voice.listening ? t('Listening… recite the ayah') : yourTurn ? t('Your turn! Recite the ayah') : t('Press the microphone and recite the ayah')}
                                 </p>
-                                <p className="mt-0.5 text-xs leading-relaxed text-muted">{t('Press again when you finish.')}</p>
+                                {voice.busy ? <VowelCheckBusy className="mt-1" /> : <p className="mt-0.5 text-xs leading-relaxed text-muted">{t('Press again when you finish.')}</p>}
                             </div>
                         </div>
                     )}
@@ -328,12 +376,16 @@ export function Lesson({ surah, reciters, progress, onProgress, onBack }: Lesson
                         {t('Hide the ayah (recite from memory)')}
                     </label>
 
-                    {transcript && (
+                    <RecitationOptions voice={voice} sound={sound} onSound={setSound} className="mt-3" />
+
+                    {recital.blocked && voice.listening && <BlockedNotice mistake={recital.blocked} onPrompt={prompt} className="mt-4" />}
+
+                    {started && (
                         <div className="mt-4 space-y-3">
-                            {finished && <Result score={check.score} />}
+                            {finished && <Result score={recital.score} />}
                             <div className="rounded-2xl bg-surface-muted/70 px-4 py-2 ring-1 ring-line">
-                                <p className="pt-1 text-xs font-semibold text-muted">{t('What you said')}</p>
-                                <HeardText heard={check.heard} className="text-2xl" />
+                                <p className="pt-1 text-xs font-semibold text-muted">{t('What you recited correctly')}</p>
+                                <RecitedText words={recited} placeholder={t('Say the first word of the ayah.')} className="mt-1 text-2xl" />
                             </div>
                             {finished && (
                                 <div className="flex flex-wrap gap-2">
@@ -349,16 +401,18 @@ export function Lesson({ surah, reciters, progress, onProgress, onBack }: Lesson
                                     )}
                                 </div>
                             )}
-                            {recorder.url && !speech.listening && (
+                            {recording && !voice.listening && (
                                 <div>
                                     <p className="mb-1 text-xs font-semibold text-muted">{t('Listen to your recording')}</p>
-                                    <audio controls src={recorder.url} className="h-10 w-full" />
+                                    <audio controls src={recording} className="h-10 w-full" />
                                 </div>
                             )}
                         </div>
                     )}
 
-                    <RecitationLimitsNote className="mt-4" />
+                    <MistakeList mistakes={ayahMistakes} className="mt-4" />
+
+                    <RecitationLimitsNote vowels={voice.checksVowels} className="mt-4" />
                 </Panel>
             </div>
 
@@ -405,7 +459,7 @@ function Result({ score }: { score: number }) {
             <div className="min-w-0">
                 <Stars count={stars} className="text-2xl" />
                 <p className="mt-1 font-bold text-ink">{message}</p>
-                <p className="text-xs text-muted">{t('Letters in red were read wrong; faded letters were left out.')}</p>
+                {score < 100 && <p className="text-xs text-muted">{t('Colored words had mistakes: red letters were read wrong, violet letters with another vowel.')}</p>}
             </div>
         </div>
     );
