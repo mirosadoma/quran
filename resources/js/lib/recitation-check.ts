@@ -5,8 +5,9 @@ import { comparable, letterClusters, letterKey, vowelOf, type Vowel } from '@/li
  *
  * - the next word must be said right before going on: a mistake (a wrong letter or vowel, another word,
  *   a word left out) stops the recitation at that word until the reader says it right;
- * - only the right continuation is written: other speech (the isti'adha, the words said again to take a
- *   run at the next one, what was said before hearing the alert) is ignored;
+ * - only the right continuation counts: other speech (the isti'adha, the words said again to take a
+ *   run at the next one, what was said before hearing the alert) is no mistake;
+ * - every word heard is kept with how it was taken (right, wrong, said again), to write it as heard;
  * - every mistake is kept with the letters read wrong, to mark them on the mushaf.
  *
  * The speech recognition of the browser writes plain Arabic, so with it only the letters are checked.
@@ -44,6 +45,24 @@ export interface RecitationMistake {
 }
 
 /**
+ * How a word heard was taken: right = it went on with the recitation, wrong = a mistake (or not the
+ * word to say after one), again = an earlier word said again to take a run at the next one, other =
+ * said before the recitation started (the isti'adha) or after its end, pending = still being recognized.
+ */
+export type HeardStatus = 'right' | 'wrong' | 'again' | 'other' | 'pending';
+
+export interface HeardWord {
+    /** The word as it was heard. */
+    text: string;
+    status: HeardStatus;
+    /** The mistake it counted as (null for a wrong word said after a mistake: it does not count again). */
+    kind: MistakeKind | null;
+    /** Letters of the word (by position in letterClusters) read wrong, and read with another vowel. */
+    letters: number[];
+    vowels: number[];
+}
+
+/**
  * pending = not reached, current = the word to say now, correct = said right the first time,
  * vowel / close / wrong = said right after a vowel mistake / a letter mistake / another word.
  */
@@ -64,6 +83,8 @@ export interface RecitationProgress {
     kinds: Map<number, MistakeKind>;
     /** Number of final words heard (to place a prompt in the recitation). */
     said: number;
+    /** The final words heard, in order, with how each was taken. */
+    heard: HeardWord[];
     finished: boolean;
     /** 0 to 100: over the words reached, or over all the words with the option `whole`. */
     score: number;
@@ -513,6 +534,7 @@ function startAt(expected: ExpectedWord[], heard: string[], at: number, freeStar
  */
 export function followRecitation(expected: ExpectedWord[], final: string, interim: string, options: FollowOptions = {}): RecitationProgress {
     const heard = heardWords(final);
+    const spoken: HeardWord[] = heard.map((text) => ({ text, status: 'other', kind: null, letters: [], vowels: [] }));
     const prompts = options.prompts ?? [];
     const kinds = new Map<number, MistakeKind>();
     const mistakes: RecitationMistake[] = [];
@@ -561,16 +583,20 @@ export function followRecitation(expected: ExpectedWord[], final: string, interi
         const step = judge({ expected, start, cursor, again, blocked: blocked !== null, vowels: !!options.vowels }, heard, at);
 
         if (step.type === 'accept') {
+            spoken.slice(at, at + step.heard).forEach((word) => (word.status = 'right'));
             cursor += step.words;
             at += step.heard - 1;
             blocked = null;
             again = null;
         } else if (step.type === 'again') {
+            spoken[at].status = 'again';
             again = step.at;
         } else if (step.type === 'mistake') {
             blocked = fail(cursor, step.kind, heard[at]);
+            spoken[at] = { ...spoken[at], status: 'wrong', kind: step.kind, letters: blocked.heardLetters, vowels: blocked.heardVowels };
             again = null;
         } else {
+            spoken[at].status = 'wrong';
             again = null;
         }
     }
@@ -629,6 +655,7 @@ export function followRecitation(expected: ExpectedWord[], final: string, interi
         blocked: reached > cursor ? null : blocked,
         kinds,
         said: heard.length,
+        heard: spoken,
         finished: start !== null && cursor >= expected.length,
         score: total <= 0 ? 0 : Math.round((100 * credit) / total),
         right,

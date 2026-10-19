@@ -51,9 +51,12 @@ const ERRORS: Record<string, SpeechError> = {
     'language-not-supported': 'language',
 };
 
+/** Errors that listening again cannot get past: the others (the connection) are shown while it goes on. */
+const LASTING: SpeechError[] = ['denied', 'no-microphone', 'language'];
+
 /**
  * Speech to text in the browser (Chrome, Edge and Safari), for reciting from memory. Listening goes on
- * through the pauses of the reader until stop() is called.
+ * through the pauses of the reader, and after a lost connection, until stop() is called.
  */
 export function useSpeechRecognition(lang = 'ar-SA'): {
     supported: boolean;
@@ -118,6 +121,7 @@ export function useSpeechRecognition(lang = 'ar-SA'): {
 
             heard = final.trim();
             restarts.current = 0;
+            setError(null);
             setHeard({ final: clean([...finished.current, final].join(' ')), interim: clean(interim) });
         };
 
@@ -126,8 +130,13 @@ export function useSpeechRecognition(lang = 'ar-SA'): {
                 return;
             }
 
-            wanted.current = false;
-            setError(ERRORS[event.error] ?? 'failed');
+            const error = ERRORS[event.error] ?? 'failed';
+
+            if (LASTING.includes(error)) {
+                wanted.current = false;
+            }
+
+            setError(error);
         };
 
         instance.onend = () => {
@@ -141,10 +150,12 @@ export function useSpeechRecognition(lang = 'ar-SA'): {
 
             setHeard({ final: clean(finished.current.join(' ')), interim: '' });
 
-            // The browser ends a recognition after a pause: go on listening until the reader stops.
-            if (wanted.current && restarts.current < 30) {
-                restarts.current++;
-                window.setTimeout(() => wanted.current && id === session.current && begin(), 120);
+            // The browser ends a recognition after a pause: go on listening until the reader stops (waiting
+            // a little longer each time nothing was heard, so a recognition that keeps failing is not a busy loop).
+            if (wanted.current) {
+                const wait = Math.min(120 * 2 ** restarts.current, 2000);
+                restarts.current = Math.min(restarts.current + 1, 5);
+                window.setTimeout(() => wanted.current && id === session.current && begin(), wait);
             } else {
                 wanted.current = false;
                 recognition.current = null;

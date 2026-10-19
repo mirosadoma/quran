@@ -2,11 +2,11 @@ import { EyeOff, RotateCcw, X } from 'lucide-react';
 import { useEffect, useMemo, useRef } from 'react';
 import {
     BlockedNotice,
+    HeardText,
     MicButton,
     MistakeList,
     RecitationLimitsNote,
     RecitationOptions,
-    RecitedText,
     ScoreRing,
     SpeechErrorNotice,
     VowelCheckBusy,
@@ -15,7 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/form';
 import { useRecitationFollow } from '@/hooks/use-recitation-voice';
 import { useTrans } from '@/lib/i18n';
-import { type ExpectedWord, expectedWords, type RecitationMistake, type RecitationProgress, recitedWords } from '@/lib/recitation-check';
+import { type ExpectedWord, expectedWords, type RecitationMistake, type RecitationProgress } from '@/lib/recitation-check';
 import { formatNumber } from '@/lib/utils';
 import type { MushafAyah } from '@/types';
 
@@ -45,15 +45,15 @@ interface RecitePanelProps {
 }
 
 /**
- * Recite from the mushaf with the voice, word by word like with a teacher: only the right words are
- * written; at a mistake an alert sounds, the recitation stops at that word (marked on the page) until
- * it is said right, and the mistake is kept in the list. "Recite again" starts over.
+ * Recite from the mushaf with the voice, word by word like with a teacher: every word said is written,
+ * the wrong ones struck through; at a mistake an alert sounds, the recitation stops at that word (marked
+ * on the page) until it is said right, and the mistake is kept in the list. The microphone stays on
+ * until the reader stops it. "Recite again" starts over.
  */
 export function RecitePanel({ ayahs, label, hideText, onHideText, vowelCheck, mistakes, onMistake, onClearMistakes, onProgress, onClose }: RecitePanelProps) {
     const { t, locale } = useTrans();
     const expected = useMemo(() => expectedWords(ayahs), [ayahs]);
-    const { voice, progress, begin, restart, prompt, sound, setSound } = useRecitationFollow({ expected, vowelCheckAvailable: vowelCheck, freeStart: true, onMistake });
-    const recited = useMemo(() => recitedWords(expected, progress).map((word) => word.written), [expected, progress]);
+    const { voice, progress, spoken, begin, restart, prompt, sound, setSound } = useRecitationFollow({ expected, vowelCheckAvailable: vowelCheck, freeStart: true, onMistake });
     const scroller = useRef<HTMLDivElement>(null);
 
     // Opened by a click: start listening right away (and again after turning the vowel check on or off).
@@ -74,7 +74,7 @@ export function RecitePanel({ ayahs, label, hideText, onHideText, vowelCheck, mi
         if (element) {
             element.scrollTop = element.scrollHeight;
         }
-    }, [recited.length]);
+    }, [spoken.length]);
 
     const counts = useMemo(
         () => ({
@@ -104,20 +104,15 @@ export function RecitePanel({ ayahs, label, hideText, onHideText, vowelCheck, mi
                     </Button>
                 </div>
 
-                {voice.error ? (
-                    <SpeechErrorNotice error={voice.error} className="mt-3" />
-                ) : (
-                    <>
-                        {progress.blocked && <BlockedNotice mistake={progress.blocked} onPrompt={prompt} className="mt-3" />}
-                        <div ref={scroller} className="mt-3 max-h-[20vh] overflow-y-auto rounded-2xl bg-surface-muted/70 px-4 py-1.5 ring-1 ring-line" aria-live="polite">
-                            <RecitedText
-                                words={recited}
-                                placeholder={t('Start reciting: every right word is written here. At a mistake you hear an alert and the word is marked on the page.')}
-                                className="text-xl"
-                            />
-                        </div>
-                    </>
-                )}
+                {voice.error && <SpeechErrorNotice error={voice.error} className="mt-3" />}
+                {progress.blocked && <BlockedNotice mistake={progress.blocked} onPrompt={prompt} className="mt-3" />}
+                <div ref={scroller} className="mt-3 max-h-[20vh] overflow-y-auto rounded-2xl bg-surface-muted/70 px-4 py-1.5 ring-1 ring-line" aria-live="polite">
+                    <HeardText
+                        words={spoken}
+                        placeholder={t('Start reciting: every word you say is written here, and a wrong word is struck through. At a mistake you hear an alert and the word is marked on the page.')}
+                        className="text-xl"
+                    />
+                </div>
 
                 <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2.5">
                     <div className="flex flex-wrap items-center gap-1.5 text-xs font-semibold">

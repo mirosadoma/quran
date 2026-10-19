@@ -356,19 +356,16 @@ export function Lesson({ surah, reciters, progress, onProgress, vowelCheck, mist
                 </Panel>
 
                 <Panel title={t('Recite with your voice')} icon={RotateCcw} hideIcon>
-                    {voice.error ? (
-                        <SpeechErrorNotice error={voice.error} />
-                    ) : (
-                        <div className="flex items-center gap-4">
-                            <MicButton listening={voice.listening} onClick={toggleMic} className={cn(yourTurn && !voice.listening && 'animate-bounce')} />
-                            <div className="min-w-0 flex-1">
-                                <p className="font-bold text-ink">
-                                    {voice.listening ? t('Listening… recite the ayah') : yourTurn ? t('Your turn! Recite the ayah') : t('Press the microphone and recite the ayah')}
-                                </p>
-                                {voice.busy ? <VowelCheckBusy className="mt-1" /> : <p className="mt-0.5 text-xs leading-relaxed text-muted">{t('Press again when you finish.')}</p>}
-                            </div>
+                    {voice.error && <SpeechErrorNotice error={voice.error} className="mb-4" />}
+                    <div className="flex items-center gap-4">
+                        <MicButton listening={voice.listening} onClick={toggleMic} className={cn(yourTurn && !voice.listening && 'animate-bounce')} />
+                        <div className="min-w-0 flex-1">
+                            <p className="font-bold text-ink">
+                                {voice.listening ? t('Listening… recite the ayah') : yourTurn ? t('Your turn! Recite the ayah') : t('Press the microphone and recite the ayah')}
+                            </p>
+                            {voice.busy ? <VowelCheckBusy className="mt-1" /> : <p className="mt-0.5 text-xs leading-relaxed text-muted">{t('Press again when you finish.')}</p>}
                         </div>
-                    )}
+                    </div>
 
                     <label className="mt-4 flex cursor-pointer items-center gap-2 text-sm text-ink">
                         <Switch checked={hide} onChange={setHide} />

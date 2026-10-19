@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useServerTranscription } from '@/hooks/use-server-transcription';
 import { type SpeechError, useSpeechRecognition } from '@/hooks/use-speech-recognition';
 import { readPreference, writePreference } from '@/lib/mushaf';
-import { type ExpectedWord, followRecitation, type RecitationMistake, type RecitationProgress } from '@/lib/recitation-check';
+import { type ExpectedWord, followRecitation, type HeardWord, heardWords, type RecitationMistake, type RecitationProgress } from '@/lib/recitation-check';
 import { playMistakeSound, prepareSounds } from '@/lib/sounds';
 
 export interface RecitationVoice {
@@ -128,6 +128,22 @@ function aheadWith(progress: RecitationProgress, quick: RecitationProgress | nul
 }
 
 /**
+ * Everything the reader said, to write it as they go: the final words as they were taken, then the
+ * words still being recognized; or, when the browser already heard further right words, those words.
+ */
+function spokenWords(expected: ExpectedWord[], progress: RecitationProgress, shown: RecitationProgress, interim: string): HeardWord[] {
+    const pending = (text: string): HeardWord => ({ text, status: 'pending', kind: null, letters: [], vowels: [] });
+
+    if (shown.reached > progress.reached && shown.start !== null) {
+        const from = progress.start === null ? shown.start : progress.cursor;
+
+        return [...progress.heard, ...expected.slice(from, shown.reached).map((word) => pending(word.simple))];
+    }
+
+    return [...progress.heard, ...heardWords(interim).map(pending)];
+}
+
+/**
  * Listens to the reader and follows the recitation word by word (see followRecitation): each new
  * mistake is reported and announced with a short alert sound (unless the reader turned it off).
  */
@@ -141,6 +157,7 @@ export function useRecitationFollow({ expected, vowelCheckAvailable, freeStart =
     );
     const quick = useMemo(() => (voice.fast ? followRecitation(expected, voice.fast, '', { freeStart, whole }) : null), [expected, voice.fast, freeStart, whole]);
     const shown = useMemo(() => aheadWith(progress, quick), [progress, quick]);
+    const spoken = useMemo(() => spokenWords(expected, progress, shown, voice.interim), [expected, progress, shown, voice.interim]);
     const reported = useRef({ expected, count: 0 });
     const onMistakeRef = useRef(onMistake);
     const soundRef = useRef(sound);
@@ -205,5 +222,5 @@ export function useRecitationFollow({ expected, vowelCheckAvailable, freeStart =
         writePreference('recitation.sound', value);
     }, []);
 
-    return { voice, progress: shown, begin, restart, prompt, sound, setSound };
+    return { voice, progress: shown, spoken, begin, restart, prompt, sound, setSound };
 }

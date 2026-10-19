@@ -6,7 +6,7 @@ import type { RecitationVoice } from '@/hooks/use-recitation-voice';
 import type { SpeechError } from '@/hooks/use-speech-recognition';
 import { letterClusters } from '@/lib/arabic';
 import { useTrans } from '@/lib/i18n';
-import type { MistakeKind, RecitationMistake, WordStatus } from '@/lib/recitation-check';
+import type { HeardWord, MistakeKind, RecitationMistake, WordStatus } from '@/lib/recitation-check';
 import { cn, formatNumber } from '@/lib/utils';
 
 /**
@@ -58,6 +58,43 @@ export function RecitedText({ words, placeholder, className }: { words: string[]
     return (
         <p dir="rtl" className={cn('font-quran leading-[2.2] text-ink', className)}>
             {words.join(' ')}
+        </p>
+    );
+}
+
+/**
+ * Every word the reader said, as they go: the right ones in green, the wrong ones struck through with
+ * the letters read wrong marked, and the words said again (or before starting) and still being heard in grey.
+ */
+export function HeardText({ words, placeholder, className }: { words: HeardWord[]; placeholder: string; className?: string }) {
+    if (words.length === 0) {
+        return <p className="py-3 text-center text-sm text-muted">{placeholder}</p>;
+    }
+
+    return (
+        <p dir="rtl" className={cn('font-quran leading-[2.2] text-ink', className)}>
+            {words.map((word, index) => (
+                <Fragment key={index}>
+                    <span
+                        data-heard={word.status}
+                        className={cn(
+                            'rounded-lg',
+                            word.status === 'right' && 'text-emerald-700 dark:text-emerald-300',
+                            word.status === 'wrong' && 'px-1 line-through decoration-2',
+                            word.status === 'wrong' &&
+                                (word.kind === 'vowel'
+                                    ? 'bg-violet-50 text-violet-700 decoration-violet-500 dark:bg-violet-500/10 dark:text-violet-300'
+                                    : word.kind !== null
+                                      ? 'bg-rose-50 text-rose-700 decoration-rose-500 dark:bg-rose-500/10 dark:text-rose-300'
+                                      : 'text-rose-600/70 decoration-rose-400/70 dark:text-rose-300/70'),
+                            (word.status === 'again' || word.status === 'other') && 'text-muted',
+                            word.status === 'pending' && 'text-ink/55',
+                        )}
+                    >
+                        <MarkedWord word={word.text} letters={word.letters} vowels={word.vowels} />
+                    </span>{' '}
+                </Fragment>
+            ))}
         </p>
     );
 }

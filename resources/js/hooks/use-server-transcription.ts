@@ -7,6 +7,8 @@ import { concat, downsampler, encodeWav, RATE, VoicePassages } from '@/lib/voice
 
 /** The recording kept to listen to it again (seconds). */
 const KEPT_S = 300;
+/** A passage the server could not take now (busy, unreachable) is sent again after these waits (ms). */
+const RETRY_MS = [1000, 3000];
 
 const WORKLET = `
 class RattilCapture extends AudioWorkletProcessor {
@@ -55,11 +57,27 @@ interface Passage {
 }
 
 /**
+ * Whether a request may work when sent again: the server was not reached, or was busy.
+ */
+function isPassing(exception: unknown): boolean {
+    if (!isAxiosError(exception)) {
+        return false;
+    }
+
+    const status = exception.response?.status;
+
+    return status === undefined || status === 429 || status >= 500;
+}
+
+/**
  * Speech to text on the platform's server, which writes the diacritics so the vowels of a recitation
  * can be checked. The microphone is recorded in the browser and cut at the reader's pauses; every
  * passage is sent (WAV, 16 kHz mono) as soon as it ends, and the texts are put together in order.
  * While the reader speaks, the passage so far is also sent about every second: its text (interim)
  * shows the words before the pause, until the final text of the passage replaces it.
+ *
+ * Listening goes on until stop() is called: a passage the server could not take is sent again, and
+ * if it still fails the error is shown while the next passages are heard.
  */
 export function useServerTranscription(): {
     supported: boolean;
@@ -136,37 +154,54 @@ export function useServerTranscription(): {
         (samples: Float32Array, number: number) => {
             const id = session.current;
             const item: Passage = { number, done: false, text: '' };
-            const form = new FormData();
+            const wav = new Blob([encodeWav(samples)], { type: 'audio/wav' });
 
             passages.current.push(item);
             setBusy(true);
-            form.append('audio', new Blob([encodeWav(samples)], { type: 'audio/wav' }), 'recitation.wav');
 
-            http.post<{ text: string }>(route('recitation.transcribe'), form)
-                .then(({ data }) => {
-                    // The reader paused after this passage: its last letter is read with a sukun (waqf).
-                    item.text = withoutFinalVowel(data.text ?? '');
-                })
-                .catch((exception: unknown) => {
-                    if (id !== session.current) {
-                        return;
-                    }
+            const finish = (): void => {
+                item.done = true;
 
-                    // Without the text of this passage the next ones cannot be followed: stop listening.
-                    wanted.current = false;
-                    release();
-                    setListening(false);
-                    setError(isAxiosError(exception) && !exception.response ? 'network' : 'service');
-                })
-                .finally(() => {
-                    item.done = true;
+                if (id === session.current) {
+                    publish();
+                }
+            };
 
-                    if (id === session.current) {
-                        publish();
-                    }
-                });
+            const attempt = (tries: number): void => {
+                const form = new FormData();
+                form.append('audio', wav, 'recitation.wav');
+
+                http.post<{ text: string }>(route('recitation.transcribe'), form).then(
+                    ({ data }) => {
+                        // The reader paused after this passage: its last letter is read with a sukun (waqf).
+                        item.text = withoutFinalVowel(data.text ?? '');
+
+                        if (id === session.current) {
+                            setError((current) => (current === 'service' || current === 'network' ? null : current));
+                        }
+
+                        finish();
+                    },
+                    (exception: unknown) => {
+                        if (id === session.current && tries < RETRY_MS.length && isPassing(exception)) {
+                            window.setTimeout(() => (id === session.current ? attempt(tries + 1) : finish()), RETRY_MS[tries]);
+
+                            return;
+                        }
+
+                        // This passage is left without text; listening goes on with the next ones.
+                        if (id === session.current) {
+                            setError(isAxiosError(exception) && !exception.response ? 'network' : 'service');
+                        }
+
+                        finish();
+                    },
+                );
+            };
+
+            attempt(0);
         },
-        [publish, release],
+        [publish],
     );
 
     /**
@@ -224,29 +259,7 @@ export function useServerTranscription(): {
         });
     }, []);
 
-    const start = useCallback(() => {
-        setError(null);
-
-        if (!supported) {
-            setError('unsupported');
-
-            return;
-        }
-
-        if (!window.isSecureContext) {
-            setError('insecure');
-
-            return;
-        }
-
-        if (wanted.current) {
-            return;
-        }
-
-        wanted.current = true;
-        setListening(true);
-        clearRecording();
-
+    const open = useCallback(() => {
         void (async () => {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
@@ -271,6 +284,17 @@ export function useServerTranscription(): {
                 node.port.onmessage = (event: MessageEvent<Float32Array>) => hear(toRate(event.data));
                 capture.current = { stream, context, node };
 
+                // The microphone was taken away (another app, unplugged): open it again until the reader stops.
+                stream.getAudioTracks().forEach((track) =>
+                    track.addEventListener('ended', () => {
+                        if (wanted.current && capture.current?.stream === stream) {
+                            release();
+                            voice.current?.end();
+                            open();
+                        }
+                    }),
+                );
+
                 if (context.state === 'suspended') {
                     await context.resume();
                 }
@@ -292,7 +316,32 @@ export function useServerTranscription(): {
                 );
             }
         })();
-    }, [supported, clearRecording, hear, release]);
+    }, [hear, release]);
+
+    const start = useCallback(() => {
+        setError(null);
+
+        if (!supported) {
+            setError('unsupported');
+
+            return;
+        }
+
+        if (!window.isSecureContext) {
+            setError('insecure');
+
+            return;
+        }
+
+        if (wanted.current) {
+            return;
+        }
+
+        wanted.current = true;
+        setListening(true);
+        clearRecording();
+        open();
+    }, [supported, clearRecording, open]);
 
     const stop = useCallback(() => {
         if (!wanted.current) {
