@@ -18,7 +18,7 @@ setupPwa();
 
 createInertiaApp({
     title: (title, page) => {
-        const name = (page.props.app as { name?: string } | undefined)?.name ?? 'Rattil';
+        const name = (page.props.app as { name?: string } | undefined)?.name ?? 'Wird';
 
         return title ? `${title} · ${name}` : name;
     },

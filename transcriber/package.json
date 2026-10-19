@@ -1,5 +1,5 @@
 {
-    "name": "rattil-transcriber",
+    "name": "wird-transcriber",
     "private": true,
     "type": "module",
     "description": "Speech to text with diacritics (checking Quran recitation) and text to speech with a man's voice (reading aloud), used by the Laravel app.",

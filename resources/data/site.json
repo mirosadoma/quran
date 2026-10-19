@@ -146,8 +146,8 @@
     "about": {
         "story": [
             {
-                "ar": "«رتّل» منصة لتحفيظ القرآن الكريم وتعليمه عن بُعد، تجمع الأكاديميات ودور التحفيظ ومعلميها وطلابها في مكان واحد، وتوفر لكل مسلم أدوات تعينه على صحبة القرآن والعبادة في يومه.",
-                "en": "Rattil is a platform for memorizing and learning the Quran online. It gathers academies and Quran schools, their teachers and students in one place, and gives every Muslim tools that help them keep company with the Quran and worship every day."
+                "ar": "«وِرد» منصة لتحفيظ القرآن الكريم وتعليمه عن بُعد، تجمع الأكاديميات ودور التحفيظ ومعلميها وطلابها في مكان واحد، وتوفر لكل مسلم أدوات تعينه على صحبة القرآن والعبادة في يومه.",
+                "en": "Wird is a platform for memorizing and learning the Quran online. It gathers academies and Quran schools, their teachers and students in one place, and gives every Muslim tools that help them keep company with the Quran and worship every day."
             },
             {
                 "ar": "بدأنا من حاجة المعلمين والطلاب إلى نظام بسيط يرتّب الحصص والحضور ويحفظ سجل الحفظ والمراجعة، ثم كبرت المنصة لتشمل المصحف المرتل والتفسير والأذكار والصلاة ومحاسبة النفس.",
@@ -190,7 +190,7 @@
             "category": { "ar": "عن المنصة", "en": "About the platform" },
             "items": [
                 {
-                    "q": { "ar": "ما هي منصة «رتّل»؟", "en": "What is Rattil?" },
+                    "q": { "ar": "ما هي منصة «وِرد»؟", "en": "What is Wird?" },
                     "a": {
                         "ar": "منصة لتحفيظ القرآن الكريم عن بُعد تضم أكاديميات ودور تحفيظ بمعلميها وحلقاتها، وتقدم لكل مستخدم أدوات القرآن والعبادة: المصحف المرتل والتفسير والأذكار والصلاة ومحاسبة النفس.",
                         "en": "An online platform for memorizing the Quran that hosts academies and Quran schools with their teachers and halaqat, and offers every user tools for the Quran and worship: the recited mushaf, tafsir, adhkar, prayer and self-accounting."
@@ -330,8 +330,8 @@
             "title": { "ar": "قبول الشروط", "en": "Acceptance of the terms" },
             "paragraphs": [
                 {
-                    "ar": "باستخدامك منصة «رتّل» أو إنشائك حسابًا فيها فإنك توافق على هذه الشروط والسياسات. إن لم توافق عليها فيرجى عدم استخدام المنصة.",
-                    "en": "By using Rattil or creating an account on it you agree to these terms and policies. If you do not agree, please do not use the platform."
+                    "ar": "باستخدامك منصة «وِرد» أو إنشائك حسابًا فيها فإنك توافق على هذه الشروط والسياسات. إن لم توافق عليها فيرجى عدم استخدام المنصة.",
+                    "en": "By using Wird or creating an account on it you agree to these terms and policies. If you do not agree, please do not use the platform."
                 }
             ]
         },

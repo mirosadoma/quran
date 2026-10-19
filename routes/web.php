@@ -8,6 +8,7 @@ use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisteredUserController;
+use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\CommunityPostController;
 use App\Http\Controllers\CommunityReplyController;
@@ -50,6 +51,7 @@ use App\Http\Controllers\RecitationTranscriptionController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SessionController;
 use App\Http\Controllers\SessionMeetingController;
+use App\Http\Controllers\SessionRecordingController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\SiteController;
 use App\Http\Controllers\SpeechController;
@@ -214,6 +216,8 @@ Route::middleware(['auth', 'active'])->prefix('admin')->group(function () {
     Route::post('sessions/{session}/join', [SessionMeetingController::class, 'join'])->name('sessions.join');
     Route::get('sessions/{session}/room', [SessionMeetingController::class, 'room'])->name('sessions.room');
     Route::post('sessions/{session}/end', [SessionMeetingController::class, 'end'])->name('sessions.end');
+    Route::post('sessions/{session}/recording/chunks', [SessionRecordingController::class, 'storeChunk'])->name('sessions.recording.chunks');
+    Route::delete('sessions/{session}/recording', [SessionRecordingController::class, 'destroy'])->name('sessions.recording.destroy');
 
     // Exams: planned by the manager of the academy; teachers examine, students are examined.
     Route::resource('exams', ExamController::class);
@@ -299,6 +303,7 @@ Route::middleware(['auth', 'active'])->prefix('admin')->group(function () {
     Route::get('prayers/{slug}', [PrayerController::class, 'show'])->where('slug', '[a-z-]+')->name('prayers.show');
     Route::put('prayers/reminders/{prayer}', [PrayerReminderController::class, 'update'])->name('prayers.reminders.update');
     Route::get('qibla', QiblaController::class)->name('qibla.index');
+    Route::get('calendar', CalendarController::class)->name('calendar.index');
     Route::get('cards', GreetingCardController::class)->name('cards.index');
 
     Route::get('deeds', [DeedController::class, 'index'])->name('deeds.index');

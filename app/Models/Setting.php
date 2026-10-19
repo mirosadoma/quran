@@ -31,7 +31,7 @@ class Setting extends Model
     public static function defaults(): array
     {
         return [
-            'academy_name' => 'رتّل',
+            'academy_name' => 'وِرد',
             'academy_tagline' => null,
             'academy_logo' => null,
             'contact_email' => null,

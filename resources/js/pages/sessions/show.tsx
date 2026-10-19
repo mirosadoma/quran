@@ -27,6 +27,8 @@ import { PendingSubmissions } from '@/components/progress/recitation-submissions
 import { RecordList } from '@/components/progress/record-list';
 import { Countdown } from '@/components/session/countdown';
 import { JoinSessionButton } from '@/components/session/join-button';
+import { RecordingPlayer } from '@/components/session/recording-player';
+import { RecordingUpload, type RecordingUploadOptions } from '@/components/session/recording-upload';
 import { Avatar } from '@/components/ui/avatar';
 import { Button, LinkButton } from '@/components/ui/button';
 import { Card, CardBody, CardFooter, CardHeader } from '@/components/ui/card';
@@ -42,7 +44,6 @@ import type { AttendanceStatus, ProgressRecordItem, RecitationSubmissionItem, Se
 
 interface SessionDetails extends SessionItem {
     notes: string | null;
-    recording_url: string | null;
     recording_passcode: string | null;
     started_at: string | null;
     ended_at: string | null;
@@ -68,6 +69,7 @@ interface SessionShowProps {
     records: ProgressRecordItem[];
     students: { id: number; name: string }[];
     submissions: RecitationSubmissionItem[];
+    recordingUpload: RecordingUploadOptions | null;
     can: { manage: boolean; join: boolean; edit: boolean; cancel: boolean; end: boolean; delete: boolean };
 }
 
@@ -78,7 +80,7 @@ const statusButton: Record<string, string> = {
     sky: 'data-[on=true]:bg-sky-600 data-[on=true]:text-white data-[on=true]:ring-sky-600',
 };
 
-export default function SessionShow({ session, attendance, myAttendance, records, students, submissions, can }: SessionShowProps) {
+export default function SessionShow({ session, attendance, myAttendance, records, students, submissions, recordingUpload, can }: SessionShowProps) {
     const { t } = useTrans();
     const labels = useLabels();
     const dates = useDates();
@@ -410,28 +412,21 @@ export default function SessionShow({ session, attendance, myAttendance, records
                                 >
                                     {t('Save')}
                                 </Button>
+                                {recordingUpload && (
+                                    <div className="border-t border-line pt-4">
+                                        <p className="mb-2 text-sm font-medium text-ink">{t('Recording video')}</p>
+                                        <RecordingUpload sessionId={session.id} options={recordingUpload} hasFile={!!session.recording_file_url} />
+                                    </div>
+                                )}
                             </CardBody>
                         ) : (
                             <CardBody className="space-y-3 text-sm">
                                 <p className="whitespace-pre-line leading-relaxed text-ink/85">{session.notes || t('No summary yet.')}</p>
                             </CardBody>
                         )}
-                        {session.recording_url && (
+                        {(session.recording_url || session.recording_file_url) && (
                             <CardFooter className="justify-start">
-                                <a
-                                    href={session.recording_url}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary-700 hover:underline dark:text-primary-300"
-                                >
-                                    <ExternalLink className="size-4" />
-                                    {t('Watch the recording')}
-                                </a>
-                                {session.recording_passcode && (
-                                    <span className="text-xs text-muted" dir="ltr">
-                                        ({session.recording_passcode})
-                                    </span>
-                                )}
+                                <RecordingPlayer session={session} className="w-full" />
                             </CardFooter>
                         )}
                     </Card>

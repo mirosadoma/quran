@@ -20,6 +20,7 @@ import {
     UserMinus,
     UserPlus,
     Users,
+    FileVideo,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
@@ -41,6 +42,7 @@ import { ConfirmDialog, Modal } from '@/components/ui/modal';
 import { StatCard } from '@/components/ui/stat-card';
 import { Table, Td, Th, Tr } from '@/components/ui/table';
 import { Tabs } from '@/components/ui/tabs';
+import { HalaqaRecordings } from '@/components/halaqa/recordings';
 import { VideoCard, VideoForm, VideoPlayer } from '@/components/video/video-components';
 import AppLayout from '@/layouts/app-layout';
 import { useDates } from '@/lib/dates';
@@ -74,14 +76,15 @@ interface HalaqaShowProps {
     lastPosition: { surah: number; ayah: number } | null;
     announcements: AnnouncementItem[];
     announcementSessions: AnnouncementSession[];
+    recordings: SessionItem[];
     focus: { tab: Tab | null; submission: number | null };
     can: { manage: boolean; update: boolean; delete: boolean; submit: boolean };
 }
 
-type Tab = 'students' | 'sessions' | 'records' | 'messages' | 'videos';
+type Tab = 'students' | 'sessions' | 'records' | 'messages' | 'videos' | 'recordings';
 
 export default function HalaqaShow(props: HalaqaShowProps) {
-    const { halaqa, students, upcomingSessions, recentSessions, recentRecords, videos, stats, availableStudents, submissions, lastPosition, announcements, can } = props;
+    const { halaqa, students, upcomingSessions, recentSessions, recentRecords, videos, stats, availableStudents, submissions, lastPosition, announcements, recordings, can } = props;
     const { t, locale } = useTrans();
     const labels = useLabels();
     const dates = useDates();
@@ -301,6 +304,7 @@ export default function HalaqaShow(props: HalaqaShowProps) {
                     { value: 'records', label: t('Recitations'), icon: BookOpenCheck },
                     { value: 'messages', label: t('Messages'), icon: Megaphone, count: announcements.length },
                     { value: 'videos', label: t('Videos'), icon: CirclePlay, count: videos.length },
+                    { value: 'recordings', label: t('Halaqa recordings'), icon: FileVideo, count: recordings.length },
                 ]}
             />
 
@@ -443,6 +447,8 @@ export default function HalaqaShow(props: HalaqaShowProps) {
                         </Card>
                     </div>
                 )}
+
+                {tab === 'recordings' && <HalaqaRecordings sessions={recordings} canManage={can.manage} />}
 
                 {tab === 'records' && (
                     <Card>

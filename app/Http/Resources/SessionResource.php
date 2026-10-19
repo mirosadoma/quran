@@ -5,6 +5,7 @@ namespace App\Http\Resources;
 use App\Models\HalaqaSession;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * @mixin HalaqaSession
@@ -32,6 +33,9 @@ class SessionResource extends JsonResource
             'meeting_provider' => $this->meeting_provider->value,
             'has_meeting' => filled($this->meeting_url),
             'cancel_reason' => $this->cancel_reason,
+            'recording_url' => $this->recording_url,
+            'recording_file_url' => $this->recording_path ? Storage::disk(config('meetings.recordings_disk'))->url($this->recording_path) : null,
+            'recording_kind' => $this->recording_path ? 'file' : ($this->recording_url ? 'link' : null),
             'halaqa' => $this->whenLoaded('halaqa', fn (): array => [
                 'id' => $this->halaqa->id,
                 'name' => $this->halaqa->name,

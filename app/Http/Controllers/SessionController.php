@@ -16,6 +16,7 @@ use App\Models\User;
 use App\Notifications\SessionScheduled;
 use App\Services\Meetings\MeetingManager;
 use App\Services\Notifier;
+use App\Services\RecordingUploads;
 use App\Services\SessionLifecycle;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
@@ -30,6 +31,7 @@ class SessionController extends Controller
         protected MeetingManager $meetings,
         protected SessionLifecycle $lifecycle,
         protected Notifier $notifier,
+        protected RecordingUploads $recordings,
     ) {}
 
     /**
@@ -175,16 +177,12 @@ class SessionController extends Controller
             ->latest('id')
             ->get();
 
-        $recordingUrl = $session->recording_url
-            ?: ($session->recording_path ? Storage::disk(config('meetings.recordings_disk'))->url($session->recording_path) : null);
-
         $myAttendance = $user->isStudent() ? $attendances->get($user->id) : null;
 
         return Inertia::render('sessions/show', [
             'session' => [
                 ...(new SessionResource($session))->resolve(),
                 'notes' => $session->notes,
-                'recording_url' => $recordingUrl,
                 'recording_passcode' => $session->meeting_data['recording_passcode'] ?? null,
                 'started_at' => $session->started_at?->toIso8601String(),
                 'ended_at' => $session->ended_at?->toIso8601String(),
@@ -216,6 +214,7 @@ class SessionController extends Controller
                     $session->halaqa->recitationSubmissions()->with('student')->oldest('updated_at')->get(),
                 )->resolve()
                 : [],
+            'recordingUpload' => $canManage ? $this->recordings->options() : null,
             'can' => [
                 'manage' => $canManage,
                 'join' => $canJoin,

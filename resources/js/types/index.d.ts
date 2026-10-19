@@ -160,6 +160,11 @@ export interface SessionItem {
     meeting_provider: MeetingProvider;
     has_meeting: boolean;
     cancel_reason: string | null;
+    /** An outside recording link (Zoom, Google Drive, YouTube...). */
+    recording_url?: string | null;
+    /** The video uploaded to the platform. */
+    recording_file_url?: string | null;
+    recording_kind?: 'file' | 'link' | null;
     halaqa?: HalaqaRef;
     teacher?: UserRef | null;
     attendances_count?: number;

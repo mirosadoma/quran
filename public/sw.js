@@ -9,8 +9,8 @@
  * Bump VERSION whenever offline.html changes.
  */
 const VERSION = 1;
-const STATIC_CACHE = `rattil-static-v${VERSION}`;
-const ASSETS_CACHE = 'rattil-assets';
+const STATIC_CACHE = `wird-static-v${VERSION}`;
+const ASSETS_CACHE = 'wird-assets';
 const OFFLINE_URL = '/offline.html';
 const MAX_ASSETS = 150;
 
@@ -27,7 +27,7 @@ self.addEventListener('activate', (event) => {
     event.waitUntil(
         (async () => {
             const keys = await caches.keys();
-            await Promise.all(keys.filter((key) => key.startsWith('rattil-static-') && key !== STATIC_CACHE).map((key) => caches.delete(key)));
+            await Promise.all(keys.filter((key) => key.startsWith('wird-static-') && key !== STATIC_CACHE).map((key) => caches.delete(key)));
 
             if (self.registration.navigationPreload) {
                 await self.registration.navigationPreload.enable();
@@ -107,7 +107,7 @@ self.addEventListener('push', (event) => {
 
     event.waitUntil(
         (async () => {
-            await self.registration.showNotification(data.title || 'رتّل', {
+            await self.registration.showNotification(data.title || 'وِرد', {
                 body: data.body || '',
                 icon: data.icon || '/icons/icon-192.png',
                 badge: data.badge || '/icons/badge-96.png',

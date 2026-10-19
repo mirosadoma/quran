@@ -212,8 +212,15 @@ class HalaqaController extends Controller
                     ])
                     ->values()
                 : [],
+            'recordings' => SessionResource::collection(
+                $halaqa->sessions()
+                    ->where(fn (Builder $query) => $query->whereNotNull('recording_path')->orWhereNotNull('recording_url'))
+                    ->with(['halaqa', 'teacher'])
+                    ->orderBy('starts_at')
+                    ->get(),
+            )->resolve(),
             'focus' => [
-                'tab' => in_array($request->query('tab'), ['students', 'sessions', 'records', 'messages', 'videos'], true) ? $request->query('tab') : null,
+                'tab' => in_array($request->query('tab'), ['students', 'sessions', 'records', 'messages', 'videos', 'recordings'], true) ? $request->query('tab') : null,
                 'submission' => $request->integer('submission') ?: null,
             ],
             'can' => [

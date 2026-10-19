@@ -11,7 +11,7 @@ const KEPT_S = 300;
 const RETRY_MS = [1000, 3000];
 
 const WORKLET = `
-class RattilCapture extends AudioWorkletProcessor {
+class WirdCapture extends AudioWorkletProcessor {
     constructor() {
         super();
         this.buffer = new Float32Array(2048);
@@ -36,7 +36,7 @@ class RattilCapture extends AudioWorkletProcessor {
     }
 }
 
-registerProcessor('rattil-capture', RattilCapture);
+registerProcessor('wird-capture', WirdCapture);
 `;
 
 export function isServerTranscriptionSupported(): boolean {
@@ -273,7 +273,7 @@ export function useServerTranscription(): {
                 }
 
                 const source = context.createMediaStreamSource(stream);
-                const node = new AudioWorkletNode(context, 'rattil-capture');
+                const node = new AudioWorkletNode(context, 'wird-capture');
                 const silent = context.createGain();
                 const toRate = downsampler(context.sampleRate);
 

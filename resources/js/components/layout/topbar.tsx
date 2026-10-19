@@ -7,7 +7,7 @@ import { NotificationsMenu } from '@/components/layout/notifications-menu';
 import { Avatar } from '@/components/ui/avatar';
 import { Dropdown, DropdownItem, DropdownLabel, DropdownSeparator } from '@/components/ui/dropdown';
 import { useTheme } from '@/hooks/use-theme';
-import { useDates } from '@/lib/dates';
+import { intlLocale, useDates } from '@/lib/dates';
 import { useTrans } from '@/lib/i18n';
 import { useLabels } from '@/lib/labels';
 import { signOut } from '@/lib/push';
@@ -49,10 +49,9 @@ export function ThemeToggle({ className }: { className?: string }) {
 }
 
 /**
- * The live clock with the Hijri and Gregorian dates, on every page of the dashboard.
+ * The current time, ticking every second.
  */
-function DateTimeClock() {
-    const dates = useDates();
+function useNow(): Date {
     const [now, setNow] = useState(() => new Date());
 
     useEffect(() => {
@@ -61,20 +60,69 @@ function DateTimeClock() {
         return () => window.clearInterval(timer);
     }, []);
 
-    const time = new Intl.DateTimeFormat('en-GB', { timeZone: dates.timezone, hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' }).format(now);
+    return now;
+}
+
+/**
+ * 12-hour clock with the day period (صباحًا / مساءً), in the user's language and timezone.
+ */
+function useClock(now: Date): (withSeconds: boolean) => string {
+    const dates = useDates();
+    const { locale } = usePage().props;
+
+    return (withSeconds: boolean) =>
+        new Intl.DateTimeFormat(intlLocale(locale), {
+            timeZone: dates.timezone,
+            hour: 'numeric',
+            minute: '2-digit',
+            second: withSeconds ? '2-digit' : undefined,
+            hour12: true,
+        }).format(now);
+}
+
+/**
+ * The live clock with the Hijri and Gregorian dates in the top bar (tablets and computers).
+ */
+function DateTimeClock() {
+    const dates = useDates();
+    const now = useNow();
+    const clock = useClock(now);
 
     return (
-        <div className="flex min-w-0 items-center gap-2 rounded-full border border-line bg-surface px-3 py-1.5 text-xs sm:gap-2.5 sm:px-3.5" title={dates.date(now, { weekday: 'long', month: 'long', year: 'numeric' })}>
-            <Clock className="size-3.5 shrink-0 text-primary-600" />
-            <span dir="ltr" className="font-bold text-ink tabular-nums">
-                {time}
-            </span>
-            <span className="hidden text-line-strong sm:inline">|</span>
-            <Moon className="hidden size-3.5 shrink-0 text-gold-500 sm:inline" />
-            <span className="hidden truncate font-semibold text-ink sm:inline">{dates.hijri(now)}</span>
+        <div
+            className="hidden min-w-0 items-center gap-3 rounded-full border border-line bg-surface px-4 py-2 text-base sm:flex"
+            title={dates.date(now, { weekday: 'long', month: 'long', year: 'numeric' })}
+        >
+            <Clock className="size-5 shrink-0 text-primary-600" />
+            <span className="text-lg font-bold whitespace-nowrap text-ink tabular-nums">{clock(true)}</span>
+            <span className="text-line-strong">|</span>
+            <Moon className="size-4.5 shrink-0 text-gold-500" />
+            <span className="truncate font-semibold text-ink">{dates.hijri(now)}</span>
             <span className="hidden text-line-strong md:inline">|</span>
-            <CalendarDays className="hidden size-3.5 shrink-0 text-muted md:inline" />
-            <span className="hidden truncate text-muted md:inline">{dates.date(now, { weekday: 'long', month: 'long' })}</span>
+            <CalendarDays className="hidden size-4.5 shrink-0 text-muted md:inline" />
+            <span className="hidden truncate font-medium text-muted md:inline">{dates.date(now, { weekday: 'long', month: 'long' })}</span>
+        </div>
+    );
+}
+
+/**
+ * On phones the clock and the dates get a slim strip of their own under the top bar.
+ */
+function DateTimeStrip() {
+    const dates = useDates();
+    const now = useNow();
+    const clock = useClock(now);
+
+    return (
+        <div className="flex items-center gap-3 border-t border-line/60 px-4 py-1.5 sm:hidden">
+            <Clock className="size-4 shrink-0 text-primary-600" />
+            <span className="text-base font-bold whitespace-nowrap text-ink tabular-nums">{clock(false)}</span>
+            <span className="text-line-strong">|</span>
+            <span className="min-w-0 flex-1 truncate text-sm font-semibold text-ink">
+                {dates.hijri(now)}
+                <span className="mx-1.5 text-line-strong">·</span>
+                <span className="font-medium text-muted">{dates.date(now, { weekday: 'long' })}</span>
+            </span>
         </div>
     );
 }
@@ -185,6 +233,7 @@ export function Topbar({ onMenu }: { onMenu: () => void }) {
                     </div>
                 </div>
             </div>
+            <DateTimeStrip />
             <AppDialog open={appOpen} onClose={() => setAppOpen(false)} />
         </header>
     );
