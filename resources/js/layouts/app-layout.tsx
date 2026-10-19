@@ -3,6 +3,7 @@ import { Head, router, usePage, usePoll } from '@inertiajs/react';
 import { X } from 'lucide-react';
 import { type ReactNode, useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { AlarmRinger } from '@/components/alarms/alarm-ringer';
 import { PageHeader, type PageHeaderProps } from '@/components/layout/page-header';
 import { Sidebar } from '@/components/layout/sidebar';
 import { Topbar } from '@/components/layout/topbar';
@@ -94,6 +95,8 @@ export default function AppLayout({ title, heading, description, actions, back, 
                     <div className="animate-fade-in">{children}</div>
                 </main>
             </div>
+
+            <AlarmRinger />
         </div>
     );
 }

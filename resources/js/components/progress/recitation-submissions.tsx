@@ -32,6 +32,8 @@ interface SubmissionFormProps {
     halaqaId: number;
     submission?: RecitationSubmissionItem | null;
     suggestion?: { surah: number; ayah: number } | null;
+    /** The page prop that holds the saved submissions (to confirm the server kept it). */
+    savedIn?: string;
 }
 
 interface SubmissionFormData {
@@ -44,7 +46,7 @@ interface SubmissionFormData {
 /**
  * The student enters the portions they are about to recite, so the teacher only adds the grade and mistakes.
  */
-export function SubmissionForm({ open, onClose, halaqaId, submission, suggestion }: SubmissionFormProps) {
+export function SubmissionForm({ open, onClose, halaqaId, submission, suggestion, savedIn = 'submissions' }: SubmissionFormProps) {
     const { t } = useTrans();
 
     const form = useForm<SubmissionFormData>({
@@ -89,7 +91,7 @@ export function SubmissionForm({ open, onClose, halaqaId, submission, suggestion
             preserveScroll: true,
             onSuccess: (page) => {
                 // Close only when the server really kept the recitation.
-                const saved = (page.props as { submissions?: RecitationSubmissionItem[] }).submissions ?? [];
+                const saved = (page.props as Record<string, RecitationSubmissionItem[] | undefined>)[savedIn] ?? [];
 
                 if (saved.some((item) => item.halaqa_id === halaqaId)) {
                     onClose();

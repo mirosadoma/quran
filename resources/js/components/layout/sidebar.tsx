@@ -1,5 +1,6 @@
 import { Link, usePage } from '@inertiajs/react';
 import {
+    AlarmClock,
     Bell,
     BookHeart,
     BookOpen,
@@ -9,10 +10,13 @@ import {
     CalendarDays,
     ChartColumn,
     CirclePlay,
+    ClipboardList,
+    Compass,
     HandHeart,
     Inbox,
     LayoutDashboard,
     LogOut,
+    Mail,
     MessageCircleQuestionMark,
     MessagesSquare,
     MoonStar,
@@ -83,6 +87,7 @@ function useNavigation(): NavGroup[] {
                   icon: BookOpen,
               },
               { label: t('Sessions'), href: route('sessions.index'), active: current('sessions.*'), icon: CalendarDays },
+              { label: isStudent ? t('My exams') : t('Exams'), href: route('exams.index'), active: current('exams.*'), icon: ClipboardList },
               {
                   label: isStudent ? t('My progress') : t('Recitations'),
                   href: isStudent ? route('progress.student', user.id) : route('progress.index'),
@@ -119,6 +124,9 @@ function useNavigation(): NavGroup[] {
                 { label: t("Prophets' stories"), href: route('prophets-stories.index'), active: current('prophets-stories.*'), icon: ScrollText },
                 { label: t('Adhkar and duas'), href: route('adhkar.index'), active: current('adhkar.*'), icon: HandHeart },
                 { label: t('Prayer'), href: route('prayers.index'), active: current('prayers.*'), icon: MoonStar },
+                { label: t('Qibla direction'), href: route('qibla.index'), active: current('qibla.*'), icon: Compass },
+                { label: t('Alarms'), href: route('alarms.index'), active: current('alarms.*'), icon: AlarmClock },
+                { label: t('Greeting cards'), href: route('cards.index'), active: current('cards.*'), icon: Mail },
                 { label: t('Self-accounting'), href: route('deeds.index'), active: current('deeds.*'), icon: Scale },
             ],
         },

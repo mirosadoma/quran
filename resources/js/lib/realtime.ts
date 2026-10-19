@@ -3,7 +3,7 @@ import Echo from 'laravel-echo';
 import Pusher from 'pusher-js';
 import type { ChatMessage, RealtimeConfig } from '@/types';
 
-export type RealtimeEvent = 'notification' | 'message' | 'message-deleted' | 'session';
+export type RealtimeEvent = 'notification' | 'message' | 'message-deleted' | 'session' | 'exam';
 
 type AuthCallback = (error: Error | null, data: unknown) => void;
 
@@ -11,6 +11,7 @@ let echo: Echo<'pusher'> | null = null;
 let connectionKey: string | null = null;
 let userChannel: string | null = null;
 const halaqaChannels = new Set<number>();
+const examDayChannels = new Set<number>();
 const events = new EventTarget();
 
 /**
@@ -74,6 +75,7 @@ export function disconnectRealtime(): void {
     connectionKey = null;
     userChannel = null;
     halaqaChannels.clear();
+    examDayChannels.clear();
 }
 
 export function socketId(): string | undefined {
@@ -137,6 +139,29 @@ export function watchHalaqa(config: RealtimeConfig, halaqaId: number): void {
         .listen('.session.updated', (event: { id: number; status: string }) => emit('session', { ...event, halaqa_id: halaqaId }));
 
     halaqaChannels.add(halaqaId);
+}
+
+/**
+ * Receive the queue and status events of an exam day (the room and the exam page).
+ */
+export function watchExamDay(config: RealtimeConfig, dayId: number): void {
+    const instance = getEcho(config);
+
+    if (!instance || examDayChannels.has(dayId)) {
+        return;
+    }
+
+    instance
+        .private(`exam-day.${dayId}`)
+        .listen('.exam-day.updated', (event: { id: number; status: string; phase: string }) => emit('exam', event));
+
+    examDayChannels.add(dayId);
+}
+
+export function unwatchExamDay(dayId: number): void {
+    if (examDayChannels.delete(dayId)) {
+        echo?.leaveChannel(`private-exam-day.${dayId}`);
+    }
 }
 
 export function joinPresence(config: RealtimeConfig, halaqaId: number) {

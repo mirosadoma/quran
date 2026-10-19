@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Http\Controllers\ImpersonationController;
+use App\Http\Resources\AlarmResource;
 use App\Models\AcademyJoinRequest;
 use App\Models\ContactMessage;
 use App\Models\Setting;
@@ -98,6 +99,10 @@ class HandleInertiaRequests extends Middleware
             ],
             // Texts (tafsir, stories) are read aloud by the man's voice of the server.
             'narrator' => fn (): bool => $user !== null && app(Narrator::class)->isConfigured(),
+            // The user's alarms ring on screen while the platform is open.
+            'alarms' => fn (): array => $user
+                ? AlarmResource::collection($user->alarms()->where('is_active', true)->orderBy('ring_at')->get())->resolve()
+                : [],
         ];
     }
 }

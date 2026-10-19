@@ -17,9 +17,11 @@ import {
 } from 'lucide-react';
 import { AttendanceTrendChart, MemorizationTrendChart } from '@/components/charts';
 import { TopStudentsCard, WelcomeBanner } from '@/components/dashboard/widgets';
+import { ExamBanners } from '@/components/exams/exam-banners';
 import { PushPrompt } from '@/components/install-app';
 import { PendingSubmissionsCard } from '@/components/progress/recitation-submissions';
 import { RecordList } from '@/components/progress/record-list';
+import { NextSessionPanel } from '@/components/session/next-session-panel';
 import { SessionRow } from '@/components/session/session-row';
 import { LinkButton } from '@/components/ui/button';
 import { Card, CardHeader } from '@/components/ui/card';
@@ -28,7 +30,7 @@ import { StatCard } from '@/components/ui/stat-card';
 import AppLayout from '@/layouts/app-layout';
 import { useTrans } from '@/lib/i18n';
 import { cn, formatNumber } from '@/lib/utils';
-import type { ProgressRecordItem, RecitationSubmissionItem, SessionItem, WeeklyAttendance, WeeklyMemorization } from '@/types';
+import type { ExamDayItem, ProgressRecordItem, RecitationSubmissionItem, SessionItem, WeeklyAttendance, WeeklyMemorization } from '@/types';
 
 interface AdminDashboardProps {
     /** The academy of a manager (none for the administration, who sees the whole platform). */
@@ -47,6 +49,9 @@ interface AdminDashboardProps {
     attendanceTrend: WeeklyAttendance[];
     memorizationTrend: WeeklyMemorization[];
     todaySessions: SessionItem[];
+    /** The session running now, or the next one of today. */
+    todaySession: SessionItem | null;
+    examDays: ExamDayItem[];
     recentRecords: ProgressRecordItem[];
     topStudents: { id: number; name: string; avatar_url: string | null; ayahs: number; total: number }[];
     pendingSubmissions: RecitationSubmissionItem[];
@@ -90,6 +95,8 @@ export default function AdminDashboard({
     attendanceTrend,
     memorizationTrend,
     todaySessions,
+    todaySession,
+    examDays,
     recentRecords,
     topStudents,
     pendingSubmissions,
@@ -107,6 +114,8 @@ export default function AdminDashboard({
                         : t('Here is an overview of the platform today: its academies, sessions, attendance and memorization progress.')
                 }
             >
+                <div className="flex flex-col gap-4 sm:items-end">
+                <NextSessionPanel session={todaySession} reloadOnly={['todaySession', 'todaySessions']} />
                 <div className="flex flex-wrap gap-2">
                     {platform && (
                         <LinkButton href={route('academies.create')} variant="gold">
@@ -123,9 +132,12 @@ export default function AdminDashboard({
                         {t('Add a user')}
                     </LinkButton>
                 </div>
+                </div>
             </WelcomeBanner>
 
             <PushPrompt />
+
+            <ExamBanners days={examDays} className="mb-6" />
 
             {platform && (
                 <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">

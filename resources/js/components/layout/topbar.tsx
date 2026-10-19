@@ -1,6 +1,6 @@
 import { router, usePage } from '@inertiajs/react';
-import { BookOpenCheck, Building2, ChevronDown, Languages, LogOut, Menu, MonitorSmartphone, Moon, Sun, UserRound } from 'lucide-react';
-import { useState } from 'react';
+import { BookOpenCheck, Building2, CalendarDays, ChevronDown, Clock, Languages, LogOut, Menu, MonitorSmartphone, Moon, Sun, UserRound } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { LogoMark } from '@/components/brand';
 import { AppButton, AppDialog } from '@/components/install-app';
 import { NotificationsMenu } from '@/components/layout/notifications-menu';
@@ -48,16 +48,33 @@ export function ThemeToggle({ className }: { className?: string }) {
     );
 }
 
-function HijriDate() {
+/**
+ * The live clock with the Hijri and Gregorian dates, on every page of the dashboard.
+ */
+function DateTimeClock() {
     const dates = useDates();
-    const today = new Date();
+    const [now, setNow] = useState(() => new Date());
+
+    useEffect(() => {
+        const timer = window.setInterval(() => setNow(new Date()), 1000);
+
+        return () => window.clearInterval(timer);
+    }, []);
+
+    const time = new Intl.DateTimeFormat('en-GB', { timeZone: dates.timezone, hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' }).format(now);
 
     return (
-        <div className="hidden items-center gap-2 rounded-full border border-line bg-surface px-3.5 py-1.5 text-xs md:flex">
-            <Moon className="size-3.5 text-gold-500" />
-            <span className="font-semibold text-ink">{dates.hijri(today)}</span>
-            <span className="text-line-strong">|</span>
-            <span className="text-muted">{dates.date(today, { weekday: 'long', month: 'long' })}</span>
+        <div className="flex min-w-0 items-center gap-2 rounded-full border border-line bg-surface px-3 py-1.5 text-xs sm:gap-2.5 sm:px-3.5" title={dates.date(now, { weekday: 'long', month: 'long', year: 'numeric' })}>
+            <Clock className="size-3.5 shrink-0 text-primary-600" />
+            <span dir="ltr" className="font-bold text-ink tabular-nums">
+                {time}
+            </span>
+            <span className="hidden text-line-strong sm:inline">|</span>
+            <Moon className="hidden size-3.5 shrink-0 text-gold-500 sm:inline" />
+            <span className="hidden truncate font-semibold text-ink sm:inline">{dates.hijri(now)}</span>
+            <span className="hidden text-line-strong md:inline">|</span>
+            <CalendarDays className="hidden size-3.5 shrink-0 text-muted md:inline" />
+            <span className="hidden truncate text-muted md:inline">{dates.date(now, { weekday: 'long', month: 'long' })}</span>
         </div>
     );
 }
@@ -157,7 +174,7 @@ export function Topbar({ onMenu }: { onMenu: () => void }) {
                     <Menu className="size-5" />
                 </button>
                 <LogoMark className="size-9 lg:hidden" />
-                <HijriDate />
+                <DateTimeClock />
                 <div className="ms-auto flex items-center gap-0.5">
                     <AppButton onOpen={() => setAppOpen(true)} />
                     <LanguageSwitch />

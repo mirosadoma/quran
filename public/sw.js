@@ -94,7 +94,7 @@ async function trim(cache) {
 }
 
 /*
- * Push notifications. The server sends JSON: { title, body, url, icon, badge, tag, lang, dir }.
+ * Push notifications. The server sends JSON: { title, body, url, icon, badge, tag, lang, dir, sticky }.
  */
 self.addEventListener('push', (event) => {
     let data = {};
@@ -115,7 +115,9 @@ self.addEventListener('push', (event) => {
                 renotify: Boolean(data.tag),
                 lang: data.lang || 'ar',
                 dir: data.dir || 'auto',
-                vibrate: [80, 40, 80],
+                vibrate: data.sticky ? [300, 150, 300, 150, 300] : [80, 40, 80],
+                // Alarms stay on screen until the user touches them.
+                requireInteraction: Boolean(data.sticky),
                 data: { url: data.url || '/' },
             });
 

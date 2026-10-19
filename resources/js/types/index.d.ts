@@ -48,6 +48,8 @@ export interface SharedProps {
     push: { public_key: string | null };
     /** Texts are read aloud by the man's voice of the server (route "speech"). */
     narrator: boolean;
+    /** The active alarms of the user; they ring on screen while the platform is open. */
+    alarms: AlarmItem[];
     [key: string]: unknown;
 }
 
@@ -529,4 +531,137 @@ export interface CommunityPostSummary {
     title: string;
     answers_count: number;
     solved: boolean;
+}
+
+export type ExamState = 'draft' | 'upcoming' | 'live' | 'finished';
+export type ExamDayStatus = 'scheduled' | 'live' | 'closed';
+export type ExamDayPhase = 'opening' | 'examining';
+export type ExamEntryStatus = 'waiting' | 'alerted' | 'called' | 'examined' | 'absent';
+export type AlarmKind = 'memorization' | 'revision' | 'prayer' | 'dhikr' | 'custom';
+
+/**
+ * Someone who listens to the students on an exam day: a teacher of the platform, or an
+ * examiner invited from outside who enters with a link.
+ */
+export interface ExamExaminerItem {
+    id: number;
+    exam_day_id: number;
+    user_id: number | null;
+    name: string;
+    email?: string | null;
+    phone?: string | null;
+    is_external: boolean;
+    avatar_url?: string | null;
+    /** The link of an outside examiner (the manager only). */
+    guest_url?: string | null;
+    entries_count?: number;
+    last_seen_at: string | null;
+}
+
+/**
+ * A student on an exam day: their place in the queue of their examiner, and their result.
+ */
+export interface ExamEntryItem {
+    id: number;
+    exam_day_id: number;
+    student_id: number;
+    halaqa_id: number | null;
+    examiner_id: number | null;
+    position: number;
+    status: ExamEntryStatus;
+    alerted_at: string | null;
+    called_at: string | null;
+    finished_at: string | null;
+    /** Hidden from the student until the result is published. */
+    grade: Grade | null;
+    score: number | null;
+    percent: number | null;
+    notes: string | null;
+    is_graded: boolean;
+    graded_at: string | null;
+    published_at: string | null;
+    student?: UserRef | null;
+    halaqa?: HalaqaRef | null;
+    examiner?: { id: number; name: string } | null;
+    grader?: { id: number; name: string } | null;
+}
+
+export interface ExamDaySummary {
+    students: number;
+    examined: number;
+    graded: number;
+    published: number;
+    pending: number;
+}
+
+export interface ExamDayItem {
+    id: number;
+    exam_id: number;
+    starts_at: string;
+    /** Null: the day stays open until the manager closes it. */
+    ends_at: string | null;
+    status: ExamDayStatus;
+    phase: ExamDayPhase;
+    opened_at: string | null;
+    examining_started_at: string | null;
+    closed_at: string | null;
+    exam?: { id: number; title: string; max_score: number };
+    halaqat?: HalaqaRef[];
+    examiners?: ExamExaminerItem[];
+    entries?: ExamEntryItem[];
+    summary?: ExamDaySummary;
+    /** The signed-in student on this day. */
+    my_entry?: ExamEntryItem | null;
+    /** The examiner row of the signed-in teacher on this day. */
+    my_examiner_id?: number | null;
+    can_enter: boolean;
+    can_manage: boolean;
+}
+
+export interface ExamItem {
+    id: number;
+    academy_id: number;
+    title: string;
+    description: string | null;
+    max_score: number;
+    state?: ExamState;
+    academy?: { id: number; name: string } | null;
+    creator?: { id: number; name: string } | null;
+    days?: ExamDayItem[];
+    days_count?: number;
+    entries_count?: number;
+    created_at: string | null;
+    can: { update: boolean; delete: boolean; view_results: boolean };
+}
+
+/**
+ * How a room of an exam day opens: in a new tab (public Jitsi server) or inside the platform.
+ */
+export interface ExamRoomTarget {
+    type: 'redirect' | 'embed';
+    url: string | null;
+    embed: { provider: 'jaas' | 'jitsi'; appId?: string; domain?: string; roomName: string; jwt?: string | null } | Record<string, never>;
+}
+
+export interface ExamRoomLink {
+    key: string;
+    label: string;
+    examiner_id: number | null;
+    target: ExamRoomTarget;
+}
+
+/**
+ * An alarm of the user, like the ones of a phone.
+ */
+export interface AlarmItem {
+    id: number;
+    kind: AlarmKind;
+    title: string;
+    /** HH:MM in the user's timezone. */
+    time: string;
+    /** Weekdays (0 = Sunday); null rings every day. */
+    days: number[] | null;
+    is_active: boolean;
+    last_dismissed_on: string | null;
+    last_rang_on: string | null;
 }

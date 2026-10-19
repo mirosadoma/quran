@@ -39,7 +39,7 @@ class JitsiDriver implements MeetingDriver
 
     public function create(HalaqaSession $session): MeetingDetails
     {
-        $room = Str::lower(Str::slug((string) config('app.name')).'-'.$session->halaqa_id.'-'.Str::random(12));
+        $room = $this->newRoomName((string) $session->halaqa_id);
 
         return new MeetingDetails(id: $room, url: $this->roomUrl($room), data: ['mode' => $this->mode()]);
     }
@@ -61,32 +61,73 @@ class JitsiDriver implements MeetingDriver
 
     public function joinTarget(HalaqaSession $session, User $user): JoinTarget
     {
+        return $this->joinTargetForRoom((string) $session->meeting_id, $this->participant($user), $session->isManagedBy($user));
+    }
+
+    /**
+     * A new, hard to guess room name with the given tag in it.
+     */
+    public function newRoomName(string $tag): string
+    {
+        return Str::lower(Str::slug((string) config('app.name')).'-'.Str::slug($tag).'-'.Str::random(12));
+    }
+
+    /**
+     * The participant description sent to Jitsi for a user of the platform.
+     *
+     * @return array{id: string, name: string, email: string|null, avatar: string|null, locale: string}
+     */
+    public function participant(User $user): array
+    {
+        return [
+            'id' => (string) $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'avatar' => $user->avatar_url,
+            'locale' => $user->preferredLocale(),
+        ];
+    }
+
+    /**
+     * Where a participant goes to enter any room of this server (used by sessions and exams).
+     *
+     * @param  array{id: string, name: string, email?: string|null, avatar?: string|null, locale?: string}  $participant
+     *
+     * @throws MeetingException
+     */
+    public function joinTargetForRoom(string $room, array $participant, bool $moderator): JoinTarget
+    {
         if (! $this->isConfigured()) {
             throw new MeetingException(__('Jitsi is not configured correctly. Check the JaaS keys in the .env file.'));
         }
-
-        $room = (string) $session->meeting_id;
-        $moderator = $session->isManagedBy($user);
 
         return match ($this->mode()) {
             'jaas' => JoinTarget::embed([
                 'provider' => 'jaas',
                 'appId' => config('meetings.jitsi.jaas.app_id'),
                 'roomName' => $room,
-                'jwt' => $this->jaasToken($room, $user, $moderator),
+                'jwt' => $this->jaasToken($room, $participant, $moderator),
             ]),
             'self_hosted' => JoinTarget::embed([
                 'provider' => 'jitsi',
                 'domain' => config('meetings.jitsi.domain'),
                 'roomName' => $room,
-                'jwt' => $this->selfHostedToken($room, $user, $moderator),
+                'jwt' => $this->selfHostedToken($room, $participant, $moderator),
             ]),
-            default => JoinTarget::redirect($this->roomUrl($room).'#'.implode('&', [
-                'userInfo.displayName='.rawurlencode((string) json_encode($user->name, JSON_UNESCAPED_UNICODE)),
-                'config.defaultLanguage='.rawurlencode((string) json_encode($user->preferredLocale())),
-                'config.disableDeepLinking=true',
-            ])),
+            default => JoinTarget::redirect($this->publicJoinUrl($room, $participant['name'], $participant['locale'] ?? app()->getLocale())),
         };
+    }
+
+    /**
+     * The address of a room on the public server, with the participant's name and language set.
+     */
+    public function publicJoinUrl(string $room, string $displayName, string $locale): string
+    {
+        return $this->roomUrl($room).'#'.implode('&', [
+            'userInfo.displayName='.rawurlencode((string) json_encode($displayName, JSON_UNESCAPED_UNICODE)),
+            'config.defaultLanguage='.rawurlencode((string) json_encode($locale)),
+            'config.disableDeepLinking=true',
+        ]);
     }
 
     public function roomUrl(string $room): string
@@ -107,8 +148,10 @@ class JitsiDriver implements MeetingDriver
 
     /**
      * JWT signed with the JaaS private key (RS256).
+     *
+     * @param  array{id: string, name: string, email?: string|null, avatar?: string|null}  $participant
      */
-    protected function jaasToken(string $room, User $user, bool $moderator): string
+    protected function jaasToken(string $room, array $participant, bool $moderator): string
     {
         $now = now()->timestamp;
 
@@ -122,10 +165,10 @@ class JitsiDriver implements MeetingDriver
             'exp' => $now + 4 * 3600,
             'context' => [
                 'user' => array_filter([
-                    'id' => (string) $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'avatar' => $user->avatar_url,
+                    'id' => $participant['id'],
+                    'name' => $participant['name'],
+                    'email' => $participant['email'] ?? null,
+                    'avatar' => $participant['avatar'] ?? null,
                     'moderator' => $moderator ? 'true' : 'false',
                 ], fn ($value): bool => $value !== null),
                 'features' => [
@@ -148,8 +191,10 @@ class JitsiDriver implements MeetingDriver
 
     /**
      * JWT for a self-hosted server using token authentication (HS256), if enabled.
+     *
+     * @param  array{id: string, name: string, email?: string|null, avatar?: string|null}  $participant
      */
-    protected function selfHostedToken(string $room, User $user, bool $moderator): ?string
+    protected function selfHostedToken(string $room, array $participant, bool $moderator): ?string
     {
         $appId = config('meetings.jitsi.app_id');
         $secret = config('meetings.jitsi.app_secret');
@@ -170,10 +215,10 @@ class JitsiDriver implements MeetingDriver
             'moderator' => $moderator,
             'context' => [
                 'user' => array_filter([
-                    'id' => (string) $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'avatar' => $user->avatar_url,
+                    'id' => $participant['id'],
+                    'name' => $participant['name'],
+                    'email' => $participant['email'] ?? null,
+                    'avatar' => $participant['avatar'] ?? null,
                     'moderator' => $moderator,
                 ], fn ($value): bool => $value !== null),
             ],

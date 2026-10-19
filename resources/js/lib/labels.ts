@@ -1,7 +1,12 @@
 import { useMemo } from 'react';
 import { useTrans } from '@/lib/i18n';
 import type {
+    AlarmKind,
     AttendanceStatus,
+    ExamDayPhase,
+    ExamDayStatus,
+    ExamEntryStatus,
+    ExamState,
     Gender,
     Grade,
     HalaqaGender,
@@ -50,6 +55,29 @@ export const joinRequestTone: Record<JoinRequestStatus, Tone> = {
     rejected: 'rose',
     cancelled: 'slate',
 };
+
+export const examStateTone: Record<ExamState, Tone> = {
+    draft: 'slate',
+    upcoming: 'sky',
+    live: 'emerald',
+    finished: 'slate',
+};
+
+export const examDayTone: Record<ExamDayStatus, Tone> = {
+    scheduled: 'sky',
+    live: 'emerald',
+    closed: 'slate',
+};
+
+export const examEntryTone: Record<ExamEntryStatus, Tone> = {
+    waiting: 'slate',
+    alerted: 'amber',
+    called: 'rose',
+    examined: 'emerald',
+    absent: 'rose',
+};
+
+export const alarmKinds: AlarmKind[] = ['memorization', 'revision', 'prayer', 'dhikr', 'custom'];
 
 export const grades: Grade[] = ['excellent', 'very_good', 'good', 'acceptable', 'weak'];
 export const attendanceStatuses: AttendanceStatus[] = ['present', 'late', 'absent', 'excused'];
@@ -117,6 +145,35 @@ export function useLabels() {
                 jitsi: 'Jitsi Meet',
                 manual: t('Manual link'),
             } satisfies Record<MeetingProvider, string>,
+            examState: {
+                draft: t('Draft'),
+                upcoming: t('Upcoming'),
+                live: t('Live now'),
+                finished: t('Finished'),
+            } satisfies Record<ExamState, string>,
+            examDay: {
+                scheduled: t('Scheduled'),
+                live: t('Live now'),
+                closed: t('Closed'),
+            } satisfies Record<ExamDayStatus, string>,
+            examPhase: {
+                opening: t('Opening word'),
+                examining: t('Examining'),
+            } satisfies Record<ExamDayPhase, string>,
+            examEntry: {
+                waiting: t('Waiting'),
+                alerted: t('Get ready'),
+                called: t('Being examined'),
+                examined: t('Examined'),
+                absent: t('Absent'),
+            } satisfies Record<ExamEntryStatus, string>,
+            alarmKind: {
+                memorization: t('Memorization'),
+                revision: t('Revision'),
+                prayer: t('Prayer'),
+                dhikr: t('Adhkar'),
+                custom: t('Other'),
+            } satisfies Record<AlarmKind, string>,
         }),
         [t],
     );

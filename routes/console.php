@@ -8,3 +8,7 @@ Schedule::command('sessions:start')->everyMinute()->withoutOverlapping();
 Schedule::command('announcements:send')->everyMinute()->withoutOverlapping();
 Schedule::command('prayers:remind')->everyMinute()->withoutOverlapping();
 Schedule::command('sessions:close')->everyTenMinutes()->withoutOverlapping();
+Schedule::command('exams:remind')->everyMinute()->withoutOverlapping();
+Schedule::command('exams:open')->everyMinute()->withoutOverlapping();
+Schedule::command('exams:close')->everyFiveMinutes()->withoutOverlapping();
+Schedule::command('alarms:ring')->everyMinute()->withoutOverlapping();

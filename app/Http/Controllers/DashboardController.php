@@ -7,6 +7,7 @@ use App\Enums\ProgressType;
 use App\Enums\SessionStatus;
 use App\Enums\UserRole;
 use App\Http\Resources\AcademyResource;
+use App\Http\Resources\ExamDayResource;
 use App\Http\Resources\HalaqaAnnouncementResource;
 use App\Http\Resources\HalaqaResource;
 use App\Http\Resources\JoinRequestResource;
@@ -26,6 +27,7 @@ use App\Models\RecitationSubmission;
 use App\Models\User;
 use App\Models\Video;
 use App\Services\DeedStats;
+use App\Services\Exams\ExamFeed;
 use App\Services\Reports;
 use App\Services\StudentProgress;
 use Illuminate\Database\Eloquent\Builder;
@@ -40,6 +42,7 @@ class DashboardController extends Controller
         protected Reports $reports,
         protected StudentProgress $progress,
         protected DeedStats $deeds,
+        protected ExamFeed $exams,
     ) {}
 
     /**
@@ -74,7 +77,13 @@ class DashboardController extends Controller
             ->orderBy('starts_at')
             ->get();
 
+        // The session running now, or the next one of today: a countdown, then the join button.
+        $todaySession = $todaySessions->first(fn (HalaqaSession $session): bool => $session->status === SessionStatus::Live)
+            ?? $todaySessions->first(fn (HalaqaSession $session): bool => $session->status === SessionStatus::Scheduled && $session->endsAt()->isFuture());
+
         return Inertia::render('dashboard/admin', [
+            'todaySession' => $todaySession ? (new SessionResource($todaySession))->resolve() : null,
+            'examDays' => $this->examDays($user),
             'academy' => $academyId !== null ? $user->academy?->only(['id', 'name', 'logo_url']) : null,
             'stats' => [
                 'students' => User::query()->students()->active()->inAcademy($academyId)->count(),
@@ -146,6 +155,7 @@ class DashboardController extends Controller
             ->get();
 
         return Inertia::render('dashboard/teacher', [
+            'examDays' => $this->examDays($user),
             'stats' => [
                 'halaqat' => $halaqat->count(),
                 'students' => DB::table('halaqa_student')->whereIn('halaqa_id', $halaqaIds)->distinct()->count('student_id'),
@@ -185,6 +195,8 @@ class DashboardController extends Controller
 
         return Inertia::render('dashboard/student', [
             'nextSession' => $nextSession ? (new SessionResource($nextSession))->resolve() : null,
+            'examDays' => $this->examDays($user),
+            'lastPosition' => $this->progress->lastMemorizedPosition($user),
             'upcomingSessions' => SessionResource::collection($sessions->slice(1)->values())->resolve(),
             'summary' => $this->progress->summary($user),
             'recentRecords' => ProgressRecordResource::collection(
@@ -206,6 +218,16 @@ class DashboardController extends Controller
             )->resolve(),
             'mushafPage' => $user->mushaf_page,
         ]);
+    }
+
+    /**
+     * The exam days running now or coming soon for the user (the banners at the top).
+     *
+     * @return list<array<string, mixed>>
+     */
+    protected function examDays(User $user): array
+    {
+        return ExamDayResource::collection($this->exams->upcomingFor($user))->resolve();
     }
 
     /**

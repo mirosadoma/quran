@@ -1,32 +1,37 @@
-import { Link, router, usePage } from '@inertiajs/react';
-import { Award, BookOpen, BookOpenCheck, BookOpenText, CalendarDays, CirclePlay, HandHeart, Inbox, Layers, Megaphone, Percent } from 'lucide-react';
+import { Link, usePage } from '@inertiajs/react';
+import { AlarmClock, Award, BookOpen, BookOpenCheck, BookOpenText, CalendarDays, CirclePlay, HandHeart, Layers, Megaphone, Percent, Plus } from 'lucide-react';
 import { useState } from 'react';
+import { alarmIcons } from '@/components/alarms/alarm-form';
 import { IslamicPattern } from '@/components/brand';
 import { VerseCard, WelcomeBanner } from '@/components/dashboard/widgets';
+import { ExamBanners } from '@/components/exams/exam-banners';
 import { AnnouncementList } from '@/components/halaqa/announcements';
 import { HalaqaCard } from '@/components/halaqa/halaqa-card';
 import { PushPrompt } from '@/components/install-app';
 import { JuzMap } from '@/components/progress/juz-map';
+import { PendingSubmissions, SubmissionForm } from '@/components/progress/recitation-submissions';
 import { RecordList } from '@/components/progress/record-list';
-import { Countdown } from '@/components/session/countdown';
-import { JoinSessionButton } from '@/components/session/join-button';
-import { LinkButton } from '@/components/ui/button';
+import { NextSessionPanel } from '@/components/session/next-session-panel';
+import { Button, LinkButton } from '@/components/ui/button';
 import { Card, CardBody, CardHeader } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
+import { Select } from '@/components/ui/form';
 import { ProgressBar } from '@/components/ui/progress-bar';
 import { StatCard } from '@/components/ui/stat-card';
 import { VideoCard, VideoPlayer } from '@/components/video/video-components';
-import { useRealtime } from '@/hooks/use-realtime';
 import AppLayout from '@/layouts/app-layout';
 import { useDates } from '@/lib/dates';
 import { useTrans } from '@/lib/i18n';
 import { useLabels } from '@/lib/labels';
-import { rangeLabel, TOTAL_AYAHS } from '@/lib/quran';
+import { nextPosition, TOTAL_AYAHS } from '@/lib/quran';
 import { formatNumber } from '@/lib/utils';
-import type { AnnouncementItem, HalaqaItem, ProgressRecordItem, ProgressSummary, QuranRange, RecitationSubmissionItem, SessionItem, VideoItem } from '@/types';
+import type { AnnouncementItem, ExamDayItem, HalaqaItem, ProgressRecordItem, ProgressSummary, RecitationSubmissionItem, SessionItem, VideoItem } from '@/types';
 
 interface StudentDashboardProps {
     nextSession: SessionItem | null;
+    examDays: ExamDayItem[];
+    /** Where the last memorization ended, to suggest the next portion. */
+    lastPosition: { surah: number; ayah: number } | null;
     upcomingSessions: SessionItem[];
     summary: ProgressSummary;
     recentRecords: ProgressRecordItem[];
@@ -37,15 +42,17 @@ interface StudentDashboardProps {
     mushafPage: number | null;
 }
 
-export default function StudentDashboard({ nextSession, upcomingSessions, summary, recentRecords, halaqat, videos, announcements, mySubmissions, mushafPage }: StudentDashboardProps) {
+export default function StudentDashboard({ nextSession, examDays, lastPosition, upcomingSessions, summary, recentRecords, halaqat, videos, announcements, mySubmissions, mushafPage }: StudentDashboardProps) {
     const { t, locale } = useTrans();
     const labels = useLabels();
     const dates = useDates();
-    const { auth } = usePage().props;
+    const { auth, alarms } = usePage().props;
     const [playing, setPlaying] = useState<VideoItem | null>(null);
+    const [submitFor, setSubmitFor] = useState<number | null>(null);
+    const [halaqaChoice, setHalaqaChoice] = useState<number | ''>(halaqat[0]?.id ?? '');
     const coverage = summary.coverage;
-
-    useRealtime('session', () => router.reload());
+    const activeHalaqat = halaqat.filter((halaqa) => halaqa.is_active);
+    const submissionFor = (halaqaId: number) => mySubmissions.find((submission) => submission.halaqa_id === halaqaId) ?? null;
 
     return (
         <AppLayout title={t('Dashboard')} hideHeader>
@@ -59,26 +66,12 @@ export default function StudentDashboard({ nextSession, upcomingSessions, summar
                         : t('May Allah make the Quran the spring of your heart.')
                 }
             >
-                {nextSession && (
-                    <div className="flex flex-col items-start gap-3 sm:items-end">
-                        {nextSession.status !== 'live' && (
-                            <>
-                                <p className="text-xs text-sidebar-ink/70">{dates.dateTime(nextSession.starts_at)}</p>
-                                <Countdown target={nextSession.starts_at} light />
-                            </>
-                        )}
-                        {nextSession.can_join ? (
-                            <JoinSessionButton session={nextSession} size="lg" />
-                        ) : (
-                            <p className="rounded-xl bg-white/10 px-3 py-2 text-xs text-sidebar-ink/80">
-                                {t('The join button appears 15 minutes before the session.')}
-                            </p>
-                        )}
-                    </div>
-                )}
+                <NextSessionPanel session={nextSession} reloadOnly={['nextSession', 'upcomingSessions']} />
             </WelcomeBanner>
 
             <PushPrompt />
+
+            <ExamBanners days={examDays} className="mb-6" />
 
             <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
                 <StatCard
@@ -111,25 +104,72 @@ export default function StudentDashboard({ nextSession, upcomingSessions, summar
                 />
             </div>
 
-            {mySubmissions.length > 0 && (
-                <div className="mt-6 flex flex-wrap items-center gap-3 rounded-2xl border border-sky-200 bg-sky-50 px-5 py-4 text-sky-900 dark:border-sky-500/20 dark:bg-sky-500/10 dark:text-sky-100">
-                    <Inbox className="size-5 shrink-0" />
-                    <div className="min-w-0 flex-1 text-sm">
-                        <p className="font-semibold">{t('Your recitation is waiting for your teacher')}</p>
-                        <p className="text-sky-800/80 dark:text-sky-200/80">
-                            {mySubmissions
-                                .map((submission) =>
-                                    [submission.memorization, submission.revision]
-                                        .filter((range): range is QuranRange => range !== null)
-                                        .map((range) => rangeLabel(range, locale))
-                                        .join(' · '),
-                                )
-                                .join(' — ')}
-                        </p>
-                    </div>
-                    <LinkButton href={route('halaqat.show', mySubmissions[0].halaqa_id)} variant="secondary" size="sm">
-                        {t('View')}
-                    </LinkButton>
+            {activeHalaqat.length > 0 && (
+                <div className="mt-6 grid gap-6 lg:grid-cols-3">
+                    <Card className="lg:col-span-2">
+                        <CardHeader
+                            title={t('My next recitation')}
+                            description={
+                                mySubmissions.length > 0
+                                    ? t('Waiting for your teacher to grade it.')
+                                    : t('Enter what you will recite (memorization, revision or both) before your turn.')
+                            }
+                            icon={BookOpenCheck}
+                            actions={
+                                <div className="flex items-center gap-2">
+                                    {activeHalaqat.length > 1 && (
+                                        <Select value={halaqaChoice} onChange={(event) => setHalaqaChoice(Number(event.target.value))} className="h-9 w-44 text-xs" aria-label={t('Halaqa')}>
+                                            {activeHalaqat.map((halaqa) => (
+                                                <option key={halaqa.id} value={halaqa.id}>
+                                                    {halaqa.name}
+                                                </option>
+                                            ))}
+                                        </Select>
+                                    )}
+                                    <Button size="sm" onClick={() => setSubmitFor(halaqaChoice === '' ? null : halaqaChoice)} disabled={halaqaChoice === ''}>
+                                        <Plus />
+                                        {halaqaChoice !== '' && submissionFor(halaqaChoice) ? t('Edit my recitation') : t('Enter my recitation')}
+                                    </Button>
+                                </div>
+                            }
+                        />
+                        {mySubmissions.length === 0 ? (
+                            <p className="px-6 py-6 text-sm text-muted">{t('Nothing entered yet. Enter your next recitation so your teacher only adds the grade and the mistakes.')}</p>
+                        ) : (
+                            <PendingSubmissions submissions={mySubmissions} onEdit={(submission) => setSubmitFor(submission.halaqa_id)} />
+                        )}
+                    </Card>
+
+                    <Card>
+                        <CardHeader
+                            title={t('My alarms')}
+                            icon={AlarmClock}
+                            actions={
+                                <LinkButton href={route('alarms.index')} variant="ghost" size="sm">
+                                    {alarms.length > 0 ? t('Manage') : t('Add an alarm')}
+                                </LinkButton>
+                            }
+                        />
+                        {alarms.length === 0 ? (
+                            <p className="px-6 py-6 text-sm text-muted">{t('Set an alarm for your memorization and revision so you never miss them.')}</p>
+                        ) : (
+                            <ul className="divide-y divide-line">
+                                {alarms.slice(0, 4).map((alarm) => {
+                                    const Icon = alarmIcons[alarm.kind];
+
+                                    return (
+                                        <li key={alarm.id} className="flex items-center gap-3 px-5 py-2.5">
+                                            <Icon className="size-4 shrink-0 text-primary-600" />
+                                            <span className="min-w-0 flex-1 truncate text-sm font-medium text-ink">{alarm.title}</span>
+                                            <span dir="ltr" className="text-sm font-bold text-ink tabular-nums">
+                                                {dates.clock(alarm.time)}
+                                            </span>
+                                        </li>
+                                    );
+                                })}
+                            </ul>
+                        )}
+                    </Card>
                 </div>
             )}
 
@@ -257,6 +297,17 @@ export default function StudentDashboard({ nextSession, upcomingSessions, summar
 
 
             <VideoPlayer video={playing} onClose={() => setPlaying(null)} />
+
+            {submitFor !== null && (
+                <SubmissionForm
+                    open
+                    onClose={() => setSubmitFor(null)}
+                    halaqaId={submitFor}
+                    submission={submissionFor(submitFor)}
+                    suggestion={lastPosition ? nextPosition(lastPosition) : null}
+                    savedIn="mySubmissions"
+                />
+            )}
         </AppLayout>
     );
 }

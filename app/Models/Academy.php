@@ -103,6 +103,14 @@ class Academy extends Model
         return $this->hasMany(Video::class);
     }
 
+    /**
+     * @return HasMany<Exam, $this>
+     */
+    public function exams(): HasMany
+    {
+        return $this->hasMany(Exam::class);
+    }
+
     #[Scope]
     protected function active(Builder $query): void
     {

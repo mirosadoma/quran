@@ -24,3 +24,11 @@ Broadcast::channel('halaqa.{halaqa}', function (User $user, Halaqa $halaqa): arr
         'avatar_url' => $user->avatar_url,
     ];
 });
+
+/*
+ * Private channel of an exam day: the manager of the academy, the examiners and the students
+ * of the day refresh their pages when something changes in the queues.
+ */
+Broadcast::channel('exam-day.{day}', function (User $user, ExamDay $day): bool {
+    return $day->isManagedBy($user) || $day->examinerFor($user) !== null || $day->entryFor($user) !== null;
+});

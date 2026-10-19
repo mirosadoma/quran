@@ -164,6 +164,26 @@ class User extends Authenticatable implements HasLocalePreference
     }
 
     /**
+     * The alarms of the user (memorization, revision, prayers, adhkar...).
+     *
+     * @return HasMany<Alarm, $this>
+     */
+    public function alarms(): HasMany
+    {
+        return $this->hasMany(Alarm::class);
+    }
+
+    /**
+     * The exam days the student is examined in.
+     *
+     * @return HasMany<ExamEntry, $this>
+     */
+    public function examEntries(): HasMany
+    {
+        return $this->hasMany(ExamEntry::class, 'student_id');
+    }
+
+    /**
      * The good and bad deeds the user records to hold themselves to account (private).
      *
      * @return HasMany<Deed, $this>

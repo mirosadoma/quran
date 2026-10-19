@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AcademyController;
 use App\Http\Controllers\AdhkarController;
+use App\Http\Controllers\AlarmController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\NewPasswordController;
@@ -16,7 +17,14 @@ use App\Http\Controllers\DeedController;
 use App\Http\Controllers\DeedReportController;
 use App\Http\Controllers\DhikrCategoryController;
 use App\Http\Controllers\DhikrController;
+use App\Http\Controllers\ExamController;
+use App\Http\Controllers\ExamDayController;
+use App\Http\Controllers\ExamEntryController;
+use App\Http\Controllers\ExamExaminerController;
+use App\Http\Controllers\ExamGuestController;
+use App\Http\Controllers\ExamRoomController;
 use App\Http\Controllers\GoogleConnectionController;
+use App\Http\Controllers\GreetingCardController;
 use App\Http\Controllers\HalaqaAnnouncementController;
 use App\Http\Controllers\HalaqaController;
 use App\Http\Controllers\HalaqaStudentController;
@@ -36,6 +44,7 @@ use App\Http\Controllers\PrayerReminderController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProgressController;
 use App\Http\Controllers\PushSubscriptionController;
+use App\Http\Controllers\QiblaController;
 use App\Http\Controllers\RecitationSubmissionController;
 use App\Http\Controllers\RecitationTranscriptionController;
 use App\Http\Controllers\ReportController;
@@ -79,6 +88,19 @@ Route::get('install', InstallController::class)->name('install');
 
 Route::post('webhooks/zoom', ZoomWebhookController::class)->name('webhooks.zoom');
 Route::post('webhooks/jaas', JaasWebhookController::class)->name('webhooks.jaas');
+
+/*
+ * Examiners invited from outside the platform enter the exam day with their link (no account).
+ */
+Route::prefix('exam-guest/{token}')->where(['token' => '[A-Za-z0-9]{40,64}'])->name('exams.guest.')->group(function () {
+    Route::get('/', [ExamGuestController::class, 'room'])->name('room');
+    Route::post('entries/{entry}/alert', [ExamGuestController::class, 'alert'])->name('alert');
+    Route::post('entries/{entry}/call', [ExamGuestController::class, 'call'])->name('call');
+    Route::post('entries/{entry}/finish', [ExamGuestController::class, 'finish'])->name('finish');
+    Route::put('entries/{entry}/grade', [ExamGuestController::class, 'grade'])->name('grade');
+    Route::post('entries/{entry}/absent', [ExamGuestController::class, 'absent'])->name('absent');
+    Route::post('entries/{entry}/reset', [ExamGuestController::class, 'reset'])->name('reset');
+});
 
 Route::middleware('guest')->group(function () {
     Route::get('login', [AuthenticatedSessionController::class, 'create'])->name('login');
@@ -193,6 +215,37 @@ Route::middleware(['auth', 'active'])->prefix('admin')->group(function () {
     Route::get('sessions/{session}/room', [SessionMeetingController::class, 'room'])->name('sessions.room');
     Route::post('sessions/{session}/end', [SessionMeetingController::class, 'end'])->name('sessions.end');
 
+    // Exams: planned by the manager of the academy; teachers examine, students are examined.
+    Route::resource('exams', ExamController::class);
+    Route::get('exam-days/{day}/room', [ExamRoomController::class, 'room'])->name('exams.room');
+    Route::middleware('role:admin,manager')->group(function () {
+        Route::post('exam-days/{day}/open', [ExamDayController::class, 'open'])->name('exams.days.open');
+        Route::post('exam-days/{day}/start-examining', [ExamDayController::class, 'startExamining'])->name('exams.days.start-examining');
+        Route::post('exam-days/{day}/close', [ExamDayController::class, 'close'])->name('exams.days.close');
+        Route::post('exam-days/{day}/sync-students', [ExamDayController::class, 'syncStudents'])->name('exams.days.sync-students');
+        Route::post('exam-days/{day}/auto-assign', [ExamDayController::class, 'autoAssign'])->name('exams.days.auto-assign');
+        Route::put('exam-days/{day}/distribution', [ExamDayController::class, 'distribute'])->name('exams.days.distribution');
+        Route::post('exam-days/{day}/publish-all', [ExamDayController::class, 'publishAll'])->name('exams.days.publish-all');
+        Route::post('exam-days/{day}/examiners', [ExamExaminerController::class, 'store'])->name('exams.examiners.store');
+        Route::delete('exam-examiners/{examiner}', [ExamExaminerController::class, 'destroy'])->name('exams.examiners.destroy');
+        Route::post('exam-entries/{entry}/publish', [ExamEntryController::class, 'publish'])->name('exams.entries.publish');
+    });
+    Route::middleware('role:admin,manager,teacher')->group(function () {
+        Route::post('exam-entries/{entry}/alert', [ExamEntryController::class, 'alert'])->name('exams.entries.alert');
+        Route::post('exam-entries/{entry}/call', [ExamEntryController::class, 'call'])->name('exams.entries.call');
+        Route::post('exam-entries/{entry}/finish', [ExamEntryController::class, 'finish'])->name('exams.entries.finish');
+        Route::put('exam-entries/{entry}/grade', [ExamEntryController::class, 'grade'])->name('exams.entries.grade');
+        Route::post('exam-entries/{entry}/absent', [ExamEntryController::class, 'absent'])->name('exams.entries.absent');
+        Route::post('exam-entries/{entry}/reset', [ExamEntryController::class, 'reset'])->name('exams.entries.reset');
+    });
+
+    // Alarms of the user (memorization, revision, prayers, adhkar...).
+    Route::get('alarms', [AlarmController::class, 'index'])->name('alarms.index');
+    Route::post('alarms', [AlarmController::class, 'store'])->name('alarms.store');
+    Route::put('alarms/{alarm}', [AlarmController::class, 'update'])->name('alarms.update');
+    Route::delete('alarms/{alarm}', [AlarmController::class, 'destroy'])->name('alarms.destroy');
+    Route::post('alarms/{alarm}/dismiss', [AlarmController::class, 'dismiss'])->name('alarms.dismiss');
+
     Route::get('progress', [ProgressController::class, 'index'])->name('progress.index');
     Route::get('progress/students/{student}', [ProgressController::class, 'student'])->name('progress.student');
     Route::post('progress', [ProgressController::class, 'store'])->middleware('role:admin,manager,teacher')->name('progress.store');
@@ -245,6 +298,8 @@ Route::middleware(['auth', 'active'])->prefix('admin')->group(function () {
     Route::get('prayers', [PrayerController::class, 'index'])->name('prayers.index');
     Route::get('prayers/{slug}', [PrayerController::class, 'show'])->where('slug', '[a-z-]+')->name('prayers.show');
     Route::put('prayers/reminders/{prayer}', [PrayerReminderController::class, 'update'])->name('prayers.reminders.update');
+    Route::get('qibla', QiblaController::class)->name('qibla.index');
+    Route::get('cards', GreetingCardController::class)->name('cards.index');
 
     Route::get('deeds', [DeedController::class, 'index'])->name('deeds.index');
     Route::get('deeds/reports', DeedReportController::class)->name('deeds.reports');

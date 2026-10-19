@@ -1,29 +1,29 @@
-import { Link, router, usePage } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import { BookOpen, BookOpenCheck, CalendarDays, ClipboardCheck, GraduationCap, Percent, TriangleAlert, UserX } from 'lucide-react';
 import { MemorizationTrendChart } from '@/components/charts';
 import { TopStudentsCard, VerseCard, WelcomeBanner } from '@/components/dashboard/widgets';
+import { ExamBanners } from '@/components/exams/exam-banners';
 import { HalaqaCard } from '@/components/halaqa/halaqa-card';
 import { PushPrompt } from '@/components/install-app';
 import { PendingSubmissionsCard } from '@/components/progress/recitation-submissions';
 import { RecordList } from '@/components/progress/record-list';
-import { Countdown } from '@/components/session/countdown';
-import { JoinSessionButton } from '@/components/session/join-button';
+import { NextSessionPanel } from '@/components/session/next-session-panel';
 import { SessionRow } from '@/components/session/session-row';
 import { Avatar } from '@/components/ui/avatar';
 import { LinkButton } from '@/components/ui/button';
 import { Card, CardHeader } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { StatCard } from '@/components/ui/stat-card';
-import { useRealtime } from '@/hooks/use-realtime';
 import AppLayout from '@/layouts/app-layout';
 import { useDates } from '@/lib/dates';
 import { useTrans } from '@/lib/i18n';
 import { formatNumber } from '@/lib/utils';
-import type { HalaqaItem, ProgressRecordItem, RecitationSubmissionItem, SessionItem, WeeklyMemorization } from '@/types';
+import type { ExamDayItem, HalaqaItem, ProgressRecordItem, RecitationSubmissionItem, SessionItem, WeeklyMemorization } from '@/types';
 
 interface TeacherDashboardProps {
     stats: { halaqat: number; students: number; sessions_week: number; attendance_rate: number | null; records_month: number };
     upcomingSessions: SessionItem[];
+    examDays: ExamDayItem[];
     pendingAttendance: SessionItem[];
     halaqat: HalaqaItem[];
     recentRecords: ProgressRecordItem[];
@@ -34,13 +34,11 @@ interface TeacherDashboardProps {
 }
 
 export default function TeacherDashboard(props: TeacherDashboardProps) {
-    const { stats, upcomingSessions, pendingAttendance, halaqat, recentRecords, attentionStudents, memorizationTrend, topStudents, pendingSubmissions } = props;
+    const { stats, upcomingSessions, examDays, pendingAttendance, halaqat, recentRecords, attentionStudents, memorizationTrend, topStudents, pendingSubmissions } = props;
     const { t, locale } = useTrans();
     const dates = useDates();
     const { auth } = usePage().props;
-    const next = upcomingSessions[0];
-
-    useRealtime('session', () => router.reload());
+    const next = upcomingSessions[0] ?? null;
 
     return (
         <AppLayout title={t('Dashboard')} hideHeader>
@@ -48,22 +46,12 @@ export default function TeacherDashboard(props: TeacherDashboardProps) {
                 title={t('Peace be upon you, :name', { name: auth.user?.name ?? '' })}
                 subtitle={next ? t('Your next session: :title', { title: next.display_title }) : t('You have no upcoming sessions.')}
             >
-                {next && (
-                    <div className="flex flex-col items-start gap-3 sm:items-end">
-                        {next.status === 'live' ? (
-                            <p className="text-sm font-semibold text-emerald-300">{t('The session is live now')}</p>
-                        ) : (
-                            <>
-                                <p className="text-xs text-sidebar-ink/70">{dates.dateTime(next.starts_at)}</p>
-                                <Countdown target={next.starts_at} light />
-                            </>
-                        )}
-                        <JoinSessionButton session={next} />
-                    </div>
-                )}
+                <NextSessionPanel session={next} reloadOnly={['upcomingSessions']} />
             </WelcomeBanner>
 
             <PushPrompt />
+
+            <ExamBanners days={examDays} className="mb-6" />
 
             <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-5">
                 <StatCard icon={BookOpen} label={t('My halaqat')} value={formatNumber(stats.halaqat, locale)} tone="emerald" />
