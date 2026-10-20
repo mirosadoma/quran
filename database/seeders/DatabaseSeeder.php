@@ -28,7 +28,8 @@ class DatabaseSeeder extends Seeder
             'is_active' => true,
         ]);
 
-        // Content of the platform: the mushaf, its tafsir, word meanings and reciters, and the adhkar.
+        // Content of the platform: the mushaf, its tafsir, word meanings and reciters, the adhkar,
+        // the stories, the guide of the prayers, the books of hadith, the sunnahs and the sayings.
         $this->call([
             AyahSeeder::class,
             TafsirSeeder::class,
@@ -36,6 +37,11 @@ class DatabaseSeeder extends Seeder
             ReciterSeeder::class,
             DhikrCategorySeeder::class,
             DhikrSeeder::class,
+            StorySeeder::class,
+            PrayerGuideSeeder::class,
+            HadithSeeder::class,
+            SunnahSeeder::class,
+            SayingSeeder::class,
         ]);
 
         if (app()->environment('local')) {

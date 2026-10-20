@@ -3,7 +3,7 @@
 namespace App\Enums;
 
 /**
- * The two libraries of stories: each one is a folder of resources/data/stories with one JSON file per story.
+ * The two libraries of stories (the stories table, installed from database/data/stories/{kind} by StorySeeder).
  */
 enum StoryKind: string
 {

@@ -1,8 +1,7 @@
 import type { Locale } from '@/types';
 
 /**
- * The stories for children and the stories of the prophets (one JSON file per story in
- * resources/data/stories, loaded by the server).
+ * The stories for children and the stories of the prophets (the stories table, sent by the server).
  */
 export type StoryKind = 'kids' | 'prophets';
 

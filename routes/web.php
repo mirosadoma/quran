@@ -26,6 +26,7 @@ use App\Http\Controllers\ExamGuestController;
 use App\Http\Controllers\ExamRoomController;
 use App\Http\Controllers\GoogleConnectionController;
 use App\Http\Controllers\GreetingCardController;
+use App\Http\Controllers\HadithController;
 use App\Http\Controllers\HalaqaAnnouncementController;
 use App\Http\Controllers\HalaqaController;
 use App\Http\Controllers\HalaqaStudentController;
@@ -49,6 +50,7 @@ use App\Http\Controllers\QiblaController;
 use App\Http\Controllers\RecitationSubmissionController;
 use App\Http\Controllers\RecitationTranscriptionController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\SayingController;
 use App\Http\Controllers\SessionController;
 use App\Http\Controllers\SessionMeetingController;
 use App\Http\Controllers\SessionRecordingController;
@@ -56,6 +58,7 @@ use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\SiteController;
 use App\Http\Controllers\SpeechController;
 use App\Http\Controllers\StoryController;
+use App\Http\Controllers\SunnahController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\VideoController;
 use App\Http\Controllers\Webhooks\JaasWebhookController;
@@ -302,6 +305,16 @@ Route::middleware(['auth', 'active'])->prefix('admin')->group(function () {
     Route::get('prayers', [PrayerController::class, 'index'])->name('prayers.index');
     Route::get('prayers/{slug}', [PrayerController::class, 'show'])->where('slug', '[a-z-]+')->name('prayers.show');
     Route::put('prayers/reminders/{prayer}', [PrayerReminderController::class, 'update'])->name('prayers.reminders.update');
+
+    // The books of hadith: browse a book, search it, or read one hadith by its number.
+    Route::get('hadith', [HadithController::class, 'index'])->name('hadith.index');
+    Route::get('hadith/{collection:slug}', [HadithController::class, 'show'])->name('hadith.show');
+    Route::get('hadith/{collection:slug}/{number}', [HadithController::class, 'hadith'])->whereNumber('number')->name('hadith.hadith');
+
+    // The neglected sunnahs and the transmitted sayings, with their hadiths.
+    Route::get('sunnahs', SunnahController::class)->name('sunnahs.index');
+    Route::get('sayings', SayingController::class)->name('sayings.index');
+
     Route::get('qibla', QiblaController::class)->name('qibla.index');
     Route::get('calendar', CalendarController::class)->name('calendar.index');
     Route::get('cards', GreetingCardController::class)->name('cards.index');

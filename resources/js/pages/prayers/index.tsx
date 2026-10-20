@@ -26,12 +26,16 @@ import { ReminderCard, type ReminderSettings } from '@/components/prayers/remind
 import { Card } from '@/components/ui/card';
 import AppLayout from '@/layouts/app-layout';
 import { useTrans } from '@/lib/i18n';
-import { localized, type PrayerGuide, prayerGuides, type PrayerReminderType } from '@/lib/prayers';
+import { localized, type PrayerGuide, type PrayerGuideSummary, type PrayerReminderType } from '@/lib/prayers';
 import { arabicDigits } from '@/lib/quran';
 import { cn, copyText } from '@/lib/utils';
 
 interface PrayersProps {
     slug: string | null;
+    /** The prayers of the guide, in their order. */
+    guides: PrayerGuideSummary[];
+    /** The prayer opened, with how to pray it. */
+    guide: PrayerGuide | null;
     reminders: Record<PrayerReminderType, ReminderSettings>;
     timezone: string;
 }
@@ -64,9 +68,8 @@ const tones: Record<PrayerGuide['tone'], { soft: string; solid: string }> = {
 /**
  * Prayer: daily reminders of the night prayer and duha, and how to pray the voluntary prayers.
  */
-export default function Prayers({ slug, reminders }: PrayersProps) {
+export default function Prayers({ guides, guide, reminders }: PrayersProps) {
     const { t } = useTrans();
-    const guide = slug ? prayerGuides.find((item) => item.slug === slug) : undefined;
 
     if (guide) {
         return <GuidePage guide={guide} reminders={reminders} />;
@@ -84,7 +87,7 @@ export default function Prayers({ slug, reminders }: PrayersProps) {
                 {t('The voluntary prayers')}
             </h2>
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                {prayerGuides.map((item) => (
+                {guides.map((item) => (
                     <GuideCard key={item.slug} guide={item} />
                 ))}
             </div>
@@ -94,7 +97,7 @@ export default function Prayers({ slug, reminders }: PrayersProps) {
     );
 }
 
-function GuideCard({ guide }: { guide: PrayerGuide }) {
+function GuideCard({ guide }: { guide: PrayerGuideSummary }) {
     const { t, locale } = useTrans();
     const Icon = icons[guide.icon] ?? Sparkles;
 

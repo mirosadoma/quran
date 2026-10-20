@@ -12,7 +12,7 @@ use Illuminate\Validation\Rule;
 use Tests\TestCase;
 
 /**
- * Every story file of resources/data/stories/{kind}/{slug}.json follows the schema the story pages read.
+ * Every story file of database/data/stories/{kind}/{slug}.json follows the schema StorySeeder installs.
  */
 class StoryFilesTest extends TestCase
 {
@@ -85,7 +85,7 @@ class StoryFilesTest extends TestCase
      */
     protected function files(StoryKind $kind): array
     {
-        return glob(resource_path("data/stories/{$kind->value}/*.json")) ?: [];
+        return glob(database_path("data/stories/{$kind->value}/*.json")) ?: [];
     }
 
     /**

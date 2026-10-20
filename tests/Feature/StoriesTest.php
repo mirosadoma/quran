@@ -5,8 +5,9 @@ namespace Tests\Feature;
 use App\Enums\StoryKind;
 use App\Models\Ayah;
 use App\Models\Reciter;
+use App\Models\Story;
 use App\Models\User;
-use App\Services\StoryLibrary;
+use Database\Seeders\StorySeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
@@ -18,32 +19,18 @@ class StoriesTest extends TestCase
 {
     use RefreshDatabase;
 
-    /**
-     * Folder of the story files the pages read during the test.
-     */
-    protected string $library;
-
     protected function setUp(): void
     {
         parent::setUp();
 
         $this->withoutVite();
-        $this->library = storage_path('framework/testing/stories-'.Str::lower(Str::random(10)));
-        $this->app->bind(StoryLibrary::class, fn (): StoryLibrary => new StoryLibrary($this->library));
-    }
-
-    protected function tearDown(): void
-    {
-        File::deleteDirectory($this->library);
-
-        parent::tearDown();
     }
 
     public function test_every_user_sees_the_kids_stories_in_their_order_without_their_text(): void
     {
-        $this->story(StoryKind::Kids, 'the-second', ['order' => 2, 'icon' => 'cat', 'tone' => 'amber', 'sections' => [['heading' => null, 'paragraphs' => [str_repeat('كلمة ', 250)]]]]);
-        $this->story(StoryKind::Kids, 'the-first', ['order' => 1]);
-        $this->story(StoryKind::Prophets, 'nuh');
+        Story::factory()->kids()->create(['slug' => 'the-second', 'sort_order' => 2, 'icon' => 'cat', 'tone' => 'amber', 'sections' => [['heading' => null, 'paragraphs' => [str_repeat('كلمة ', 250)]]]]);
+        Story::factory()->kids()->create(['slug' => 'the-first', 'sort_order' => 1, 'title' => 'قصة the-first', 'title_en' => 'Story the-first']);
+        Story::factory()->prophets()->create(['slug' => 'nuh']);
 
         foreach ([User::factory()->student()->create(), User::factory()->teacher()->create(), User::factory()->manager()->create(), User::factory()->admin()->create()] as $user) {
             $this->actingAs($user)
@@ -70,9 +57,9 @@ class StoriesTest extends TestCase
 
     public function test_the_prophets_page_lists_only_the_stories_of_the_prophets(): void
     {
-        $this->story(StoryKind::Prophets, 'nuh', ['order' => 3]);
-        $this->story(StoryKind::Prophets, 'adam', ['order' => 1]);
-        $this->story(StoryKind::Kids, 'the-first');
+        Story::factory()->prophets()->create(['slug' => 'nuh', 'sort_order' => 3]);
+        Story::factory()->prophets()->create(['slug' => 'adam', 'sort_order' => 1]);
+        Story::factory()->kids()->create(['slug' => 'the-first']);
 
         $this->actingAs(User::factory()->student()->create())
             ->get(route('prophets-stories.index'))
@@ -86,10 +73,11 @@ class StoriesTest extends TestCase
 
     public function test_a_story_shows_its_ayahs_from_the_quran_text_with_the_stories_around_it(): void
     {
-        $this->story(StoryKind::Prophets, 'adam', ['order' => 1]);
-        $this->story(StoryKind::Prophets, 'hud', ['order' => 3]);
-        $this->story(StoryKind::Prophets, 'nuh', [
-            'order' => 2,
+        Story::factory()->prophets()->create(['slug' => 'adam', 'sort_order' => 1]);
+        Story::factory()->prophets()->create(['slug' => 'hud', 'sort_order' => 3]);
+        Story::factory()->prophets()->create([
+            'slug' => 'nuh',
+            'sort_order' => 2,
             'sections' => [
                 ['heading' => 'دعوته لقومه', 'paragraphs' => ['دعا قومه.', 'صبر عليهم.'], 'ayahs' => [['surah' => 114, 'from' => 1, 'to' => 2]]],
                 ['heading' => 'السفينة', 'paragraphs' => ['صنع السفينة.']],
@@ -126,7 +114,7 @@ class StoriesTest extends TestCase
 
     public function test_a_story_shows_the_reference_of_its_ayahs_while_the_quran_text_is_not_installed(): void
     {
-        $this->story(StoryKind::Kids, 'the-first', ['sections' => [['heading' => null, 'paragraphs' => ['قصة.'], 'ayahs' => [['surah' => 2, 'from' => 153, 'to' => 153]]]]]);
+        Story::factory()->kids()->create(['slug' => 'the-first', 'sections' => [['heading' => null, 'paragraphs' => ['قصة.'], 'ayahs' => [['surah' => 2, 'from' => 153, 'to' => 153]]]]]);
 
         $this->actingAs(User::factory()->student()->create())
             ->get(route('kids-stories.show', 'the-first'))
@@ -138,7 +126,7 @@ class StoriesTest extends TestCase
 
     public function test_an_unknown_story_is_not_found(): void
     {
-        $this->story(StoryKind::Kids, 'the-first');
+        Story::factory()->kids()->create(['slug' => 'the-first']);
         $user = User::factory()->student()->create();
 
         $this->actingAs($user)->get(route('kids-stories.show', 'the-second'))->assertNotFound();
@@ -151,45 +139,61 @@ class StoriesTest extends TestCase
         $this->get(route('prophets-stories.show', 'nuh'))->assertRedirect(route('login'));
     }
 
-    public function test_new_and_edited_story_files_show_without_clearing_the_cache(): void
+    public function test_the_seeder_installs_the_story_files_and_refreshes_them(): void
     {
-        $this->story(StoryKind::Kids, 'the-first');
-        $user = User::factory()->student()->create();
+        $path = storage_path('framework/testing/stories-'.Str::lower(Str::random(10)));
 
-        $this->actingAs($user)->get(route('kids-stories.index'))->assertInertia(fn (AssertableInertia $page) => $page->has('stories', 1));
+        try {
+            $this->storyFile($path, 'the-first', ['sections' => [['heading' => 'البداية', 'paragraphs' => ['كان يا ما كان.'], 'ayahs' => [['surah' => 2, 'from' => 153, 'to' => 153]]]]]);
+            File::put("{$path}/kids/half-written.json", '{"slug": "half-written", "order": 2, "tit');
+            File::put("{$path}/kids/Not_A_Slug.json", File::get("{$path}/kids/the-first.json"));
 
-        $this->story(StoryKind::Kids, 'the-first', ['title' => ['ar' => 'عنوان جديد أطول', 'en' => 'A longer new title']]);
-        $this->story(StoryKind::Kids, 'the-second', ['order' => 2]);
+            (new StorySeeder($path))->run();
 
-        $this->actingAs($user)
-            ->get(route('kids-stories.index'))
-            ->assertInertia(fn (AssertableInertia $page) => $page
-                ->has('stories', 2)
-                ->where('stories.0.title.ar', 'عنوان جديد أطول'));
+            $story = Story::query()->sole();
+            $this->assertSame('the-first', $story->slug);
+            $this->assertSame(StoryKind::Kids, $story->kind);
+            $this->assertSame('قصة the-first', $story->title);
+            $this->assertSame('Story the-first', $story->title_en);
+            $this->assertSame(1, $story->sort_order);
+            $this->assertSame([['heading' => 'البداية', 'paragraphs' => ['كان يا ما كان.'], 'ayahs' => [['surah' => 2, 'from' => 153, 'to' => 153]]]], $story->sections);
+            $this->assertSame(['الصدق منجاة.'], $story->lessons);
+
+            // Edited and new files refresh the stories.
+            $this->storyFile($path, 'the-first', ['order' => 4, 'title' => ['ar' => 'عنوان جديد', 'en' => 'A new title']]);
+            $this->storyFile($path, 'the-second', ['order' => 2]);
+
+            (new StorySeeder($path))->run();
+        } finally {
+            File::deleteDirectory($path);
+        }
+
+        $this->assertSame(2, Story::query()->count());
+        $this->assertSame('عنوان جديد', $story->fresh()->title);
+        $this->assertSame(4, $story->fresh()->sort_order);
     }
 
-    public function test_files_that_are_not_stories_are_left_out(): void
+    public function test_every_story_file_of_the_platform_installs(): void
     {
-        $this->story(StoryKind::Kids, 'the-first');
-        File::put("{$this->library}/kids/half-written.json", '{"slug": "half-written", "order": 2, "tit');
-        File::put("{$this->library}/kids/Not_A_Slug.json", (string) file_get_contents("{$this->library}/kids/the-first.json"));
+        (new StorySeeder)->run();
 
-        $this->actingAs(User::factory()->student()->create())
-            ->get(route('kids-stories.index'))
-            ->assertInertia(fn (AssertableInertia $page) => $page
-                ->has('stories', 1)
-                ->where('stories.0.slug', 'the-first'));
+        foreach (StoryKind::cases() as $kind) {
+            $files = count(File::glob(database_path("data/stories/{$kind->value}/*.json")));
+
+            $this->assertGreaterThan(0, $files);
+            $this->assertSame($files, Story::query()->ofKind($kind)->count());
+        }
     }
 
     /**
-     * Write a story file of the library read by the pages.
+     * Write a story file of the folder the seeder reads.
      *
      * @param  array<string, mixed>  $attributes
      */
-    protected function story(StoryKind $kind, string $slug, array $attributes = []): void
+    protected function storyFile(string $path, string $slug, array $attributes = []): void
     {
-        File::ensureDirectoryExists("{$this->library}/{$kind->value}");
-        File::put("{$this->library}/{$kind->value}/{$slug}.json", (string) json_encode([
+        File::ensureDirectoryExists("{$path}/kids");
+        File::put("{$path}/kids/{$slug}.json", (string) json_encode([
             'slug' => $slug,
             'order' => 1,
             'title' => ['ar' => "قصة {$slug}", 'en' => "Story {$slug}"],

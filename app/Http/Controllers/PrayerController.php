@@ -3,9 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Enums\PrayerReminderType;
+use App\Models\PrayerGuide;
 use App\Models\PrayerReminder;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -24,12 +24,14 @@ class PrayerController extends Controller
      */
     public function show(Request $request, string $slug): Response
     {
-        abort_unless(in_array($slug, $this->slugs(), true), 404);
+        $guide = PrayerGuide::query()->where('slug', $slug)->first();
 
-        return $this->page($request, $slug);
+        abort_if($guide === null, 404);
+
+        return $this->page($request, $guide);
     }
 
-    protected function page(Request $request, ?string $slug): Response
+    protected function page(Request $request, ?PrayerGuide $guide): Response
     {
         $saved = $request->user()->prayerReminders()->get()->keyBy(fn (PrayerReminder $reminder): string => $reminder->prayer->value);
 
@@ -41,22 +43,11 @@ class PrayerController extends Controller
         ]);
 
         return Inertia::render('prayers/index', [
-            'slug' => $slug,
+            'slug' => $guide?->slug,
+            'guides' => PrayerGuide::query()->ordered()->get()->map(fn (PrayerGuide $item): array => $item->toSummaryArray())->values(),
+            'guide' => $guide?->toGuideArray(),
             'reminders' => $reminders,
             'timezone' => $request->user()->displayTimezone(),
         ]);
-    }
-
-    /**
-     * Prayers of the guide (resources/data/prayers.json, shown by the page).
-     *
-     * @return list<string>
-     */
-    protected function slugs(): array
-    {
-        return Cache::rememberForever('prayers.slugs', fn (): array => array_column(
-            json_decode((string) file_get_contents(resource_path('data/prayers.json')), true),
-            'slug',
-        ));
     }
 }
