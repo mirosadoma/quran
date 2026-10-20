@@ -30,9 +30,12 @@ return [
     | to expire immediately when the browser is closed then you may
     | indicate that via the expire_on_close configuration option.
     |
+    | A session of the platform lasts a year (and every sign-in is remembered
+    | for five years), so a user stays signed in until they sign out.
+    |
     */
 
-    'lifetime' => (int) env('SESSION_LIFETIME', 120),
+    'lifetime' => (int) env('SESSION_LIFETIME', 525600),
 
     'expire_on_close' => env('SESSION_EXPIRE_ON_CLOSE', false),
 

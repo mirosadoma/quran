@@ -47,6 +47,15 @@ class Setting extends Model
             'notify_whatsapp' => false,
             'notify_push' => true,
             'google_meet' => null,
+            // Outgoing email (App\Services\MailSettings): "env" keeps the .env file, "smtp" and "log" replace it.
+            'mail_mailer' => 'env',
+            'mail_host' => null,
+            'mail_port' => 587,
+            'mail_username' => null,
+            'mail_password' => null,
+            'mail_encryption' => 'tls',
+            'mail_from_address' => null,
+            'mail_from_name' => null,
         ];
     }
 

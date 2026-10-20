@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Models\Setting;
 use App\Services\AppIcons;
+use App\Services\MailSettings;
 use App\Services\Quran;
 use Illuminate\Contracts\View\View as ViewContract;
 use Illuminate\Foundation\DevCommands;
@@ -37,6 +38,9 @@ class AppServiceProvider extends ServiceProvider
 
         $this->renderErrorPages();
         $this->shareBranding();
+
+        // The email settings saved by the administration replace the .env ones the moment the mailer is made.
+        $this->app->resolving('mail.manager', fn () => $this->app->make(MailSettings::class)->apply($this->app['config']));
     }
 
     /**

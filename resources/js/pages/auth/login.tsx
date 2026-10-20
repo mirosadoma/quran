@@ -2,7 +2,7 @@ import { Link, useForm } from '@inertiajs/react';
 import { GraduationCap, LogIn, School, ShieldCheck, UserPlus, UserRound } from 'lucide-react';
 import type { FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
-import { Checkbox, Field, Input, Label } from '@/components/ui/form';
+import { Field, Input, Label } from '@/components/ui/form';
 import { PasswordInput } from '@/components/ui/password-input';
 import AuthLayout from '@/layouts/auth-layout';
 import { useTrans } from '@/lib/i18n';
@@ -64,12 +64,6 @@ export default function Login({ status, demoAccounts }: LoginProps) {
                     />
                     {form.errors.password && <p className="mt-1.5 text-xs font-medium text-rose-600">{form.errors.password}</p>}
                 </div>
-
-                <Checkbox
-                    label={t('Remember me')}
-                    checked={form.data.remember}
-                    onChange={(event) => form.setData('remember', event.target.checked)}
-                />
 
                 <Button type="submit" size="lg" className="w-full" loading={form.processing}>
                     <LogIn className="rtl:rotate-180" />

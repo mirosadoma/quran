@@ -1,9 +1,10 @@
-import { router, useForm } from '@inertiajs/react';
+import { router, useForm, usePage } from '@inertiajs/react';
 import { Bell, Building2, CircleCheck, CircleDashed, Copy, ImagePlus, Link2, Save, Timer, Trash, Unplug, Video, Webhook } from 'lucide-react';
 import { type FormEvent, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { LogoMark } from '@/components/brand';
 import { MeetingProviderPicker } from '@/components/meeting-provider-picker';
+import { MailSettingsCard, type MailSummary } from '@/components/settings/mail-settings-card';
 import { Button } from '@/components/ui/button';
 import { Card, CardBody, CardHeader } from '@/components/ui/card';
 import { Field, Input, Select, Switch } from '@/components/ui/form';
@@ -30,6 +31,8 @@ interface SettingsProps {
         notify_whatsapp: boolean;
         notify_push: boolean;
     };
+    /** The outgoing email settings (saved here instead of the .env file). */
+    mail: MailSummary;
     logoUrl: string | null;
     providers: ProviderOption[];
     google: { has_credentials: boolean; connected: boolean; email: string | null; redirect_uri: string };
@@ -73,8 +76,9 @@ function CopyValue({ value }: { value: string }) {
     );
 }
 
-export default function Settings({ settings, logoUrl, providers, google, integrations, timezones }: SettingsProps) {
+export default function Settings({ settings, mail, logoUrl, providers, google, integrations, timezones }: SettingsProps) {
     const { t } = useTrans();
+    const { auth } = usePage().props;
     const logoInput = useRef<HTMLInputElement>(null);
     const [logoPreview, setLogoPreview] = useState<string | null>(null);
     const [disconnecting, setDisconnecting] = useState(false);
@@ -347,6 +351,12 @@ export default function Settings({ settings, logoUrl, providers, google, integra
                     </Card>
                 </div>
             </form>
+
+            <div className="mt-6 lg:grid lg:grid-cols-3 lg:gap-6">
+                <div className="min-w-0 lg:col-span-2">
+                    <MailSettingsCard mail={mail} adminEmail={auth.user?.email ?? null} />
+                </div>
+            </div>
 
             <ConfirmDialog
                 open={disconnecting}

@@ -45,7 +45,8 @@ class RegisteredUserController extends Controller
             'is_active' => true,
         ]);
 
-        Auth::login($user);
+        // Remembered like a sign-in: the new user stays signed in until they sign out.
+        Auth::login($user, remember: true);
         $request->session()->regenerate();
         $user->forceFill(['last_login_at' => now()])->saveQuietly();
 

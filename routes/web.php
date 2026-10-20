@@ -35,6 +35,7 @@ use App\Http\Controllers\InstallController;
 use App\Http\Controllers\JoinRequestController;
 use App\Http\Controllers\KidsController;
 use App\Http\Controllers\LocaleController;
+use App\Http\Controllers\MailSettingsController;
 use App\Http\Controllers\ManifestController;
 use App\Http\Controllers\MushafBookmarkController;
 use App\Http\Controllers\MushafController;
@@ -166,6 +167,8 @@ Route::middleware(['auth', 'active'])->prefix('admin')->group(function () {
         Route::put('settings', [SettingsController::class, 'update'])->name('settings.update');
         Route::get('settings/google/connect', [GoogleConnectionController::class, 'redirect'])->name('settings.google.connect');
         Route::delete('settings/google', [GoogleConnectionController::class, 'destroy'])->name('settings.google.disconnect');
+        Route::put('settings/mail', [MailSettingsController::class, 'update'])->name('settings.mail.update');
+        Route::post('settings/mail/test', [MailSettingsController::class, 'test'])->middleware('throttle:6,1')->name('settings.mail.test');
 
         Route::get('contact-messages', [ContactMessageController::class, 'index'])->name('contact-messages.index');
         Route::patch('contact-messages/{message}/read', [ContactMessageController::class, 'read'])->name('contact-messages.read');

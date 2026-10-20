@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\SettingsRequest;
 use App\Models\Setting;
 use App\Services\AppIcons;
+use App\Services\MailSettings;
 use App\Services\Meetings\Drivers\JitsiDriver;
 use App\Services\Meetings\GoogleClient;
 use App\Services\Meetings\MeetingManager;
@@ -29,16 +30,17 @@ class SettingsController extends Controller
     /**
      * Academy settings and the status of every integration.
      */
-    public function edit(): Response
+    public function edit(MailSettings $mail): Response
     {
         $logo = Setting::get('academy_logo');
 
         $settings = collect(Setting::defaults())
-            ->except(['google_meet', 'academy_logo'])
+            ->except(['google_meet', 'academy_logo', ...MailSettings::keys()])
             ->map(fn ($default, string $key) => Setting::get($key));
 
         return Inertia::render('settings/index', [
             'settings' => $settings,
+            'mail' => $mail->summary(),
             'logoUrl' => $logo ? Storage::disk('public')->url($logo) : null,
             'providers' => $this->meetings->providers(),
             'google' => [
@@ -50,7 +52,7 @@ class SettingsController extends Controller
             'integrations' => [
                 'jitsi_mode' => $this->jitsi->mode(),
                 'realtime' => ['enabled' => Realtime::enabled(), 'driver' => Realtime::driver()],
-                'mail' => ['driver' => config('mail.default'), 'from' => config('mail.from.address')],
+                'mail' => ['driver' => $mail->effective()['mailer'], 'from' => $mail->effective()['from']],
                 'whatsapp' => ['driver' => config('services.whatsapp.driver'), 'configured' => $this->whatsApp->isConfigured()],
                 'push' => ['configured' => app(WebPush::class)->isConfigured()],
                 'queue' => config('queue.default'),

@@ -52,7 +52,8 @@ class LoginRequest extends FormRequest
             'password' => (string) $this->input('password'),
         ];
 
-        if (! Auth::attempt($credentials, $this->boolean('remember'))) {
+        // Every sign-in is remembered: the user stays signed in until they sign out.
+        if (! Auth::attempt($credentials, remember: true)) {
             RateLimiter::hit($this->throttleKey());
 
             throw ValidationException::withMessages([
