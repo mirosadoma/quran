@@ -1,9 +1,10 @@
 import { router, usePage } from '@inertiajs/react';
 import { BookOpenCheck, Building2, CalendarDays, ChevronDown, Clock, Languages, LogOut, Menu, MonitorSmartphone, Moon, Sun, UserRound } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { LogoMark } from '@/components/brand';
 import { AppButton, AppDialog } from '@/components/install-app';
 import { NotificationsMenu } from '@/components/layout/notifications-menu';
+import { LogoutBuddy } from '@/components/mascot/logout-buddy';
 import { Avatar } from '@/components/ui/avatar';
 import { Dropdown, DropdownItem, DropdownLabel, DropdownSeparator } from '@/components/ui/dropdown';
 import { useTheme } from '@/hooks/use-theme';
@@ -132,13 +133,20 @@ function UserMenu({ onApp }: { onApp: () => void }) {
     const { t } = useTrans();
     const labels = useLabels();
     const user = auth.user;
+    // Where "Sign out" is while the pointer or the keyboard rests on it: the companion waves goodbye beside it.
+    const [signOutAnchor, setSignOutAnchor] = useState<DOMRect | null>(null);
+    const onSignOutActive = useCallback((active: boolean, element: HTMLElement | null) => {
+        setSignOutAnchor(active && element ? element.getBoundingClientRect() : null);
+    }, []);
 
     if (!user) {
         return null;
     }
 
     return (
-        <Dropdown
+        <>
+            <LogoutBuddy anchor={signOutAnchor} />
+            <Dropdown
             trigger={
                 <button
                     type="button"
@@ -167,10 +175,11 @@ function UserMenu({ onApp }: { onApp: () => void }) {
                 {t('App and notifications')}
             </DropdownItem>
             <DropdownSeparator />
-            <DropdownItem icon={LogOut} onClick={signOut} danger>
+            <DropdownItem icon={LogOut} onClick={signOut} onActiveChange={onSignOutActive} danger>
                 {t('Sign out')}
             </DropdownItem>
-        </Dropdown>
+            </Dropdown>
+        </>
     );
 }
 

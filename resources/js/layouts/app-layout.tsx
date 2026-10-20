@@ -7,6 +7,7 @@ import { AlarmRinger } from '@/components/alarms/alarm-ringer';
 import { PageHeader, type PageHeaderProps } from '@/components/layout/page-header';
 import { Sidebar } from '@/components/layout/sidebar';
 import { Topbar } from '@/components/layout/topbar';
+import { TourMascot } from '@/components/mascot/tour-mascot';
 import { useDocumentDirection, useFlashToasts } from '@/hooks/use-app-shell';
 import { useRealtime } from '@/hooks/use-realtime';
 import { useTrans } from '@/lib/i18n';
@@ -97,6 +98,9 @@ export default function AppLayout({ title, heading, description, actions, back, 
             </div>
 
             <AlarmRinger />
+
+            {/* The companion keeps clear of the sidebar on large screens */}
+            <TourMascot variant="app" className="lg:[--mascot-offset-start:18rem]" />
         </div>
     );
 }

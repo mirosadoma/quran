@@ -1,0 +1,58 @@
+{
+    "_note": "References only, never texts: the companion (mascot) reads every text from the tables of the platform (ayahs, sayings, adhkar) through App\\Services\\MascotQuotes. Review this list before publishing; a reference that is not in the database is simply skipped.",
+    "ayahs": [
+        { "surah": 54, "ayah": 17 },
+        { "surah": 15, "ayah": 9 },
+        { "surah": 73, "ayah": 4 },
+        { "surah": 13, "ayah": 28 },
+        { "surah": 2, "ayah": 152 },
+        { "surah": 94, "ayah": 6 },
+        { "surah": 33, "ayah": 41 },
+        { "surah": 55, "ayah": 60 },
+        { "surah": 93, "ayah": 11 },
+        { "surah": 16, "ayah": 128 },
+        { "surah": 14, "ayah": 7 },
+        { "surah": 38, "ayah": 29 }
+    ],
+    "hadiths": [
+        "la-yumin-ahadukum",
+        "laysa-al-ghina",
+        "nimatan-maghbun",
+        "as-sabr-inda-as-sadma",
+        "kun-fi-ad-dunya-gharib",
+        "tarku-ma-la-yani",
+        "ittaqillah-haythuma-kunt",
+        "ar-rahimun",
+        "la-taghdab",
+        "allah-rafiq",
+        "ma-naqasat-sadaqa",
+        "laysa-ash-shadid",
+        "izhad-fi-ad-dunya"
+    ],
+    "adhkar": [
+        { "category": "tasbih", "order": 1 },
+        { "category": "tasbih", "order": 2 },
+        { "category": "tasbih", "order": 3 },
+        { "category": "knowledge", "order": 2 },
+        { "category": "knowledge", "order": 3 },
+        { "category": "prophetic-duas", "order": 1 },
+        { "category": "prophetic-duas", "order": 2 },
+        { "category": "prophetic-duas", "order": 8 },
+        { "category": "quran-duas", "order": 2 },
+        { "category": "quran-duas", "order": 17 }
+    ],
+    "wisdom": [
+        "ali-qimatu-kulli-imri",
+        "uthman-tahurat-qulubukum",
+        "hasan-ibn-adam-ayyam",
+        "umar-ibn-abdulaziz-al-layl",
+        "ibn-al-mubarak-an-niyya",
+        "muadh-ilamu-ma-shitum",
+        "abu-ad-darda-lan-takuna-aliman",
+        "ibn-abbas-dhalaltu-taliban",
+        "wuhayb-la-yasbiqk",
+        "umar-ibn-abdulaziz-bighayri-ilm",
+        "malik-akhir-al-umma",
+        "ali-la-yarjuwanna-abd"
+    ]
+}

@@ -50,8 +50,12 @@ export interface SharedProps {
     narrator: boolean;
     /** The active alarms of the user; they ring on screen while the platform is open. */
     alarms: AlarmItem[];
+    /** The texts of the companion (mascot): ayahs, hadiths, adhkar and sayings of the platform, sent once per language. */
+    mascot: MascotQuote[];
     [key: string]: unknown;
 }
+
+export type { MascotQuote } from '@/lib/mascot/quotes';
 
 export interface Toast {
     type: 'success' | 'error' | 'warning' | 'info';

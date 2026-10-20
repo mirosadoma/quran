@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import { IslamicPattern, Logo, StarOrnament } from '@/components/brand';
 import { AppButton } from '@/components/install-app';
 import { LanguageSwitch, ThemeToggle } from '@/components/layout/topbar';
+import { TourMascot } from '@/components/mascot/tour-mascot';
 import { useDocumentDirection, useFlashToasts } from '@/hooks/use-app-shell';
 import { useTrans } from '@/lib/i18n';
 
@@ -96,6 +97,8 @@ export default function AuthLayout({ title, subtitle, children }: AuthLayoutProp
                     </ul>
                 </div>
             </div>
+
+            <TourMascot variant="auth" />
         </div>
     );
 }

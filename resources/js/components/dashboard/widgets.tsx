@@ -2,6 +2,7 @@ import { Link } from '@inertiajs/react';
 import { Trophy } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { IslamicPattern, StarOrnament } from '@/components/brand';
+import { DailyQuoteBubble, DashboardBuddy } from '@/components/mascot/buddy';
 import { Avatar } from '@/components/ui/avatar';
 import { Card, CardHeader } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -21,12 +22,19 @@ export function WelcomeBanner({ title, subtitle, children }: { title: ReactNode;
             <div className="pointer-events-none absolute -bottom-24 start-10 size-64 rounded-full bg-gold-400/10 blur-3xl" />
             <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
                 <div className="min-w-0">
-                    <p className="flex items-center gap-2 text-xs font-medium text-gold-200/90">
-                        <StarOrnament className="size-3 text-gold-400" />
-                        {dates.hijri(today)} · {dates.date(today, { weekday: 'long', month: 'long' })}
-                    </p>
-                    <h1 className="mt-2 text-2xl font-bold sm:text-3xl">{title}</h1>
-                    {subtitle && <p className="mt-2 max-w-xl text-sm leading-relaxed text-sidebar-ink/80">{subtitle}</p>}
+                    {/* The companion first, then the greeting beside it */}
+                    <div className="flex items-center gap-4">
+                        <DashboardBuddy className="no-print shrink-0" />
+                        <div className="min-w-0" data-welcome-text>
+                            <p className="flex items-center gap-2 text-xs font-medium text-gold-200/90">
+                                <StarOrnament className="size-3 text-gold-400" />
+                                {dates.hijri(today)} · {dates.date(today, { weekday: 'long', month: 'long' })}
+                            </p>
+                            <h1 className="mt-2 text-2xl font-bold sm:text-3xl">{title}</h1>
+                            {subtitle && <p className="mt-2 max-w-xl text-sm leading-relaxed text-sidebar-ink/80">{subtitle}</p>}
+                        </div>
+                    </div>
+                    <DailyQuoteBubble className="no-print mt-4" />
                 </div>
                 {children}
             </div>

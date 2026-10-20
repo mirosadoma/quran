@@ -1,0 +1,748 @@
+/* The companion (mascot): a small lantern of light with a friendly face. Its colors come from the theme
+   (app.css) so it follows the light and the dark modes; every movement is a keyframe of this file. */
+
+:root {
+    --mascot-glass: #fff8e6;
+    --mascot-frame: #0b3b31;
+    --mascot-ink: #1f2a26;
+    --mascot-cheek: #f0a3a3;
+    /* The inside of the mouth, the pit of the chase and the shadow under its feet, from the theme */
+    --mascot-mouth: color-mix(in oklab, var(--mascot-ink) 78%, var(--mascot-cheek));
+    --mascot-pit: color-mix(in oklab, var(--sidebar) 80%, black);
+    --mascot-shadow: color-mix(in oklab, var(--ink) 28%, transparent);
+    --mascot-bubble: var(--surface);
+    --mascot-bubble-ink: var(--ink);
+    --mascot-bubble-line: var(--line-strong);
+}
+
+.dark {
+    --mascot-glass: #fbf1d6;
+    --mascot-frame: #d8a747;
+    --mascot-ink: #231d14;
+    --mascot-cheek: #e98f8f;
+    --mascot-pit: color-mix(in oklab, var(--sidebar) 55%, black);
+    --mascot-shadow: color-mix(in oklab, black 55%, transparent);
+}
+
+.mascot {
+    display: block;
+    overflow: visible;
+    aspect-ratio: 100 / 120;
+    flex-shrink: 0;
+    filter: drop-shadow(0 0 8px color-mix(in oklab, var(--mascot-halo) 55%, transparent));
+    user-select: none;
+}
+
+/* The halo takes the color of the look */
+.mascot[data-halo='gold'] {
+    --mascot-halo: var(--color-gold-400, #d8a747);
+}
+
+.mascot[data-halo='emerald'] {
+    --mascot-halo: var(--color-primary-400, #4db691);
+}
+
+.mascot[data-halo='sky'] {
+    --mascot-halo: var(--color-sky-400, #38bdf8);
+}
+
+.mascot[data-halo='violet'] {
+    --mascot-halo: var(--color-violet-400, #a78bfa);
+}
+
+.mascot-halo circle {
+    transform-box: fill-box;
+    transform-origin: center;
+}
+
+.mascot-pupil {
+    transform: translate(var(--eye-x, 0px), var(--eye-y, 0px));
+    transition: transform 0.15s ease-out;
+}
+
+/* Movements, only when the page is animated (not for visitors who asked for less motion) */
+.mascot-animated .mascot-eye {
+    animation: mascot-blink 4.6s ease-in-out infinite;
+}
+
+.mascot-animated .mascot-eye:nth-of-type(2) {
+    animation-delay: 0.12s;
+}
+
+.mascot-animated .mascot-halo circle {
+    animation: mascot-halo-pulse 2.8s ease-in-out infinite;
+}
+
+.mascot-animated .mascot-halo circle:nth-of-type(2) {
+    animation-delay: -1.4s;
+}
+
+.mascot-animated .mascot-arm-wave {
+    animation: mascot-wave 1.6s ease-in-out infinite;
+}
+
+.mascot-animated .mascot-arm-farewell {
+    animation: mascot-wave 2.6s ease-in-out infinite;
+}
+
+.mascot-animated .mascot-arm-point {
+    animation: mascot-point 1.3s ease-in-out infinite alternate;
+}
+
+.mascot-animated .mascot-sparkle {
+    animation: mascot-twinkle 2.2s ease-in-out infinite;
+}
+
+.mascot-animated .mascot-sparkle:nth-of-type(2) {
+    animation-delay: -0.7s;
+}
+
+.mascot-animated .mascot-sparkle:nth-of-type(3) {
+    animation-delay: -1.4s;
+}
+
+.mascot-animated .mascot-tear {
+    animation: mascot-tear 2.4s ease-in infinite;
+}
+
+.mascot-animated[data-mood='thinking'] .mascot-pupil {
+    animation: mascot-ponder 3.4s ease-in-out infinite;
+}
+
+.mascot-animated[data-mood='thinking'] {
+    animation: mascot-sway 3.2s ease-in-out infinite;
+}
+
+/* The wrapper that floats up and down (3px in the headers, 6px elsewhere) */
+.mascot-float {
+    animation: mascot-float 3.4s ease-in-out infinite;
+}
+
+/* ---------- The tour: a lantern in a corner or on a side of the page ---------- */
+
+.mascot-layer {
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+    pointer-events: none;
+}
+
+.mascot-visit {
+    --mascot-edge: 1.25rem;
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    max-width: min(20rem, calc(100vw - 2.5rem));
+    pointer-events: none;
+}
+
+.mascot-visit[data-position='bottom-end'],
+.mascot-visit[data-position='bottom-start'] {
+    bottom: var(--mascot-edge);
+    --mascot-slide-y: 48px;
+}
+
+.mascot-visit[data-position='middle-end'],
+.mascot-visit[data-position='middle-start'] {
+    top: 50%;
+    translate: 0 -50%;
+}
+
+.mascot-visit[data-position$='-end'] {
+    inset-inline-end: calc(var(--mascot-offset-end, 0px) + var(--mascot-edge));
+    align-items: flex-end;
+    --mascot-slide-x: 48px;
+}
+
+.mascot-visit[data-position$='-start'] {
+    inset-inline-start: calc(var(--mascot-offset-start, 0px) + var(--mascot-edge));
+    align-items: flex-start;
+    --mascot-slide-x: -48px;
+}
+
+[dir='rtl'] .mascot-visit[data-position$='-end'] {
+    --mascot-slide-x: -48px;
+}
+
+[dir='rtl'] .mascot-visit[data-position$='-start'] {
+    --mascot-slide-x: 48px;
+}
+
+.mascot-visit[data-position^='bottom'] {
+    --mascot-slide-x: 0px;
+}
+
+.mascot-visit-body {
+    display: flex;
+    flex-direction: column;
+    align-items: inherit;
+    gap: 0.5rem;
+}
+
+.mascot-visit[data-state='entering'] .mascot-visit-body {
+    animation: mascot-arrive var(--mascot-enter, 600ms) cubic-bezier(0.22, 1.2, 0.36, 1) both;
+}
+
+.mascot-visit[data-state='leaving'] .mascot-visit-body {
+    animation: mascot-depart var(--mascot-exit, 500ms) ease-in both;
+}
+
+.mascot-visit .mascot-clickable,
+.mascot-visit .mascot-bubble {
+    pointer-events: auto;
+}
+
+.mascot-clickable {
+    display: block;
+    border: 0;
+    padding: 0;
+    background: none;
+    border-radius: 999px;
+    cursor: pointer;
+    outline-offset: 4px;
+}
+
+.mascot-clickable:focus-visible {
+    outline: 2px solid var(--color-primary-500, #2a9a77);
+}
+
+/* ---------- The intro: the lantern hangs from a rope that starts behind the header ---------- */
+
+.mascot-intro {
+    position: fixed;
+    top: 0;
+    left: 50%;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    translate: -50% 0;
+    pointer-events: none;
+    transform-origin: 50% 0;
+}
+
+.mascot-intro[data-state='entering'],
+.mascot-intro[data-state='visible'] {
+    animation:
+        mascot-drop-in var(--mascot-intro-enter, 900ms) cubic-bezier(0.34, 1.3, 0.64, 1) both,
+        mascot-swing 2.6s ease-in-out var(--mascot-intro-enter, 900ms) infinite;
+}
+
+.mascot-intro[data-state='leaving'] {
+    animation: mascot-pull-up var(--mascot-intro-exit, 700ms) ease-in both;
+}
+
+.mascot-rope {
+    width: 2px;
+    height: 22vh;
+    min-height: 5rem;
+    background: linear-gradient(to bottom, transparent, var(--mascot-frame) 30%);
+    border-radius: 1px;
+}
+
+.mascot-intro-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.mascot-intro .mascot-bubble {
+    pointer-events: auto;
+}
+
+/* ---------- The speech bubble ---------- */
+
+.mascot-bubble {
+    position: relative;
+    max-width: 20rem;
+    border: 1px solid var(--mascot-bubble-line);
+    border-radius: 1.1rem;
+    background: var(--mascot-bubble);
+    color: var(--mascot-bubble-ink);
+    padding: 0.7rem 0.95rem 0.75rem;
+    box-shadow: 0 14px 34px -16px rgb(0 0 0 / 0.35);
+    text-align: start;
+}
+
+/* The tail of the bubble points to the lantern: below it for the visits, on a side for the intro */
+.mascot-bubble::after {
+    content: '';
+    position: absolute;
+    width: 0.8rem;
+    height: 0.8rem;
+    border: 1px solid var(--mascot-bubble-line);
+    background: var(--mascot-bubble);
+    rotate: 45deg;
+}
+
+.mascot-bubble[data-tail='bottom-end']::after {
+    bottom: -0.45rem;
+    inset-inline-end: 1.6rem;
+    border-block-start-color: transparent;
+    border-inline-start-color: transparent;
+}
+
+.mascot-bubble[data-tail='bottom-start']::after {
+    bottom: -0.45rem;
+    inset-inline-start: 1.6rem;
+    border-block-start-color: transparent;
+    border-inline-start-color: transparent;
+}
+
+[dir='rtl'] .mascot-bubble[data-tail='bottom-end']::after,
+[dir='rtl'] .mascot-bubble[data-tail='bottom-start']::after {
+    border-color: var(--mascot-bubble-line);
+    border-block-start-color: transparent;
+    border-inline-end-color: transparent;
+}
+
+.mascot-bubble[data-tail='start']::after {
+    top: 50%;
+    inset-inline-start: -0.45rem;
+    translate: 0 -50%;
+    border-block-end-color: transparent;
+    border-inline-end-color: transparent;
+}
+
+[dir='rtl'] .mascot-bubble[data-tail='start']::after {
+    border-color: var(--mascot-bubble-line);
+    border-block-start-color: transparent;
+    border-inline-end-color: transparent;
+}
+
+.mascot-bubble[data-tail='end']::after {
+    top: 50%;
+    inset-inline-end: -0.45rem;
+    translate: 0 -50%;
+    border-block-start-color: transparent;
+    border-inline-start-color: transparent;
+}
+
+[dir='rtl'] .mascot-bubble[data-tail='end']::after {
+    border-color: var(--mascot-bubble-line);
+    border-block-end-color: transparent;
+    border-inline-start-color: transparent;
+}
+
+/* On phones the intro bubble sits under the lantern: no tail */
+@media (max-width: 639px) {
+    .mascot-intro-row {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .mascot-intro .mascot-bubble::after {
+        display: none;
+    }
+}
+
+.mascot-bubble[data-tail='top-start']::after {
+    top: -0.45rem;
+    inset-inline-start: 1.4rem;
+    border-block-end-color: transparent;
+    border-inline-end-color: transparent;
+}
+
+[dir='rtl'] .mascot-bubble[data-tail='top-start']::after {
+    border-color: var(--mascot-bubble-line);
+    border-block-end-color: transparent;
+    border-inline-start-color: transparent;
+}
+
+/* The bubble of the dashboard greeting lies on the dark green banner */
+.mascot-bubble[data-tone='dark'] {
+    --mascot-bubble: rgb(255 255 255 / 0.1);
+    --mascot-bubble-ink: #fff;
+    --mascot-bubble-line: rgb(255 255 255 / 0.22);
+    backdrop-filter: blur(6px);
+}
+
+/* ---------- The thinking cloud of the loader ---------- */
+
+.mascot-thought {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.45rem 0.7rem;
+    border-radius: 999px;
+    background: var(--mascot-bubble);
+    border: 1px solid var(--mascot-bubble-line);
+}
+
+.mascot-thought i {
+    display: block;
+    width: 0.4rem;
+    height: 0.4rem;
+    border-radius: 999px;
+    background: var(--mascot-halo, var(--color-gold-400, #d8a747));
+    animation: mascot-dots 1.3s ease-in-out infinite;
+}
+
+.mascot-thought i:nth-child(2) {
+    animation-delay: 0.18s;
+}
+
+.mascot-thought i:nth-child(3) {
+    animation-delay: 0.36s;
+}
+
+/* ---------- The chase: it runs after the pointer, eats it and falls into a pit ---------- */
+
+.mascot-chase {
+    position: fixed;
+    inset: 0;
+    z-index: 45;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.mascot-chase-actor {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: var(--chase-width);
+    height: var(--chase-height);
+    visibility: hidden;
+    will-change: transform;
+}
+
+.mascot-chase[data-phase='pop'] .mascot-chase-actor,
+.mascot-chase[data-phase='chase'] .mascot-chase-actor,
+.mascot-chase[data-phase='eat'] .mascot-chase-actor,
+.mascot-chase[data-phase='fall'] .mascot-chase-actor {
+    visibility: visible;
+}
+
+/* Only what is above the feet line shows: when it drops into the pit, the part under the line is cut off */
+.mascot-chase-clip {
+    position: absolute;
+    inset: -60px -40px 0;
+    overflow: hidden;
+}
+
+.mascot-chase-body {
+    position: absolute;
+    bottom: 0;
+    left: 40px;
+    width: var(--chase-width);
+    height: var(--chase-height);
+    transform-origin: 50% 100%;
+    will-change: transform;
+}
+
+.mascot-chase-body > .mascot {
+    height: 100%;
+}
+
+.mascot-chase[data-phase='pop'] .mascot-chase-body {
+    animation: mascot-pop var(--chase-enter, 400ms) cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.mascot-chase-body[data-chomp='true'] {
+    animation: mascot-chomp 0.42s ease-in-out both;
+}
+
+.mascot-chase-body[data-fall='true'] {
+    animation: mascot-fall var(--chase-fall, 750ms) ease-in both;
+}
+
+.mascot-chase-shadow {
+    position: absolute;
+    bottom: -3px;
+    left: 50%;
+    width: 70%;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--mascot-shadow);
+    opacity: var(--shadow-opacity, 0.9);
+    transform: translateX(-50%) scaleX(var(--shadow, 1));
+}
+
+.mascot-pit {
+    position: absolute;
+    width: calc(var(--chase-width) * 1.15);
+    height: calc(var(--chase-width) * 0.42);
+    border-radius: 50%;
+    background: var(--mascot-pit);
+    box-shadow: inset 0 3px 6px rgb(0 0 0 / 0.5);
+    /* Centered on the feet inside the transform itself: the minifier drops a separate `translate` here */
+    transform: translate(-50%, -50%) scale(0);
+    transition: transform var(--pit-close, 300ms) ease-in;
+}
+
+.mascot-pit[data-open='true'] {
+    transform: translate(-50%, -50%) scale(1);
+    transition-duration: var(--pit-open, 320ms);
+    transition-timing-function: ease-out;
+}
+
+/* The pointer it eats: an arrow that slides into its mouth while the real pointer is hidden */
+.mascot-fake-cursor {
+    position: absolute;
+    width: 20px;
+    height: 24px;
+    opacity: 0;
+    transform-origin: 2px 2px;
+}
+
+.mascot-fake-cursor[data-swallowed='true'] {
+    animation: mascot-swallow var(--chase-swallow, 400ms) ease-in both;
+}
+
+html.mascot-cursor-hidden,
+html.mascot-cursor-hidden * {
+    cursor: none !important;
+}
+
+/* ---------- Keyframes ---------- */
+
+@keyframes mascot-pop {
+    from {
+        opacity: 0;
+        transform: scale(0) rotate(-25deg);
+    }
+    60% {
+        opacity: 1;
+        transform: scale(1.15) rotate(6deg);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) rotate(0deg);
+    }
+}
+
+@keyframes mascot-chomp {
+    0%,
+    100% {
+        scale: 1 1;
+    }
+    25% {
+        scale: 1.12 0.82;
+    }
+    50% {
+        scale: 0.95 1.06;
+    }
+    75% {
+        scale: 1.1 0.86;
+    }
+}
+
+@keyframes mascot-fall {
+    from {
+        transform: translateY(0) rotate(0deg) scale(1);
+    }
+    to {
+        transform: translateY(calc(var(--chase-height, 80px) * 0.95)) rotate(28deg) scale(0.35);
+    }
+}
+
+@keyframes mascot-swallow {
+    from {
+        opacity: 1;
+        transform: translate(0, 0) scale(1) rotate(0deg);
+    }
+    to {
+        opacity: 0;
+        transform: translate(var(--to-x, 0px), var(--to-y, 0px)) scale(0.15) rotate(220deg);
+    }
+}
+
+@keyframes mascot-float {
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(calc(-1 * var(--mascot-float, 6px)));
+    }
+}
+
+@keyframes mascot-blink {
+    0%,
+    91%,
+    100% {
+        transform: scaleY(1);
+    }
+    94%,
+    96% {
+        transform: scaleY(0.08);
+    }
+}
+
+@keyframes mascot-halo-pulse {
+    0%,
+    100% {
+        opacity: 0.55;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.08);
+    }
+}
+
+@keyframes mascot-wave {
+    0%,
+    100% {
+        transform: rotate(0deg);
+    }
+    30% {
+        transform: rotate(-22deg);
+    }
+    60% {
+        transform: rotate(10deg);
+    }
+}
+
+@keyframes mascot-point {
+    from {
+        transform: translateX(0);
+    }
+    to {
+        transform: translateX(3px);
+    }
+}
+
+@keyframes mascot-twinkle {
+    0%,
+    100% {
+        opacity: 0.35;
+        transform: scale(0.7);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.1);
+    }
+}
+
+@keyframes mascot-tear {
+    0% {
+        opacity: 0;
+        transform: translateY(0);
+    }
+    25% {
+        opacity: 0.9;
+    }
+    80% {
+        opacity: 0.9;
+        transform: translateY(9px);
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(11px);
+    }
+}
+
+@keyframes mascot-ponder {
+    0%,
+    40% {
+        transform: translate(-2px, -2.2px);
+    }
+    50%,
+    90% {
+        transform: translate(2px, -2.2px);
+    }
+    100% {
+        transform: translate(-2px, -2.2px);
+    }
+}
+
+@keyframes mascot-sway {
+    0%,
+    100% {
+        transform: rotate(-3deg);
+    }
+    50% {
+        transform: rotate(3deg);
+    }
+}
+
+@keyframes mascot-arrive {
+    from {
+        opacity: 0;
+        transform: translate(var(--mascot-slide-x, 0px), var(--mascot-slide-y, 0px)) scale(0.85);
+    }
+    to {
+        opacity: 1;
+        transform: translate(0, 0) scale(1);
+    }
+}
+
+@keyframes mascot-depart {
+    from {
+        opacity: 1;
+        transform: translate(0, 0) scale(1);
+    }
+    to {
+        opacity: 0;
+        transform: translate(var(--mascot-slide-x, 0px), var(--mascot-slide-y, 0px)) scale(0.85);
+    }
+}
+
+@keyframes mascot-drop-in {
+    from {
+        transform: translateY(-105%);
+    }
+    to {
+        transform: translateY(0);
+    }
+}
+
+@keyframes mascot-swing {
+    0%,
+    100% {
+        transform: rotate(-4deg);
+    }
+    50% {
+        transform: rotate(4deg);
+    }
+}
+
+@keyframes mascot-pull-up {
+    from {
+        transform: translateY(0);
+    }
+    to {
+        transform: translateY(-110%);
+    }
+}
+
+@keyframes mascot-dots {
+    0%,
+    100% {
+        transform: translateY(0);
+        opacity: 0.5;
+    }
+    50% {
+        transform: translateY(-4px);
+        opacity: 1;
+    }
+}
+
+/* Reading the mushaf full screen, or printing: no companion */
+html[data-mushaf-immersive] .mascot-layer,
+html[data-mushaf-immersive] .mascot-intro {
+    display: none;
+}
+
+@media print {
+    .mascot-layer,
+    .mascot-intro,
+    .mascot-float,
+    .mascot {
+        display: none !important;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .mascot,
+    .mascot *,
+    .mascot-float,
+    .mascot-visit-body,
+    .mascot-intro,
+    .mascot-thought i {
+        animation: none !important;
+        transition: none !important;
+    }
+}

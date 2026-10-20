@@ -1,5 +1,7 @@
 /* Look for classes in resources/ only: the Quran data files (database/data) are megabytes of text with none. */
 @import 'tailwindcss' source('../');
+/* The companion (mascot): its colors, positions and movements */
+@import './mascot.css' layer(components);
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';

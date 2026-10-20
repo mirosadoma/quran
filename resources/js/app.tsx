@@ -10,7 +10,10 @@ import '@fontsource/amiri/700.css';
 import { createInertiaApp, type ResolvedComponent } from '@inertiajs/react';
 import { createRoot } from 'react-dom/client';
 import { Toaster } from 'sonner';
+import { NavigationLoader } from '@/components/layout/loading-screen';
+import { translate } from '@/lib/i18n';
 import { setupPwa } from '@/lib/pwa';
+import type { SharedProps } from '@/types';
 
 const pages = import.meta.glob<{ default: ResolvedComponent }>('./pages/**/*.tsx');
 
@@ -36,10 +39,18 @@ createInertiaApp({
             return;
         }
 
+        const shared = props.initialPage.props as unknown as SharedProps;
+
         createRoot(el).render(
             <>
                 <App {...props} />
                 <Toaster richColors closeButton position="top-center" dir="auto" toastOptions={{ className: 'font-sans' }} />
+                {/* The loading screen of the slow page changes: the companion pondering over the logo */}
+                <NavigationLoader
+                    name={shared.app.name}
+                    logoUrl={shared.app.logo_url}
+                    label={() => translate(document.documentElement.lang === 'ar' ? 'ar' : 'en', 'Loading…')}
+                />
             </>,
         );
     },

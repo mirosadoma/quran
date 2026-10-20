@@ -8,11 +8,13 @@ use App\Models\AcademyJoinRequest;
 use App\Models\ContactMessage;
 use App\Models\Setting;
 use App\Services\ChatService;
+use App\Services\MascotQuotes;
 use App\Services\Narrator;
 use App\Services\Realtime;
 use App\Services\WebPush\WebPush;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Inertia\Inertia;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
@@ -81,6 +83,8 @@ class HandleInertiaRequests extends Middleware
                 'public_key' => $user && Setting::get('notify_push') && app(WebPush::class)->isConfigured() ? app(WebPush::class)->publicKey() : null,
             ],
             'locale' => app()->getLocale(),
+            // The texts of the companion (mascot): sent once per language, then kept by the browser.
+            'mascot' => Inertia::once(fn (): array => app(MascotQuotes::class)->all(app()->getLocale()))->as('mascot.'.app()->getLocale()),
             'timezone' => $user?->displayTimezone() ?? config('app.user_timezone'),
             'csrf_token' => csrf_token(),
             'counts' => fn (): ?array => $user ? [

@@ -5,7 +5,8 @@
     "scripts": {
         "build": "vite build",
         "dev": "vite",
-        "types": "tsc --noEmit"
+        "types": "tsc --noEmit",
+        "test:js": "node --import ./tests/js/register.mjs --test \"tests/js/**/*.test.{ts,tsx}\""
     },
     "devDependencies": {
         "@tailwindcss/vite": "^4.0.0",

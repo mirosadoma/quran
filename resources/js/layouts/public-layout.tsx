@@ -4,6 +4,7 @@ import { Download, LayoutDashboard, LogIn, Mail, Menu, Phone, UserPlus, X } from
 import { type ReactNode, useState } from 'react';
 import { IslamicPattern, Logo, StarOrnament } from '@/components/brand';
 import { LanguageSwitch, ThemeToggle } from '@/components/layout/topbar';
+import { TourMascot } from '@/components/mascot/tour-mascot';
 import { LinkButton } from '@/components/ui/button';
 import { useDocumentDirection, useFlashToasts } from '@/hooks/use-app-shell';
 import { useTrans } from '@/lib/i18n';
@@ -265,6 +266,7 @@ export default function PublicLayout({ title, description, children }: PublicLay
             <Header />
             <main className="flex-1">{children}</main>
             <Footer />
+            <TourMascot variant="site" />
         </div>
     );
 }
