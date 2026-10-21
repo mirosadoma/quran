@@ -46,6 +46,12 @@ class Setting extends Model
             'notify_email' => true,
             'notify_whatsapp' => false,
             'notify_push' => true,
+            // Where the companion (the lantern avatar) shows: the public website and the panel of every role.
+            'companion_site' => true,
+            'companion_admin' => true,
+            'companion_manager' => true,
+            'companion_teacher' => true,
+            'companion_student' => true,
             'google_meet' => null,
             // Outgoing email (App\Services\MailSettings): "env" keeps the .env file, "smtp" and "log" replace it.
             'mail_mailer' => 'env',
@@ -76,7 +82,7 @@ class Setting extends Model
     {
         $value = static::stored()[$key] ?? null;
 
-        return $value ?? $default ?? static::defaults()[$key] ?? null;
+        return static::cast($key, $value ?? $default ?? static::defaults()[$key] ?? null);
     }
 
     /**
@@ -87,9 +93,19 @@ class Setting extends Model
     public static function put(array $values): void
     {
         foreach ($values as $key => $value) {
-            static::query()->updateOrCreate(['key' => $key], ['value' => $value]);
+            static::query()->updateOrCreate(['key' => $key], ['value' => static::cast($key, $value)]);
         }
 
         Cache::forget(self::CACHE_KEY);
+    }
+
+    /**
+     * Keep the switches true or false: the settings form sends them as "1" and "0".
+     */
+    protected static function cast(string $key, mixed $value): mixed
+    {
+        return is_bool(static::defaults()[$key] ?? null) && $value !== null
+            ? filter_var($value, FILTER_VALIDATE_BOOLEAN)
+            : $value;
     }
 }

@@ -39,6 +39,11 @@ class SettingsRequest extends FormRequest
             'notify_email' => ['boolean'],
             'notify_whatsapp' => ['boolean'],
             'notify_push' => ['boolean'],
+            'companion_site' => ['boolean'],
+            'companion_admin' => ['boolean'],
+            'companion_manager' => ['boolean'],
+            'companion_teacher' => ['boolean'],
+            'companion_student' => ['boolean'],
             'logo' => ['nullable', 'image', 'max:2048'],
             'remove_logo' => ['boolean'],
         ];

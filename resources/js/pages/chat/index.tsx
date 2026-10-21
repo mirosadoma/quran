@@ -30,7 +30,7 @@ export default function Chat({ conversations, conversation, messages, hasMore, m
 
     return (
         <AppLayout title={conversation ? conversation.name : t('Chat')} hideHeader flush wide>
-            <div className="flex h-[calc(100dvh-6.5rem)] overflow-hidden rounded-3xl border border-line bg-surface lg:h-[calc(100dvh-7.5rem)]">
+            <div className="flex h-[calc(100dvh-6.5rem-var(--bottom-nav-space))] overflow-hidden rounded-3xl border border-line bg-surface lg:h-[calc(100dvh-7.5rem)]">
                 <aside className={cn('w-full shrink-0 border-line lg:block lg:w-80 lg:border-e', conversation ? 'hidden' : 'block')}>
                     <ConversationList conversations={conversations} activeId={conversation?.id ?? null} />
                 </aside>

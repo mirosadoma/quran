@@ -134,6 +134,18 @@
 }
 
 @layer base {
+    /* The height of the bottom bar of the phones (components/layout/bottom-nav.tsx): the pages and their fixed
+       parts (the docks of the mushaf, the companion, the chat) keep above it. */
+    :root {
+        --bottom-nav-space: 0px;
+    }
+
+    @media (width < 48rem) {
+        :root:has([data-bottom-nav]):not([data-mushaf-immersive]) {
+            --bottom-nav-space: calc(4rem + env(safe-area-inset-bottom));
+        }
+    }
+
     html {
         -webkit-tap-highlight-color: transparent;
         text-rendering: optimizeLegibility;
@@ -142,6 +154,9 @@
     body {
         @apply bg-canvas text-ink;
         min-height: 100dvh;
+        /* The page reaches the edges of the phone (viewport-fit=cover): it keeps clear of the notch on the sides */
+        padding-left: env(safe-area-inset-left);
+        padding-right: env(safe-area-inset-right);
     }
 
     ::selection {
@@ -585,10 +600,11 @@
     }
 }
 
-/* Reading the mushaf full screen: the sidebar, the top bar and the margins of the page are hidden.
+/* Reading the mushaf full screen: the sidebar, the top bar, the bottom bar and the margins of the page are hidden.
    Outside the layers, so it wins over the utility classes of these parts. */
 html[data-mushaf-immersive] [data-shell='sidebar'],
-html[data-mushaf-immersive] [data-shell='content'] > header {
+html[data-mushaf-immersive] [data-shell='content'] > header,
+html[data-mushaf-immersive] [data-bottom-nav] {
     display: none;
 }
 

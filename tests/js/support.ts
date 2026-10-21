@@ -1,16 +1,46 @@
 import { __setPageProps } from '@inertiajs/react';
+import type { CompanionVisibility } from '@/hooks/use-companion';
 import type { MascotQuote } from '@/lib/mascot/quotes';
+import type { AuthUser, SharedProps } from '@/types';
+
+interface PageOptions {
+    locale?: 'ar' | 'en';
+    quotes?: MascotQuote[];
+    companion?: CompanionVisibility;
+    user?: AuthUser | null;
+    counts?: SharedProps['counts'];
+}
 
 /**
- * The shared props the components read through usePage(): the language, the name of the platform and the quotes.
+ * The shared props the components read through usePage(): the language, the name of the platform, the quotes,
+ * where the companion shows, the signed-in user and their unread counters.
  */
-export function setPage({ locale = 'ar', quotes = sampleQuotes() }: { locale?: 'ar' | 'en'; quotes?: MascotQuote[] } = {}): void {
+export function setPage({ locale = 'ar', quotes = sampleQuotes(), companion = { site: true, panel: true }, user = null, counts = null }: PageOptions = {}): void {
     __setPageProps({
         locale,
         app: { name: 'وِرد', tagline: null, logo_url: null, contact: { email: null, phone: null } },
-        auth: { user: null },
+        auth: { user },
         mascot: quotes,
+        companion,
+        counts,
     });
+}
+
+/**
+ * A signed-in user of the role (a student without academy studies on their own).
+ */
+export function sampleUser(role: AuthUser['role'], { academy = true }: { academy?: boolean } = {}): AuthUser {
+    return {
+        id: 7,
+        name: 'أحمد',
+        email: 'ahmad@example.com',
+        phone: null,
+        role,
+        gender: 'male',
+        avatar_url: null,
+        timezone: 'Africa/Cairo',
+        academy: academy && role !== 'admin' ? { id: 1, name: 'أكاديمية رتّل', logo_url: null } : null,
+    };
 }
 
 export function sampleQuotes(): MascotQuote[] {
@@ -24,10 +54,13 @@ export function sampleQuotes(): MascotQuote[] {
 }
 
 /**
- * Ziggy's route() helper, as the components call it.
+ * Ziggy's route() helper, as the components call it: route(name) is the URL, route().current(pattern) tells
+ * whether `current` (the name of the route of the page) matches the pattern ("halaqat.*").
  */
-export function stubRoutes(): void {
-    (globalThis as { route?: unknown }).route = Object.assign((name: string) => `/${name.replaceAll('.', '/')}`, {
-        current: () => false,
+export function stubRoutes(current: string | null = null): void {
+    const matches = (pattern: string) => current !== null && new RegExp(`^${pattern.replaceAll('.', '\\.').replaceAll('*', '.*')}$`).test(current);
+
+    (globalThis as { route?: unknown }).route = Object.assign((name?: string) => (name === undefined ? { current: matches } : `/${name.replaceAll('.', '/')}`), {
+        current: matches,
     });
 }

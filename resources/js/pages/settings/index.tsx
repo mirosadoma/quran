@@ -1,5 +1,5 @@
 import { router, useForm, usePage } from '@inertiajs/react';
-import { Bell, Building2, CircleCheck, CircleDashed, Copy, ImagePlus, Link2, Save, Timer, Trash, Unplug, Video, Webhook } from 'lucide-react';
+import { Bell, Building2, CircleCheck, CircleDashed, Copy, ImagePlus, Link2, Save, Sparkles, Timer, Trash, Unplug, Video, Webhook } from 'lucide-react';
 import { type FormEvent, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { LogoMark } from '@/components/brand';
@@ -30,6 +30,11 @@ interface SettingsProps {
         notify_email: boolean;
         notify_whatsapp: boolean;
         notify_push: boolean;
+        companion_site: boolean;
+        companion_admin: boolean;
+        companion_manager: boolean;
+        companion_teacher: boolean;
+        companion_student: boolean;
     };
     /** The outgoing email settings (saved here instead of the .env file). */
     mail: MailSummary;
@@ -112,6 +117,14 @@ export default function Settings({ settings, mail, logoUrl, providers, google, i
     };
 
     const shownLogo = logoPreview ?? (form.data.remove_logo ? null : logoUrl);
+
+    const companionAreas = [
+        { key: 'companion_site', label: t('The public website'), description: t('The pages of the website and the sign-in pages.') },
+        { key: 'companion_admin', label: t('The administration panel'), description: undefined },
+        { key: 'companion_manager', label: t('The academy panel'), description: t('The academy managers.') },
+        { key: 'companion_teacher', label: t('The teacher panel'), description: undefined },
+        { key: 'companion_student', label: t('The student panel'), description: undefined },
+    ] as const;
 
     return (
         <AppLayout title={t('Settings')} description={t('Academy identity, meetings, automation and notifications.')}>
@@ -338,6 +351,25 @@ export default function Settings({ settings, mail, logoUrl, providers, google, i
                                     <span className="font-semibold text-ink">{integrations.queue}</span>
                                 </div>
                             </div>
+                        </CardBody>
+                    </Card>
+
+                    <Card>
+                        <CardHeader
+                            title={t('The companion (avatar)')}
+                            description={t('The lantern that visits the pages with an ayah, a hadith or a dhikr, and the small companions beside the titles.')}
+                            icon={Sparkles}
+                        />
+                        <CardBody className="space-y-5">
+                            {companionAreas.map((area) => (
+                                <Switch
+                                    key={area.key}
+                                    checked={form.data[area.key]}
+                                    onChange={(value) => form.setData(area.key, value)}
+                                    label={area.label}
+                                    description={area.description}
+                                />
+                            ))}
                         </CardBody>
                     </Card>
 

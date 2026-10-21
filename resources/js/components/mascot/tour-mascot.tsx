@@ -3,6 +3,7 @@ import { type CSSProperties, useCallback, useEffect, useMemo, useState, useSyncE
 import { ChaseMascot } from '@/components/mascot/chase-mascot';
 import { MascotFace } from '@/components/mascot/mascot-face';
 import { QuoteBubble, SpeechBubble } from '@/components/mascot/speech-bubble';
+import { useCompanionShown } from '@/hooks/use-companion';
 import { useReducedMotion } from '@/hooks/use-reduced-motion';
 import { useTrans } from '@/lib/i18n';
 import { MASCOT_TIMING, MASCOT_VARIANTS, MASCOT_VISITS, type MascotVariant } from '@/lib/mascot/config';
@@ -38,21 +39,27 @@ export function TourMascot({ variant, className }: TourMascotProps) {
     const quotes = useMemo(() => quotesOfKinds((mascot as MascotQuote[] | undefined) ?? [], MASCOT_VARIANTS[variant].kinds), [mascot, variant]);
     const state = useSyncExternalStore(subscribeCycle, getCycleState, getCycleState);
     const [shift, setShift] = useState(0);
+    // The administration can hide the companion on the website or in the panel of a role (settings).
+    const shown = useCompanionShown(variant);
 
     useEffect(() => {
-        if (!reduced) {
+        if (shown && !reduced) {
             ensureCycleStarted();
         }
-    }, [reduced]);
+    }, [shown, reduced]);
 
     // A page opened during the chase: its lantern gets the whole time again before the cycle moves on alone.
     useEffect(() => {
-        if (state.phase === 'chase') {
+        if (shown && state.phase === 'chase') {
             restartChaseTimeout();
         }
-    }, [state.phase]);
+    }, [shown, state.phase]);
 
     const changeLook = useCallback(() => setShift((value) => value + 1), []);
+
+    if (!shown) {
+        return null;
+    }
 
     const welcome = t(MASCOT_VARIANTS[variant].welcome, { name: app.name });
 

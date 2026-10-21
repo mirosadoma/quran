@@ -1,5 +1,5 @@
-import { useForm } from '@inertiajs/react';
-import { KeyRound } from 'lucide-react';
+import { Link, useForm } from '@inertiajs/react';
+import { ArrowRight, KeyRound } from 'lucide-react';
 import type { FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { Field, Input } from '@/components/ui/form';
@@ -17,10 +17,11 @@ export default function ResetPassword({ email, token }: { email: string; token: 
     };
 
     return (
-        <AuthLayout title={t('Choose a new password')} subtitle={t('Use at least 8 characters.')}>
+        <AuthLayout title={t('Choose a new password')} subtitle={t('The code is confirmed. Use at least 8 characters.')}>
             <form onSubmit={submit} className="space-y-5">
+                {/* The email comes from the confirmed code: shown, not changed */}
                 <Field label={t('Email')} htmlFor="email" error={form.errors.email}>
-                    <Input id="email" type="email" dir="ltr" value={form.data.email} onChange={(event) => form.setData('email', event.target.value)} />
+                    <Input id="email" type="email" dir="ltr" value={form.data.email} readOnly className="bg-surface-muted text-muted" />
                 </Field>
                 <Field label={t('New password')} htmlFor="password" error={form.errors.password}>
                     <PasswordInput
@@ -44,6 +45,11 @@ export default function ResetPassword({ email, token }: { email: string; token: 
                     {t('Save the new password')}
                 </Button>
             </form>
+
+            <Link href={route('login')} className="mt-6 inline-flex items-center gap-1.5 text-sm font-semibold text-primary-700 hover:underline dark:text-primary-300">
+                <ArrowRight className="size-4 ltr:rotate-180" />
+                {t('Back to sign in')}
+            </Link>
         </AuthLayout>
     );
 }

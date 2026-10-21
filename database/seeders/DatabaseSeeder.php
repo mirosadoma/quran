@@ -2,9 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Enums\Gender;
-use App\Enums\UserRole;
-use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -13,35 +10,16 @@ class DatabaseSeeder extends Seeder
     use WithoutModelEvents;
 
     /**
-     * Seed the application's database.
+     * Seed the application's database: the administration account and the content of the platform
+     * everywhere, and the demo academy with its teachers, students, halaqat and sessions on the
+     * developer's machine only (APP_ENV=local). The settings need no rows: Setting::defaults() applies
+     * until the administration saves the settings page.
      */
     public function run(): void
     {
-        User::query()->updateOrCreate(['email' => 'admin@rattil.test'], [
-            'name' => 'إدارة المنصة',
-            'phone' => '+201000000000',
-            'password' => 'password',
-            'role' => UserRole::Admin,
-            'gender' => Gender::Male,
-            'timezone' => config('app.user_timezone'),
-            'locale' => 'ar',
-            'is_active' => true,
-        ]);
-
-        // Content of the platform: the mushaf, its tafsir, word meanings and reciters, the adhkar,
-        // the stories, the guide of the prayers, the books of hadith, the sunnahs and the sayings.
         $this->call([
-            AyahSeeder::class,
-            TafsirSeeder::class,
-            WordMeaningSeeder::class,
-            ReciterSeeder::class,
-            DhikrCategorySeeder::class,
-            DhikrSeeder::class,
-            StorySeeder::class,
-            PrayerGuideSeeder::class,
-            HadithSeeder::class,
-            SunnahSeeder::class,
-            SayingSeeder::class,
+            AdminSeeder::class,
+            ContentSeeder::class,
         ]);
 
         if (app()->environment('local')) {

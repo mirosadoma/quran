@@ -3,6 +3,7 @@ import { BookOpenCheck, MessagesSquare, Video } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { IslamicPattern, Logo, StarOrnament } from '@/components/brand';
 import { AppButton } from '@/components/install-app';
+import { BottomNav } from '@/components/layout/bottom-nav';
 import { LanguageSwitch, ThemeToggle } from '@/components/layout/topbar';
 import { TourMascot } from '@/components/mascot/tour-mascot';
 import { useDocumentDirection, useFlashToasts } from '@/hooks/use-app-shell';
@@ -28,7 +29,7 @@ export default function AuthLayout({ title, subtitle, children }: AuthLayoutProp
     ];
 
     return (
-        <div className="grid min-h-dvh lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)]">
+        <div className="grid min-h-dvh pb-(--bottom-nav-space) lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)]">
             <Head title={title} />
 
             <div className="relative flex flex-col px-5 py-6 sm:px-10">
@@ -98,6 +99,7 @@ export default function AuthLayout({ title, subtitle, children }: AuthLayoutProp
                 </div>
             </div>
 
+            <BottomNav />
             <TourMascot variant="auth" />
         </div>
     );

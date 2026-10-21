@@ -81,6 +81,25 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Administration Account
+    |--------------------------------------------------------------------------
+    |
+    | The first administration account, created by the seeders on a server
+    | that has none (Database\Seeders\AdminSeeder). Without a password, a
+    | random one is made and shown once. Remove the password from the .env
+    | file after the first sign-in.
+    |
+    */
+
+    'admin' => [
+        'name' => env('ADMIN_NAME', 'إدارة المنصة'),
+        'email' => env('ADMIN_EMAIL'),
+        'phone' => env('ADMIN_PHONE'),
+        'password' => env('ADMIN_PASSWORD'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Supported Locales
     |--------------------------------------------------------------------------
     */

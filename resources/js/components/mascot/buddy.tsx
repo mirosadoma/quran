@@ -2,6 +2,7 @@ import { usePage } from '@inertiajs/react';
 import { type CSSProperties, useEffect, useState } from 'react';
 import { type MascotArms, MascotFace } from '@/components/mascot/mascot-face';
 import { QuoteBubble } from '@/components/mascot/speech-bubble';
+import { useCompanionShown } from '@/hooks/use-companion';
 import { useReducedMotion } from '@/hooks/use-reduced-motion';
 import { useTrans } from '@/lib/i18n';
 import { MASCOT_TIMING } from '@/lib/mascot/config';
@@ -61,6 +62,10 @@ export function Buddy({ size, arms, lookEvery, startLook = 0, float = '6px', cla
  * The companion of the dashboard greeting: 4.5rem, waving, a new look every 6 seconds.
  */
 export function DashboardBuddy({ className }: { className?: string }) {
+    if (!useCompanionShown('app')) {
+        return null;
+    }
+
     return <Buddy size="4.5rem" arms="wave" lookEvery={MASCOT_TIMING.dashboardLookEvery} startLook={0} float="6px" className={className} />;
 }
 
@@ -68,6 +73,10 @@ export function DashboardBuddy({ className }: { className?: string }) {
  * The companion of the page headers: 2.5rem, pointing at the title (or the breadcrumb), a new look every 8 seconds.
  */
 export function HeaderBuddy({ className }: { className?: string }) {
+    if (!useCompanionShown('app')) {
+        return null;
+    }
+
     return <Buddy size="2.5rem" arms="point" lookEvery={MASCOT_TIMING.headerLookEvery} startLook={2} float="3px" className={className} />;
 }
 
@@ -76,9 +85,10 @@ export function HeaderBuddy({ className }: { className?: string }) {
  */
 export function DailyQuoteBubble({ className }: { className?: string }) {
     const { mascot } = usePage().props;
+    const shown = useCompanionShown('app');
     const quote = quoteOfTheDay((mascot as MascotQuote[] | undefined) ?? []);
 
-    if (!quote) {
+    if (!shown || !quote) {
         return null;
     }
 

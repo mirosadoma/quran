@@ -3,6 +3,7 @@ import { Head, Link, usePage } from '@inertiajs/react';
 import { Download, LayoutDashboard, LogIn, Mail, Menu, Phone, UserPlus, X } from 'lucide-react';
 import { type ReactNode, useState } from 'react';
 import { IslamicPattern, Logo, StarOrnament } from '@/components/brand';
+import { BottomNav } from '@/components/layout/bottom-nav';
 import { LanguageSwitch, ThemeToggle } from '@/components/layout/topbar';
 import { TourMascot } from '@/components/mascot/tour-mascot';
 import { LinkButton } from '@/components/ui/button';
@@ -65,10 +66,12 @@ function AuthButtons({ stacked = false, onNavigate }: { stacked?: boolean; onNav
     );
 }
 
-function Header() {
+/**
+ * The header; `open` is its menu of the small screens (the bottom bar opens it too).
+ */
+function Header({ open, setOpen }: { open: boolean; setOpen: (open: boolean) => void }) {
     const { t } = useTrans();
     const links = useNavLinks();
-    const [open, setOpen] = useState(false);
 
     return (
         <header className="sticky top-0 z-30 border-b border-line/70 bg-canvas/85 backdrop-blur-md">
@@ -257,15 +260,19 @@ function Footer() {
  * The public website: header with the pages and the account buttons, and the footer.
  */
 export default function PublicLayout({ title, description, children }: PublicLayoutProps) {
+    const [menuOpen, setMenuOpen] = useState(false);
+
     useFlashToasts();
     useDocumentDirection();
 
     return (
-        <div className="flex min-h-dvh flex-col">
+        <div className="flex min-h-dvh flex-col pb-(--bottom-nav-space)">
             <Head title={title}>{description && <meta name="description" content={description} />}</Head>
-            <Header />
+            <Header open={menuOpen} setOpen={setMenuOpen} />
             <main className="flex-1">{children}</main>
             <Footer />
+            {/* Phones: the pages of the website for visitors, the control panel for the signed-in users */}
+            <BottomNav onMore={() => setMenuOpen(true)} />
             <TourMascot variant="site" />
         </div>
     );

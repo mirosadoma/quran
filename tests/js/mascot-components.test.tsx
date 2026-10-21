@@ -10,6 +10,7 @@ import { LoaderBuddy } from '@/components/mascot/loader-buddy';
 import { MascotFace } from '@/components/mascot/mascot-face';
 import { QuoteBubble } from '@/components/mascot/speech-bubble';
 import { TourMascot } from '@/components/mascot/tour-mascot';
+import { companionShownOn } from '@/hooks/use-companion';
 import { MASCOT_TIMING } from '@/lib/mascot/config';
 import { configureCycle, ensureCycleStarted, finishChase, resetCycle } from '@/lib/mascot/cycle';
 import { MASCOT_LOOKS } from '@/lib/mascot/looks';
@@ -202,6 +203,42 @@ describe('the tour on the page', () => {
 
         assert.ok(!hasClass(html, 'mascot-animated'));
         assert.ok(!hasClass(html, 'mascot-float'));
+    });
+});
+
+describe('where the administration hides it', () => {
+    it('leaves the website and the sign-in pages without the tour, and keeps it in the panels', () => {
+        setPage({ companion: { site: false, panel: true } });
+
+        assert.equal(renderToStaticMarkup(<TourMascot variant="site" />), '');
+        assert.equal(renderToStaticMarkup(<TourMascot variant="auth" />), '');
+        assert.ok(hasClass(renderToStaticMarkup(<TourMascot variant="app" />), 'mascot-layer'));
+    });
+
+    it('leaves the panel of the role without the tour, the companions of the headers and the greeting, and its bubble', () => {
+        setPage({ companion: { site: true, panel: false } });
+        const header = renderToStaticMarkup(<PageHeader title="الحلقات" />);
+        const greeting = renderToStaticMarkup(<WelcomeBanner title="السلام عليكم، أحمد" />);
+
+        assert.equal(renderToStaticMarkup(<TourMascot variant="app" />), '');
+        assert.ok(hasClass(renderToStaticMarkup(<TourMascot variant="site" />), 'mascot-layer'));
+        assert.ok(!header.includes('data-mascot-buddy') && header.includes('الحلقات'));
+        assert.ok(!greeting.includes('data-mascot-buddy') && greeting.includes('السلام عليكم، أحمد'));
+        assert.ok(!greeting.includes('data-tone="dark"'), 'no bubble of the day without its companion');
+    });
+
+    it('tells the loading screen from the page being left', () => {
+        const companion = { site: false, panel: true };
+
+        assert.equal(companionShownOn({ component: 'site/home', props: { companion } }), false);
+        assert.equal(companionShownOn({ component: 'auth/login', props: { companion } }), false);
+        assert.equal(companionShownOn({ component: 'dashboard/student', props: { companion } }), true);
+        assert.equal(companionShownOn({ component: 'site/home', props: {} }), true, 'shown when nothing says otherwise');
+
+        const html = renderToStaticMarkup(<LoadingScreen name="وِرد" label="جارٍ التحميل…" companion={false} />);
+
+        assert.ok(!html.includes('data-mascot-loader'));
+        assert.ok(html.includes('<svg viewBox="0 0 48 48"'), 'the logo stays');
     });
 });
 

@@ -1,24 +1,18 @@
 import { Link, useForm } from '@inertiajs/react';
-import { GraduationCap, LogIn, School, ShieldCheck, UserPlus, UserRound } from 'lucide-react';
+import { LogIn, UserPlus } from 'lucide-react';
 import type { FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { Field, Input, Label } from '@/components/ui/form';
 import { PasswordInput } from '@/components/ui/password-input';
 import AuthLayout from '@/layouts/auth-layout';
 import { useTrans } from '@/lib/i18n';
-import { useLabels } from '@/lib/labels';
-import type { Role } from '@/types';
 
 interface LoginProps {
     status?: string | null;
-    demoAccounts: { role: Role; login: string }[];
 }
 
-const roleIcons = { admin: ShieldCheck, manager: School, teacher: GraduationCap, student: UserRound };
-
-export default function Login({ status, demoAccounts }: LoginProps) {
+export default function Login({ status }: LoginProps) {
     const { t } = useTrans();
-    const labels = useLabels();
     const form = useForm({ login: '', password: '', remember: true });
 
     const submit = (event: FormEvent) => {
@@ -78,31 +72,6 @@ export default function Login({ status, demoAccounts }: LoginProps) {
                     {t('Create a free account')}
                 </Link>
             </p>
-
-            {demoAccounts.length > 0 && (
-                <div className="mt-8 rounded-2xl border border-dashed border-gold-300 bg-gold-50/60 p-4 dark:border-gold-500/30 dark:bg-gold-500/5">
-                    <p className="text-xs font-semibold text-gold-800 dark:text-gold-300">
-                        {t('Demo accounts (password: :password)', { password: 'password' })}
-                    </p>
-                    <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
-                        {demoAccounts.map((account) => {
-                            const Icon = roleIcons[account.role];
-
-                            return (
-                                <button
-                                    key={account.login}
-                                    type="button"
-                                    onClick={() => form.setData({ login: account.login, password: 'password', remember: true })}
-                                    className="flex flex-col items-center gap-1.5 rounded-xl border border-line bg-surface px-2 py-3 text-xs font-semibold text-ink transition hover:border-primary-400 hover:text-primary-700"
-                                >
-                                    <Icon className="size-4.5 text-gold-600" />
-                                    {labels.role[account.role]}
-                                </button>
-                            );
-                        })}
-                    </div>
-                </div>
-            )}
         </AuthLayout>
     );
 }

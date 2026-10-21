@@ -11,6 +11,7 @@ import { createInertiaApp, type ResolvedComponent } from '@inertiajs/react';
 import { createRoot } from 'react-dom/client';
 import { Toaster } from 'sonner';
 import { NavigationLoader } from '@/components/layout/loading-screen';
+import { companionShownOn } from '@/hooks/use-companion';
 import { translate } from '@/lib/i18n';
 import { setupPwa } from '@/lib/pwa';
 import type { SharedProps } from '@/types';
@@ -50,6 +51,7 @@ createInertiaApp({
                     name={shared.app.name}
                     logoUrl={shared.app.logo_url}
                     label={() => translate(document.documentElement.lang === 'ar' ? 'ar' : 'en', 'Loading…')}
+                    companion={companionShownOn(props.initialPage)}
                 />
             </>,
         );

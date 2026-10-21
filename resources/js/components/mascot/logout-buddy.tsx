@@ -2,6 +2,7 @@ import type { CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
 import { MascotFace } from '@/components/mascot/mascot-face';
 import { SpeechBubble } from '@/components/mascot/speech-bubble';
+import { useCompanionShown } from '@/hooks/use-companion';
 import { useReducedMotion } from '@/hooks/use-reduced-motion';
 import { useTrans } from '@/lib/i18n';
 
@@ -19,8 +20,9 @@ const look = { halo: 'sky', body: 'round', eyes: 'open', accessory: 'none' } as 
 export function LogoutBuddy({ anchor }: { anchor: DOMRect | null }) {
     const { t, isRtl } = useTrans();
     const reduced = useReducedMotion();
+    const shown = useCompanionShown('app');
 
-    if (!anchor || typeof document === 'undefined') {
+    if (!shown || !anchor || typeof document === 'undefined') {
         return null;
     }
 

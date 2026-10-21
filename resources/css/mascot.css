@@ -139,7 +139,7 @@
 
 .mascot-visit[data-position='bottom-end'],
 .mascot-visit[data-position='bottom-start'] {
-    bottom: var(--mascot-edge);
+    bottom: calc(var(--mascot-edge) + var(--bottom-nav-space, 0px));
     --mascot-slide-y: 48px;
 }
 

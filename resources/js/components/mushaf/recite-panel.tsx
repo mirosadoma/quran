@@ -90,7 +90,7 @@ export function RecitePanel({ ayahs, label, hideText, onHideText, vowelCheck, mi
     };
 
     return (
-        <div className="mushaf-dock fixed inset-x-0 bottom-0 z-30 animate-slide-up border-t border-line bg-surface/97 shadow-[0_-10px_30px_-15px_rgb(0_0_0/0.3)] backdrop-blur lg:start-72">
+        <div className="mushaf-dock fixed inset-x-0 bottom-(--bottom-nav-space) z-30 animate-slide-up border-t border-line bg-surface/97 shadow-[0_-10px_30px_-15px_rgb(0_0_0/0.3)] backdrop-blur lg:start-72">
             <div className="mx-auto max-h-[70vh] max-w-4xl overflow-y-auto px-4 py-3">
                 <div className="flex items-center gap-3">
                     <MicButton size="md" listening={voice.listening} onClick={voice.listening ? voice.stop : begin} />

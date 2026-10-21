@@ -84,6 +84,11 @@ class HandleInertiaRequests extends Middleware
             ],
             'locale' => app()->getLocale(),
             // The texts of the companion (mascot): sent once per language, then kept by the browser.
+            // Where the companion shows (the settings): on the public website, and in the control panel of the user's role.
+            'companion' => fn (): array => [
+                'site' => Setting::get('companion_site'),
+                'panel' => Setting::get($user ? 'companion_'.$user->role->value : 'companion_site'),
+            ],
             'mascot' => Inertia::once(fn (): array => app(MascotQuotes::class)->all(app()->getLocale()))->as('mascot.'.app()->getLocale()),
             'timezone' => $user?->displayTimezone() ?? config('app.user_timezone'),
             'csrf_token' => csrf_token(),

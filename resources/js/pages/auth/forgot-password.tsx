@@ -18,7 +18,7 @@ export default function ForgotPassword({ status }: { status?: string | null }) {
     return (
         <AuthLayout
             title={t('Forgot your password?')}
-            subtitle={t('Enter the email of your account and we will send you a link to choose a new password.')}
+            subtitle={t('Enter the email of your account and we will send you a code to choose a new password.')}
         >
             {status && (
                 <div className="mb-5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-200">
@@ -34,6 +34,7 @@ export default function ForgotPassword({ status }: { status?: string | null }) {
                         dir="ltr"
                         value={form.data.email}
                         onChange={(event) => form.setData('email', event.target.value)}
+                        autoComplete="email"
                         autoFocus
                         aria-invalid={!!form.errors.email}
                     />
@@ -41,7 +42,7 @@ export default function ForgotPassword({ status }: { status?: string | null }) {
 
                 <Button type="submit" size="lg" className="w-full" loading={form.processing}>
                     <Mail />
-                    {t('Send reset link')}
+                    {t('Send the code')}
                 </Button>
             </form>
 

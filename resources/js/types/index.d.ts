@@ -52,6 +52,8 @@ export interface SharedProps {
     alarms: AlarmItem[];
     /** The texts of the companion (mascot): ayahs, hadiths, adhkar and sayings of the platform, sent once per language. */
     mascot: MascotQuote[];
+    /** Where the companion shows, as the administration chose in the settings. */
+    companion: import('@/hooks/use-companion').CompanionVisibility;
     [key: string]: unknown;
 }
 

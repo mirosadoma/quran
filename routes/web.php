@@ -6,7 +6,7 @@ use App\Http\Controllers\AlarmController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\NewPasswordController;
-use App\Http\Controllers\Auth\PasswordResetLinkController;
+use App\Http\Controllers\Auth\PasswordResetCodeController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\ChatController;
@@ -113,8 +113,12 @@ Route::middleware('guest')->group(function () {
     Route::post('login', [AuthenticatedSessionController::class, 'store'])->middleware('throttle:10,1')->name('login.store');
     Route::get('register', [RegisteredUserController::class, 'create'])->name('register');
     Route::post('register', [RegisteredUserController::class, 'store'])->middleware('throttle:10,1')->name('register.store');
-    Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])->name('password.request');
-    Route::post('forgot-password', [PasswordResetLinkController::class, 'store'])->middleware('throttle:5,1')->name('password.email');
+    // Forgot password: the email, the code (OTP) sent to it, then the new password.
+    Route::get('forgot-password', [PasswordResetCodeController::class, 'create'])->name('password.request');
+    Route::post('forgot-password', [PasswordResetCodeController::class, 'store'])->middleware('throttle:5,1')->name('password.email');
+    Route::get('forgot-password/code', [PasswordResetCodeController::class, 'code'])->name('password.code');
+    Route::post('forgot-password/code', [PasswordResetCodeController::class, 'verify'])->middleware('throttle:10,1')->name('password.code.verify');
+    Route::post('forgot-password/code/resend', [PasswordResetCodeController::class, 'resend'])->middleware('throttle:5,1')->name('password.code.resend');
     Route::get('reset-password/{token}', [NewPasswordController::class, 'create'])->name('password.reset');
     Route::post('reset-password', [NewPasswordController::class, 'store'])->name('password.store');
 });

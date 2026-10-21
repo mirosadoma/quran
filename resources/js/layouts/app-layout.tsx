@@ -4,6 +4,7 @@ import { X } from 'lucide-react';
 import { type ReactNode, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { AlarmRinger } from '@/components/alarms/alarm-ringer';
+import { BottomNav } from '@/components/layout/bottom-nav';
 import { PageHeader, type PageHeaderProps } from '@/components/layout/page-header';
 import { Sidebar } from '@/components/layout/sidebar';
 import { Topbar } from '@/components/layout/topbar';
@@ -89,13 +90,16 @@ export default function AppLayout({ title, heading, description, actions, back, 
             </Dialog>
 
             {/* data-shell: the parts hidden while the mushaf is read full screen (see app.css). */}
-            <div data-shell="content" className="lg:ps-72 print:ps-0">
+            <div data-shell="content" className="pb-(--bottom-nav-space) lg:ps-72 print:ps-0">
                 <Topbar onMenu={() => setMenuOpen(true)} />
                 <main data-shell="main" className={cn('mx-auto px-4 pt-6 sm:px-6 lg:px-8 lg:pt-8', flush ? 'pb-4' : 'pb-16', wide ? 'max-w-420' : 'max-w-360')}>
                     {!hideHeader && <PageHeader title={heading ?? title} description={description} actions={actions} back={back} />}
                     <div className="animate-fade-in">{children}</div>
                 </main>
             </div>
+
+            {/* Phones: the tabs of the most used pages; "More" opens the sidebar */}
+            <BottomNav onMore={() => setMenuOpen(true)} />
 
             <AlarmRinger />
 
