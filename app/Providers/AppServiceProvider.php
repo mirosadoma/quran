@@ -31,6 +31,11 @@ class AppServiceProvider extends ServiceProvider
     {
         DevCommands::artisan('schedule:work', 'scheduler');
 
+        // The realtime chat (Laravel Reverb), when it is turned on.
+        if (config('broadcasting.default') === 'reverb') {
+            DevCommands::artisan('reverb:start', 'reverb');
+        }
+
         // The vowel check of recitations (transcriber/), once it is set up.
         if ($this->app->runningInConsole() && filled(config('services.transcriber.url')) && is_dir(base_path('transcriber/node_modules'))) {
             DevCommands::register('node transcriber/server.mjs', 'transcriber');

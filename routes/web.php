@@ -52,6 +52,7 @@ use App\Http\Controllers\RecitationSubmissionController;
 use App\Http\Controllers\RecitationTranscriptionController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SayingController;
+use App\Http\Controllers\SentCodeController;
 use App\Http\Controllers\SessionController;
 use App\Http\Controllers\SessionMeetingController;
 use App\Http\Controllers\SessionRecordingController;
@@ -177,6 +178,9 @@ Route::middleware(['auth', 'active'])->prefix('admin')->group(function () {
         Route::get('contact-messages', [ContactMessageController::class, 'index'])->name('contact-messages.index');
         Route::patch('contact-messages/{message}/read', [ContactMessageController::class, 'read'])->name('contact-messages.read');
         Route::delete('contact-messages/{message}', [ContactMessageController::class, 'destroy'])->name('contact-messages.destroy');
+
+        // The codes (OTP) sent in the last two hours, to give one when its email did not arrive.
+        Route::get('sent-codes', [SentCodeController::class, 'index'])->name('sent-codes.index');
 
         Route::post('adhkar/categories', [DhikrCategoryController::class, 'store'])->name('adhkar.categories.store');
         Route::put('adhkar/categories/{category}', [DhikrCategoryController::class, 'update'])->name('adhkar.categories.update');

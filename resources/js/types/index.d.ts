@@ -23,15 +23,24 @@ export interface AuthUser {
     academy: { id: number; name: string; logo_url: string | null } | null;
 }
 
+/** The connection to Laravel Reverb (the platform's own WebSocket server); off when not set up. */
 export interface RealtimeConfig {
     enabled: boolean;
-    broadcaster?: 'pusher' | 'reverb';
+    broadcaster?: 'reverb';
     key?: string;
-    cluster?: string;
     host?: string;
     port?: number;
     scheme?: string;
     halaqa_ids: number[];
+}
+
+/** What the browser needs to get its push token from Firebase Cloud Messaging (none of it is secret). */
+export interface FirebaseWebConfig {
+    apiKey: string;
+    projectId: string;
+    appId: string;
+    messagingSenderId: string;
+    vapidKey: string;
 }
 
 export interface SharedProps {
@@ -44,8 +53,8 @@ export interface SharedProps {
     /** The administration is inside an academy with the account of its manager. */
     impersonating: { academy: string | null } | null;
     realtime: RealtimeConfig;
-    /** VAPID key for push notifications; null when signed out or push is not set up. */
-    push: { public_key: string | null };
+    /** Firebase settings for push notifications; null when signed out or push is not set up. */
+    push: { firebase: FirebaseWebConfig | null };
     /** Texts are read aloud by the man's voice of the server (route "speech"). */
     narrator: boolean;
     /** The active alarms of the user; they ring on screen while the platform is open. */
@@ -490,6 +499,20 @@ export interface ContactMessageItem {
     read_at: string | null;
     created_at: string | null;
     user_id: number | null;
+}
+
+/** A code (OTP) the platform sent, shown to the administration for two hours. */
+export interface SentCodeItem {
+    id: number;
+    code: string;
+    purpose: 'password_reset';
+    channel: 'email';
+    destination: string;
+    /** Whether it can still be given: the newest code of the account, not used, blocked or expired. */
+    status: 'valid' | 'expired' | 'used' | 'replaced' | 'blocked';
+    sent_at: string | null;
+    expires_at: string;
+    user: { id: number; name: string; email: string | null; phone: string | null; role: Role };
 }
 
 /**

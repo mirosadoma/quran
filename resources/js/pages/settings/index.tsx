@@ -3,6 +3,7 @@ import { Bell, Building2, CircleCheck, CircleDashed, Copy, ImagePlus, Link2, Sav
 import { type FormEvent, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { LogoMark } from '@/components/brand';
+import { TestPushButton } from '@/components/install-app';
 import { MeetingProviderPicker } from '@/components/meeting-provider-picker';
 import { MailSettingsCard, type MailSummary } from '@/components/settings/mail-settings-card';
 import { Button } from '@/components/ui/button';
@@ -338,9 +339,10 @@ export default function Settings({ settings, mail, logoUrl, providers, google, i
                                 description={
                                     integrations.push.configured
                                         ? t('Every user turns them on for each device from the app window.')
-                                        : t('Run php artisan webpush:keys to create the keys first.')
+                                        : t('Add the Firebase settings to the .env file first.')
                                 }
                             />
+                            {integrations.push.configured && <TestPushButton />}
                             <div className="space-y-2 border-t border-line pt-4 text-xs">
                                 <div className="flex items-center justify-between">
                                     <span className="text-muted">{t('Realtime chat')}</span>

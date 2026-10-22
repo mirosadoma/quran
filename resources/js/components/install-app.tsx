@@ -165,6 +165,78 @@ export function PushPrompt() {
     );
 }
 
+/**
+ * Sends a test notification to this device (settings page). When the notifications are off on it,
+ * they are turned on first: the click lets the browser ask for permission.
+ */
+export function TestPushButton() {
+    const { t } = useTrans();
+    const push = usePush();
+    const [busy, setBusy] = useState(false);
+
+    const send = async () => {
+        setBusy(true);
+
+        try {
+            if (push.status !== 'on') {
+                const result = await push.enable();
+
+                if (result === 'denied') {
+                    toast.error(t('Notifications were blocked. Allow them from the site settings in the browser.'));
+                }
+
+                if (result !== 'on') {
+                    return;
+                }
+            }
+
+            const { delivered } = await sendTestPush();
+
+            if (delivered > 0) {
+                toast.success(t('Test notification sent. It arrives in a few seconds.'));
+            } else {
+                toast.error(t('Firebase did not accept the notification. Check storage/logs/laravel.log.'));
+            }
+        } catch {
+            toast.error(t('Could not send the test notification.'));
+            await push.refresh();
+        } finally {
+            setBusy(false);
+        }
+    };
+
+    switch (push.status) {
+        case 'checking':
+            return <div className="h-10 animate-pulse rounded-xl bg-surface-muted" />;
+        case 'unconfigured':
+            return <Hint>{t('Turn on push notifications above and save the settings to test them.')}</Hint>;
+        case 'insecure':
+            return <Hint>{t('Available once the platform is opened from its secure address.')}</Hint>;
+        case 'unsupported':
+            return <Hint>{t('This browser cannot receive notifications. Use a recent Chrome, Edge, Firefox or Safari.')}</Hint>;
+        case 'denied':
+            return (
+                <StatusLine icon={BellOff} tone="warning">
+                    {t('Notifications are blocked for this site. Allow them from the site settings (the icon next to the address), then come back.')}
+                </StatusLine>
+            );
+        default:
+            return (
+                <div className="space-y-2">
+                    <Button variant="secondary" size="sm" loading={busy} onClick={send}>
+                        <Send />
+                        {t('Send a test notification to my device')}
+                    </Button>
+                    <Hint>
+                        {push.status === 'on'
+                            ? t('Notifications are on for this device.')
+                            : t('Notifications are off on this device: the browser asks you to allow them first.')}
+                    </Hint>
+                </div>
+            );
+    }
+}
+
 const PROMPT_DISMISSED = 'push-prompt-dismissed';
 
 function readFlag(key: string): boolean {
@@ -427,7 +499,7 @@ function NotificationsSection({ push }: { push: ReturnType<typeof usePush> }) {
                     toast.error(t('Notifications were blocked. Allow them from the site settings in the browser.'));
                 }
             } else {
-                await disablePush();
+                await disablePush(push.config);
                 toast.success(t('Notifications are off for this device.'));
             }
         } catch {
@@ -442,8 +514,13 @@ function NotificationsSection({ push }: { push: ReturnType<typeof usePush> }) {
         setTesting(true);
 
         try {
-            await sendTestPush();
-            toast.success(t('Test notification sent. It arrives in a few seconds.'));
+            const { delivered } = await sendTestPush();
+
+            if (delivered > 0) {
+                toast.success(t('Test notification sent. It arrives in a few seconds.'));
+            } else {
+                toast.error(t('Could not send the test notification.'));
+            }
         } catch {
             toast.error(t('Could not send the test notification.'));
         } finally {
@@ -461,7 +538,7 @@ function NotificationsSection({ push }: { push: ReturnType<typeof usePush> }) {
             content = (
                 <Hint>
                     {auth.user.role === 'admin'
-                        ? t('Push notifications are off. Create the keys with php artisan webpush:keys, then turn them on in the settings.')
+                        ? t('Push notifications are off. Add the Firebase settings to the .env file, then turn them on in the settings.')
                         : t('The administration has not turned on push notifications yet.')}
                 </Hint>
             );

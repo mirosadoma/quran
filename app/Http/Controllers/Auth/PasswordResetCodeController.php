@@ -38,7 +38,8 @@ class PasswordResetCodeController extends Controller
 
     /**
      * Send the code to the email and go to the page of the code; an email without account is told so at once.
-     * A code sent less than a minute ago stays valid and is not sent again.
+     * A code sent less than a minute ago stays valid and is not sent again. When the email cannot leave, the code
+     * page still opens: the administration can give the code (sent codes page).
      *
      * @throws ValidationException
      */
@@ -55,14 +56,11 @@ class PasswordResetCodeController extends Controller
             throw ValidationException::withMessages(['email' => __('passwords.user')]);
         }
 
-        if ($this->codes->resendAt($email) === null) {
-            $this->send($user, 'email');
-        }
+        $sent = $this->codes->resendAt($email) !== null || $this->send($user);
 
         $request->session()->put(self::SESSION_KEY, $email);
 
-        return redirect()->route('password.code')
-            ->with('status', __('We sent the code to your email.'));
+        return $this->afterSending(redirect()->route('password.code'), $sent, __('We sent the code to your email.'));
     }
 
     /**
@@ -79,6 +77,7 @@ class PasswordResetCodeController extends Controller
         return Inertia::render('auth/reset-code', [
             'email' => $email,
             'status' => $request->session()->get('status'),
+            'warning' => $request->session()->get('warning'),
             'resendAt' => $this->codes->resendAt($email)?->toIso8601String(),
             'minutes' => PasswordResetCodes::CODE_MINUTES,
         ]);
@@ -131,26 +130,32 @@ class PasswordResetCodeController extends Controller
             ]);
         }
 
-        $this->send($user, 'code');
-
-        return back()->with('status', __('A new code has been sent.'));
+        return $this->afterSending(back(), $this->send($user), __('A new code has been sent.'));
     }
 
     /**
-     * Send the code, and tell the user when the email could not leave (the outgoing email is not set up).
-     *
-     * @throws ValidationException
+     * Send the code; false when the email could not leave (the outgoing email is not set up or is down).
      */
-    protected function send(User $user, string $field): void
+    protected function send(User $user): bool
     {
         try {
             $this->codes->send($user);
+
+            return true;
         } catch (Throwable $exception) {
             report($exception);
 
-            throw ValidationException::withMessages([
-                $field => __('The code could not be sent now. Try again later or contact the administration.'),
-            ]);
+            return false;
         }
+    }
+
+    /**
+     * Tell the user the code was sent, or that the administration can give it when the email could not leave.
+     */
+    protected function afterSending(RedirectResponse $redirect, bool $sent, string $status): RedirectResponse
+    {
+        return $sent
+            ? $redirect->with('status', $status)
+            : $redirect->with('warning', __('The email could not be sent now. Contact the administration: they can give you the code.'));
     }
 }

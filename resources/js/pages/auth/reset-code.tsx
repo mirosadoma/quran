@@ -11,6 +11,8 @@ import { useTrans } from '@/lib/i18n';
 interface ResetCodeProps {
     email: string;
     status?: string | null;
+    /** The email could not leave: the administration can give the code. */
+    warning?: string | null;
     /** When a new code may be asked for (null: now). */
     resendAt: string | null;
     /** How long a code lasts. */
@@ -22,7 +24,7 @@ const LENGTH = 6;
 /**
  * The second step of "Forgot your password?": the code sent by email, then the page of the new password.
  */
-export default function ResetCode({ email, status, resendAt, minutes }: ResetCodeProps) {
+export default function ResetCode({ email, status, warning, resendAt, minutes }: ResetCodeProps) {
     const { t } = useTrans();
     const form = useForm({ code: '' });
     const resendForm = useForm({});
@@ -69,6 +71,12 @@ export default function ResetCode({ email, status, resendAt, minutes }: ResetCod
             {status && (
                 <div className="mb-5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-200">
                     {status}
+                </div>
+            )}
+
+            {warning && (
+                <div className="mb-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-200">
+                    {warning}
                 </div>
             )}
 

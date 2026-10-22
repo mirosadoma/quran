@@ -23,7 +23,7 @@
 | Frontend | **React 19 + TypeScript** عبر **Inertia.js v3** | لارافيل وريأكت في مشروع واحد بدون API منفصل: الـ Routing والصلاحيات والـ Validation في لارافيل، والواجهة SPA سريعة في ريأكت |
 | التصميم | **Tailwind CSS v4** + Headless UI + Lucide Icons | تصميم خاص بهوية إسلامية، ودعم RTL كامل بالخصائص المنطقية (`ms-`/`me-`/`start-`/`end-`) |
 | قاعدة البيانات | **MySQL** | متوفرة في Laragon وأي استضافة |
-| اللحظي (Realtime) | **Pusher** (الخطة المجانية) أو **Laravel Reverb** (مجاني على سيرفرك) | الشات والإشعارات اللحظية. المنصة تعمل بدونهم أيضاً (تحديث تلقائي كل بضع ثوانٍ) |
+| اللحظي (Realtime) | **Laravel Reverb** (مجاني على سيرفرك) | الشات والإشعارات اللحظية. المنصة تعمل بدونه أيضاً (تحديث تلقائي كل بضع ثوانٍ) |
 | الرسوم البيانية | Recharts | لوحات التحكم والتقارير |
 | الخلفية | Queue + Scheduler | إنشاء الجلسات، التذكيرات، الإشعارات، تحميل التسجيلات |
 
@@ -242,13 +242,20 @@ JITSI_DOMAIN=meet.example.com      # للسيرفر الخاص
 JITSI_APP_ID= / JITSI_APP_SECRET=  # لو السيرفر الخاص يستخدم JWT
 ```
 
-### الشات اللحظي (Pusher أو Reverb)
+### الشات اللحظي (Laravel Reverb)
+خادم WebSocket خاص بالمنصة يعمل على نفس السيرفر (مجاني وبلا حدود رسائل). في `.env`:
 ```
-BROADCAST_CONNECTION=pusher
-PUSHER_APP_ID=... PUSHER_APP_KEY=... PUSHER_APP_SECRET=... PUSHER_APP_CLUSTER=eu
+BROADCAST_CONNECTION=reverb
+REVERB_APP_ID=...  REVERB_APP_KEY=...  REVERB_APP_SECRET=...   # قيم عشوائية: php -r "echo bin2hex(random_bytes(16));"
+REVERB_HOST=الدومين
+REVERB_PORT=443
+REVERB_SCHEME=https
+REVERB_SERVER_HOST=127.0.0.1
+REVERB_SERVER_PORT=8080
 ```
-الخطة المجانية في Pusher: ‏200 ألف رسالة يومياً و100 اتصال متزامن. عند تجاوزها استخدم **Laravel Reverb** المجاني (`composer require laravel/reverb` ثم `BROADCAST_CONNECTION=reverb` وشغّل `php artisan reverb:start`).
-بدون أي منهما: الشات والإشعارات تتحدث تلقائياً كل بضع ثوانٍ.
+ثم شغّل `php artisan reverb:start` دائماً (Supervisor، القسم 11)، ووجّه `/app` و `/apps` إليه من Nginx.
+على جهازك: `composer run dev` يشغّله تلقائياً مع `BROADCAST_CONNECTION=reverb`.
+بدونه (`BROADCAST_CONNECTION=null`)، أو لو توقف: الشات يتحدث تلقائياً كل 4 ثوانٍ والإشعارات كل دقيقة.
 
 ### البريد الإلكتروني
 أي SMTP (مثل Brevo أو Resend المجانيين للبداية):
@@ -300,6 +307,27 @@ sudo mysql -e "CREATE DATABASE quran CHARACTER SET utf8mb4 COLLATE utf8mb4_unico
 sudo ufw allow OpenSSH && sudo ufw allow 'Nginx Full' && sudo ufw enable   # المنفذ 8787 يبقى مغلقاً
 ```
 
+**ذاكرة احتياطية (swap) 2 جيجا:** لو امتلأت الرام يبطئ السيرفر بدل أن يُغلق MySQL بالقوة.
+```bash
+sudo fallocate -l 2G /swapfile && sudo chmod 600 /swapfile
+sudo mkswap /swapfile && sudo swapon /swapfile
+echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+free -h   # يظهر سطر Swap بـ 2.0Gi
+```
+
+**OPcache (يحفظ كود PHP جاهزاً في الذاكرة فتصير الصفحات أسرع):** الملف `/etc/php/8.3/fpm/conf.d/99-quran.ini`:
+```ini
+opcache.enable=1
+opcache.memory_consumption=256
+opcache.interned_strings_buffer=16
+opcache.max_accelerated_files=20000
+opcache.validate_timestamps=0
+```
+```bash
+sudo systemctl restart php8.3-fpm
+```
+> مع `validate_timestamps=0` لا يرى PHP أي تعديل في الكود حتى `sudo systemctl reload php8.3-fpm` (موجود في خطوات التحديث بالأسفل).
+
 **3) رفع المشروع:** ارفعه أولاً على GitHub (مستودع خاص)، ثم:
 ```bash
 cd /var/www && sudo git clone <رابط المستودع> quran && sudo chown -R $USER:www-data quran && cd quran
@@ -316,14 +344,20 @@ DB_DATABASE=quran
 DB_USERNAME=quran
 DB_PASSWORD=كلمة-سر-قوية
 QUEUE_CONNECTION=database
+DB_QUEUE_RETRY_AFTER=960   # تنزيل تسجيل الاجتماع قد يأخذ 15 دقيقة، فلا يُعاد تشغيله قبلها
 MAIL_MAILER=smtp        # مع بيانات SMTP (القسم 10)
 TRANSCRIBER_URL=http://127.0.0.1:8787
 TRANSCRIBER_TOKEN=...   # ناتج: php -r "echo bin2hex(random_bytes(32));"
+# إشعارات الجوال والكمبيوتر (Firebase): نفس القيم الموجودة في .env على جهازك
+FIREBASE_API_KEY=...
+FIREBASE_APP_ID=...
+FIREBASE_MESSAGING_SENDER_ID=...
+FIREBASE_VAPID_KEY=...
 ```
+> ملف حساب الخدمة في Firebase (سرّي، ليس في git): ارفعه إلى `storage/app/private/firebase-credentials.json` على السيرفر.
 ```bash
 php artisan migrate --force
 php artisan db:seed --force    # القرآن والتفسير ومعاني الكلمات والقراء والأذكار + حساب الأدمن
-php artisan webpush:keys       # مفاتيح إشعارات الجوال، ضعها في .env
 php artisan storage:link
 php artisan optimize
 sudo chown -R www-data:www-data storage bootstrap/cache transcriber
@@ -338,6 +372,16 @@ server {
     index index.php;
     client_max_body_size 20m;   # تسجيلات التسميع والرسائل الصوتية
     location / { try_files $uri $uri/ /index.php?$query_string; }
+    # الشات اللحظي (Reverb): اتصالات المتصفح (/app) وإرسال السيرفر (/apps)
+    location ~ ^/apps? {
+        proxy_pass http://127.0.0.1:8080;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "Upgrade";
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_read_timeout 120s;
+    }
     location ~ \.php$ { include snippets/fastcgi-php.conf; fastcgi_pass unix:/run/php/php8.3-fpm.sock; }
     location ~ /\.(?!well-known) { deny all; }
 }
@@ -350,10 +394,18 @@ sudo certbot --nginx -d الدومين -d www.الدومين
 **5) العمليات الدائمة (Supervisor):** أولاً `cd transcriber && sudo -u www-data npm install --omit=dev`، ثم ملف `/etc/supervisor/conf.d/quran.conf`:
 ```ini
 [program:quran-queue]
-command=php /var/www/quran/artisan queue:work --tries=3 --max-time=3600
+command=php /var/www/quran/artisan queue:work --sleep=3 --tries=3 --max-time=3600
 user=www-data
 autostart=true
 autorestart=true
+stopwaitsecs=960
+
+[program:quran-reverb]
+command=php /var/www/quran/artisan reverb:start
+user=www-data
+autostart=true
+autorestart=true
+minfds=10000
 
 [program:quran-transcriber]
 command=node /var/www/quran/transcriber/server.mjs
@@ -370,7 +422,7 @@ curl http://127.0.0.1:8787/health   # أول تشغيل يحمّل حوالي 50
 **6) المجدول:** `sudo crontab -u www-data -e` ثم السطر:
 `* * * * * php /var/www/quran/artisan schedule:run >> /dev/null 2>&1`
 
-**7) اختياري:** الشات اللحظي (Pusher أو Reverb) والاجتماعات والواتساب من القسم 10.
+**7) اختياري:** الاجتماعات والواتساب من القسم 10. الشات اللحظي (Reverb) يحتاج فقط قيم `REVERB_*` في `.env` (القسم 10)، وبرنامج `quran-reverb` في Supervisor وتوجيه Nginx أعلاه جاهزان.
 
 **8) نسخ احتياطي:** نسخة يومية لقاعدة البيانات (`mysqldump`) ولمجلد `storage/app`.
 
@@ -379,7 +431,8 @@ curl http://127.0.0.1:8787/health   # أول تشغيل يحمّل حوالي 50
 cd /var/www/quran && git pull
 composer install --no-dev -o && npm install && npm run build
 php artisan migrate --force && php artisan optimize
-php artisan queue:restart && sudo supervisorctl restart quran-transcriber
+sudo systemctl reload php8.3-fpm   # OPcache يقرأ الكود الجديد
+php artisan queue:restart && php artisan reverb:restart && sudo supervisorctl restart quran-transcriber
 ```
 
 ---

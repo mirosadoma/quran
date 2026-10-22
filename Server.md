@@ -5,10 +5,11 @@
 1. احفظ كل التعديلات في git وارفعها على مستودع خاص (private) على GitHub، لأن السيرفر هيسحب الكود منه.
 2. ملفا الإصدارات `composer.lock` و`package-lock.json` بقوا بيترفعوا مع الكود، عشان السيرفر يثبّت نفس الإصدارات اللي على جهازك بالظبط.
 3. متْرفعش يدويًا: `.env` ولا `node_modules` ولا `vendor` ولا `public/build` ولا `public/hot` ولا نماذج مجلد `transcriber`. كلها بتتبني أو بتتنزل على السيرفر.
+4. ملف Firebase السري `storage/app/private/firebase-credentials.json` مش بيترفع مع git (متجاهَل عمدًا). هترفعه للسيرفر بإيدك (شوف "إشعارات الأجهزة" تحت).
 
 ## ثانيًا: على السيرفر (مرة واحدة)
 
-**السيرفر:** Ubuntu 24.04 بذاكرة ٤ جيجا على الأقل، ودومين بيشاور عليه، وHTTPS إجباري، وإلا مش هيشتغل الميكروفون ولا الإشعارات ولا تثبيت التطبيق. أوامر تجهيز السيرفر (PHP 8.3، MySQL، Nginx، Node 22، Composer، Supervisor، Certbot) موجودة في PLAN.md بند ٢.
+**السيرفر:** Ubuntu 24.04 بذاكرة ٤ جيجا على الأقل، ودومين بيشاور عليه، وHTTPS إجباري، وإلا مش هيشتغل الميكروفون ولا الإشعارات ولا تثبيت التطبيق. أوامر تجهيز السيرفر (PHP 8.3، MySQL، Nginx، Node 22، Composer، Supervisor، Certbot) موجودة في PLAN.md بند ٢، ومعاها الذاكرة الاحتياطية (swap) وتسريع PHP (OPcache).
 
 **سحب المشروع وبناؤه:**
 
@@ -27,12 +28,23 @@ cp .env.example .env && php artisan key:generate
 | `APP_URL` | `http://quran.test` | `https://الدومين` |
 | `LOG_LEVEL` | `debug` | `error` |
 | `DB_*` | قاعدتك المحلية | قاعدة السيرفر |
-| `QUEUE_CONNECTION` | `sync` | `database` |
+| `QUEUE_CONNECTION` | `sync` | `database`، ومعاه `DB_QUEUE_RETRY_AFTER=960` |
 | `ADMIN_NAME` / `ADMIN_EMAIL` / `ADMIN_PHONE` / `ADMIN_PASSWORD` | فاضيين | بيانات حساب الإدارة الأول (اقرأ "قاعدة البيانات والمحتوى") |
-| `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` | موجودين | انسخهم من ملفك المحلي زي ما هم، أو اعمل جداد بأمر `php artisan webpush:keys` |
+| `FIREBASE_API_KEY` / `FIREBASE_APP_ID` / `FIREBASE_MESSAGING_SENDER_ID` / `FIREBASE_VAPID_KEY` | موجودين | انسخهم من ملفك المحلي زي ما هم |
+| `BROADCAST_CONNECTION` | `reverb` | `reverb` |
+| `REVERB_APP_ID` / `REVERB_APP_KEY` / `REVERB_APP_SECRET` | قيم محلية | ٣ قيم عشوائية جديدة: `php -r "echo bin2hex(random_bytes(16));"` |
+| `REVERB_HOST` / `REVERB_PORT` / `REVERB_SCHEME` | `quran.test` / `8080` / `https` | `الدومين` / `443` / `https` |
+| `REVERB_SERVER_HOST` / `REVERB_SERVER_PORT` | `0.0.0.0` / `8080` | `127.0.0.1` / `8080` |
+| `REVERB_TLS_CERT` / `REVERB_TLS_KEY` | شهادة Laragon | **فاضيين** (Nginx هو اللي بيشفّر) |
 | `TRANSCRIBER_URL` / `TRANSCRIBER_TOKEN` | مضبوطين | نفس العنوان `http://127.0.0.1:8787` وكلمة سر جديدة |
 
-الباقي يفضل زي جهازك: `APP_LOCALE=ar`، `APP_USER_TIMEZONE=Africa/Cairo`، `SESSION_DRIVER=database`، `CACHE_STORE=database`، `MEETING_PROVIDER=jitsi` مع `JITSI_MODE=public`، `WHATSAPP_DRIVER=log`، و`BROADCAST_CONNECTION=null` (الشات بيحدّث نفسه كل دقيقة). البريد الصادر سيبه `MAIL_MAILER=log` واضبط SMTP من صفحة الإعدادات بعد الدخول.
+الباقي يفضل زي جهازك: `APP_LOCALE=ar`، `APP_USER_TIMEZONE=Africa/Cairo`، `SESSION_DRIVER=database`، `CACHE_STORE=database`، `MEETING_PROVIDER=jitsi` مع `JITSI_MODE=public`، `WHATSAPP_DRIVER=log`. البريد الصادر سيبه `MAIL_MAILER=log` واضبط SMTP من صفحة الإعدادات بعد الدخول.
+
+**إشعارات الأجهزة (Firebase):** ارفع ملف حساب الخدمة من جهازك لنفس المكان على السيرفر، مثلًا من جهازك:
+
+```bash
+scp storage/app/private/firebase-credentials.json root@IP-السيرفر:/var/www/quran/storage/app/private/
+```
 
 **قاعدة البيانات والمحتوى:**
 
@@ -53,9 +65,9 @@ sudo chown -R www-data:www-data storage bootstrap/cache transcriber
 
 > **تحذير:** لازم يكون `APP_ENV=production` قبل `db:seed`. لو كان `local` هيتزرع على السيرفر بيانات التجربة كلها، وحساب `admin@rattil.test` بكلمة سر `password`. ومتشغلش `migrate:fresh` على السيرفر أبدًا، لأنه بيمسح قاعدة البيانات كلها.
 
-**Nginx وشهادة HTTPS:** إعداد Nginx في PLAN.md بند ٤ (مع `client_max_body_size 20m` لتسجيلات التسميع)، وبعدها `certbot --nginx`.
+**Nginx وشهادة HTTPS:** إعداد Nginx في PLAN.md بند ٤ (مع `client_max_body_size 20m` لتسجيلات التسميع، وتوجيه `/app` و`/apps` للمحادثة اللحظية Reverb)، وبعدها `certbot --nginx`.
 
-**العمليات الدايمة بـ Supervisor** (PLAN.md بند ٥): طابور المهام، وخدمة التفريغ والصوت. قبلها:
+**العمليات الدايمة بـ Supervisor** (PLAN.md بند ٥): طابور المهام، والمحادثة اللحظية (Reverb)، وخدمة التفريغ والصوت. اتأكد بعدها إن الثلاثة `RUNNING` بـ `sudo supervisorctl status`. قبلها:
 
 ```bash
 cd transcriber && sudo -u www-data npm install --omit=dev
@@ -71,10 +83,10 @@ cd transcriber && sudo -u www-data npm install --omit=dev
 
 ## ثالثًا: أول دخول بحساب الإدارة
 
-1. **الإعدادات:** اسم المنصة والشعار وبيانات التواصل والمنطقة الزمنية، والبريد الصادر (SMTP) مع إيميل تجريبي، ومفاتيح الرفيق (الأفاتار)، وإشعار تجريبي.
+1. **الإعدادات:** اسم المنصة والشعار وبيانات التواصل والمنطقة الزمنية، والبريد الصادر (SMTP) مع إيميل تجريبي، ومفاتيح الرفيق (الأفاتار)، وزرار "إرسال إشعار تجريبي لجهازي". لازم "المحادثة اللحظية" تظهر `reverb`.
 2. **الأكاديميات:** اعمل الأكاديميات ومسؤوليها، وهم بيضيفوا المعلمين والطلاب والحلقات.
 3. **مكتبة الفيديو:** ضيف الفيديوهات العامة اللي بتظهر في صفحة الفيديوهات في الموقع.
-4. **اختبار سريع:** صفحات الأحاديث والقصص والصلاة والمصحف، والميكروفون في التسميع، والشريط السفلي من الموبايل.
+4. **اختبار سريع:** صفحات الأحاديث والقصص والصلاة والمصحف، والميكروفون في التسميع، والشريط السفلي من الموبايل، والمحادثة بحسابين (الرسالة تظهر عند التاني في ثانية)، وتثبيت التطبيق على أندرويد وآيفون وتفعيل الإشعارات من جواه.
 5. **نسخة احتياطية يومية** لقاعدة البيانات ولمجلد `storage/app`.
 
 ## رابعًا: بعد كل تعديل لاحق
@@ -83,7 +95,8 @@ cd transcriber && sudo -u www-data npm install --omit=dev
 cd /var/www/quran && git pull
 composer install --no-dev -o && npm ci && npm run build
 php artisan migrate --force && php artisan optimize
-php artisan queue:restart && sudo supervisorctl restart quran-transcriber
+sudo systemctl reload php8.3-fpm
+php artisan queue:restart && php artisan reverb:restart && sudo supervisorctl restart quran-transcriber
 ```
 
 ولو ضفت محتوى جديد (أحاديث أو قصص أو أذكار في `database/data`)، حدّثه بالأمر ده. هو آمن للتكرار ومش بيلمس الحسابات ولا الأكاديميات:

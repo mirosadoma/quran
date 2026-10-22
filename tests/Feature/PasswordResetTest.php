@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Http\Controllers\Auth\PasswordResetCodeController;
+use App\Models\SentCode;
 use App\Models\User;
 use App\Notifications\PasswordResetCode;
 use App\Services\PasswordResetCodes;
@@ -191,12 +192,23 @@ class PasswordResetTest extends TestCase
         $this->post(route('password.code.resend'))->assertRedirect(route('password.request'));
     }
 
-    public function test_an_email_that_cannot_leave_is_told_to_the_user(): void
+    public function test_when_the_email_cannot_leave_the_user_still_reaches_the_code_page_and_the_administration_has_the_code(): void
     {
-        User::factory()->student()->create(['email' => 'student@example.com']);
+        $user = User::factory()->student()->create(['email' => 'student@example.com']);
         Notification::shouldReceive('send')->andThrow(new \RuntimeException('Connection could not be established'));
 
-        $this->post(route('password.email'), ['email' => 'student@example.com'])->assertSessionHasErrors('email');
+        $this->post(route('password.email'), ['email' => 'student@example.com'])
+            ->assertRedirect(route('password.code'))
+            ->assertSessionHasNoErrors()
+            ->assertSessionHas('warning');
+
+        $this->get(route('password.code'))->assertInertia(fn (AssertableInertia $page) => $page->component('auth/reset-code')->has('warning'));
+
+        $code = SentCode::query()->sole();
+        $this->assertTrue($code->user->is($user));
+
+        $this->post(route('password.code.verify'), ['code' => $code->code])->assertSessionHasNoErrors()->assertRedirect();
+        $this->assertNotNull($code->fresh()->used_at);
     }
 
     public function test_a_wrong_token_or_a_weak_password_is_refused(): void

@@ -6,8 +6,8 @@ use App\Models\Setting;
 use App\Notifications\Channels\WebPushChannel;
 use App\Notifications\Channels\WhatsAppChannel;
 use App\Services\AppIcons;
+use App\Services\Firebase\CloudMessaging;
 use App\Services\Realtime;
-use App\Services\WebPush\WebPush;
 use App\Services\WhatsApp\WhatsAppMessage;
 use Carbon\CarbonInterface;
 use Illuminate\Bus\Queueable;
@@ -89,7 +89,7 @@ abstract class AppNotification extends Notification implements ShouldQueue
         }
 
         if (Setting::get('notify_push')
-            && app(WebPush::class)->isConfigured()
+            && app(CloudMessaging::class)->isConfigured()
             && method_exists($notifiable, 'pushSubscriptions')
             && $notifiable->pushSubscriptions()->exists()) {
             $channels[] = WebPushChannel::class;

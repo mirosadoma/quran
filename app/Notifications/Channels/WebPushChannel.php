@@ -3,24 +3,25 @@
 namespace App\Notifications\Channels;
 
 use App\Models\PushSubscription;
-use App\Services\WebPush\WebPush;
+use App\Services\Firebase\CloudMessaging;
 use Illuminate\Notifications\Notification;
+use Illuminate\Support\Facades\Log;
 use Throwable;
 
 /**
- * Pushes a notification to every browser and installed app of the user, even when the
- * platform is closed. Subscriptions the push service no longer knows are removed.
+ * Pushes a notification to every browser and installed app of the user through Firebase,
+ * even when the platform is closed. Devices Firebase no longer knows are removed.
  */
 class WebPushChannel
 {
-    public function __construct(protected WebPush $push) {}
+    public function __construct(protected CloudMessaging $messaging) {}
 
     /**
      * Send the given notification.
      */
     public function send(object $notifiable, Notification $notification): void
     {
-        if (! $this->push->isConfigured() || ! method_exists($notification, 'toWebPush') || ! method_exists($notifiable, 'pushSubscriptions')) {
+        if (! $this->messaging->isConfigured() || ! method_exists($notification, 'toWebPush') || ! method_exists($notifiable, 'pushSubscriptions')) {
             return;
         }
 
@@ -37,17 +38,22 @@ class WebPushChannel
     protected function deliver(PushSubscription $subscription, array $payload): void
     {
         try {
-            $status = $this->push->send($subscription, $payload)->status();
+            $response = $this->messaging->send($subscription, $payload);
         } catch (Throwable $exception) {
             report($exception);
 
             return;
         }
 
-        if (in_array($status, [404, 410], true)) {
-            $subscription->delete();
-        } elseif ($status < 300) {
+        if ($response->successful()) {
             $subscription->forceFill(['last_used_at' => now()])->saveQuietly();
+        } elseif ($this->messaging->isStaleToken($response)) {
+            $subscription->delete();
+        } else {
+            Log::warning('Firebase refused a push notification.', [
+                'status' => $response->status(),
+                'error' => $response->json('error.message'),
+            ]);
         }
     }
 }

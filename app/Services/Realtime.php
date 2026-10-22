@@ -3,7 +3,8 @@
 namespace App\Services;
 
 /**
- * Broadcasting status and the public settings the browser needs to connect.
+ * Broadcasting status (Laravel Reverb, the platform's own WebSocket server) and the public
+ * settings the browser needs to connect.
  */
 class Realtime
 {
@@ -14,10 +15,7 @@ class Realtime
 
     public static function enabled(): bool
     {
-        $driver = static::driver();
-
-        return in_array($driver, ['pusher', 'reverb'], true)
-            && filled(config("broadcasting.connections.{$driver}.key"));
+        return static::driver() === 'reverb' && filled(config('broadcasting.connections.reverb.key'));
     }
 
     /**
@@ -31,25 +29,15 @@ class Realtime
             return ['enabled' => false];
         }
 
-        $driver = static::driver();
-        $connection = config("broadcasting.connections.{$driver}");
-
-        if ($driver === 'reverb') {
-            return [
-                'enabled' => true,
-                'broadcaster' => 'reverb',
-                'key' => $connection['key'],
-                'host' => $connection['options']['host'] ?? request()->getHost(),
-                'port' => (int) ($connection['options']['port'] ?? 443),
-                'scheme' => $connection['options']['scheme'] ?? 'https',
-            ];
-        }
+        $options = config('broadcasting.connections.reverb.options');
 
         return [
             'enabled' => true,
-            'broadcaster' => 'pusher',
-            'key' => $connection['key'],
-            'cluster' => $connection['options']['cluster'] ?? 'mt1',
+            'broadcaster' => 'reverb',
+            'key' => config('broadcasting.connections.reverb.key'),
+            'host' => $options['host'] ?? request()->getHost(),
+            'port' => (int) ($options['port'] ?? 443),
+            'scheme' => $options['scheme'] ?? 'https',
         ];
     }
 }

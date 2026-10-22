@@ -10,10 +10,6 @@ declare module '@inertiajs/core' {
 
 declare global {
     var route: typeof routeFn;
-
-    interface Window {
-        Pusher: unknown;
-    }
 }
 
 export {};

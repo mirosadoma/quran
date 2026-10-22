@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\PushSubscription;
 use App\Notifications\TestPushNotification;
-use App\Services\WebPush\WebPush;
+use App\Services\Firebase\CloudMessaging;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -13,23 +13,20 @@ use Illuminate\Support\Str;
 class PushSubscriptionController extends Controller
 {
     /**
-     * Remember this browser (or installed app) to push the user's notifications to it.
+     * Remember this browser (or installed app) by its Firebase token to push the user's
+     * notifications to it.
      */
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'endpoint' => ['required', 'string', 'url', 'starts_with:https://', 'max:2000'],
-            'keys.p256dh' => ['required', 'string', 'max:120'],
-            'keys.auth' => ['required', 'string', 'max:60'],
+            'token' => ['required', 'string', 'max:2000', 'regex:/^[\w:-]+$/'],
         ]);
 
         PushSubscription::query()->updateOrCreate(
-            ['endpoint_hash' => PushSubscription::hashEndpoint($validated['endpoint'])],
+            ['token_hash' => PushSubscription::hashToken($validated['token'])],
             [
                 'user_id' => $request->user()->id,
-                'endpoint' => $validated['endpoint'],
-                'public_key' => $validated['keys']['p256dh'],
-                'auth_token' => $validated['keys']['auth'],
+                'token' => $validated['token'],
                 'user_agent' => Str::limit((string) $request->userAgent(), 250, ''),
             ],
         );
@@ -42,22 +39,28 @@ class PushSubscriptionController extends Controller
      */
     public function destroy(Request $request): Response
     {
-        $validated = $request->validate(['endpoint' => ['required', 'string', 'max:2000']]);
+        $validated = $request->validate(['token' => ['required', 'string', 'max:2000']]);
 
-        $request->user()->pushSubscriptions()->where('endpoint_hash', PushSubscription::hashEndpoint($validated['endpoint']))->delete();
+        $request->user()->pushSubscriptions()->where('token_hash', PushSubscription::hashToken($validated['token']))->delete();
 
         return response()->noContent();
     }
 
     /**
-     * Send a test notification to the user's devices.
+     * Send a test notification to the user's devices right away (not through the queue), and
+     * tell how many of them Firebase accepted it for.
      */
-    public function test(Request $request, WebPush $push): JsonResponse
+    public function test(Request $request, CloudMessaging $messaging): JsonResponse
     {
-        abort_unless($push->isConfigured(), 422, __('Push notifications are not configured.'));
+        abort_unless($messaging->isConfigured(), 422, __('Push notifications are not configured.'));
 
-        $request->user()->notify(new TestPushNotification);
+        $startedAt = now()->startOfSecond();
 
-        return response()->json(['devices' => $request->user()->pushSubscriptions()->count()]);
+        $request->user()->notifyNow(new TestPushNotification);
+
+        return response()->json([
+            'devices' => $request->user()->pushSubscriptions()->count(),
+            'delivered' => $request->user()->pushSubscriptions()->where('last_used_at', '>=', $startedAt)->count(),
+        ]);
     }
 }

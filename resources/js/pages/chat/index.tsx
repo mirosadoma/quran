@@ -12,7 +12,7 @@ import { useDates } from '@/lib/dates';
 import { http } from '@/lib/http';
 import { useTrans } from '@/lib/i18n';
 import { useLabels } from '@/lib/labels';
-import { joinPresence, leavePresence, watchHalaqa } from '@/lib/realtime';
+import { isRealtimeConnected, joinPresence, leavePresence, watchHalaqa } from '@/lib/realtime';
 import { cn, colorOf, formatBytes } from '@/lib/utils';
 import type { ChatMessage, ChatUser, Conversation } from '@/types';
 
@@ -216,15 +216,15 @@ function Thread({ conversation, initialMessages, initialHasMore, members, canMod
         }
     });
 
-    // Without realtime: poll for new messages every few seconds.
+    // Without realtime, or while the connection to Reverb is down: poll for new messages every few seconds.
     const lastId = items[items.length - 1]?.id ?? 0;
 
     useEffect(() => {
-        if (realtime.enabled) {
-            return;
-        }
-
         const timer = window.setInterval(() => {
+            if (realtime.enabled && isRealtimeConnected()) {
+                return;
+            }
+
             http.get<{ messages: ChatMessage[] }>(route('chat.messages', conversation.id), { params: { after: lastId } })
                 .then(({ data }) => {
                     if (data.messages.length > 0) {

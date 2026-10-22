@@ -1,13 +1,12 @@
 import axios from 'axios';
 import Echo from 'laravel-echo';
-import Pusher from 'pusher-js';
+// Reverb speaks the Pusher protocol: Echo connects to it with the pusher-js client (no Pusher service is used).
+import Pusher, { type ChannelAuthorizationCallback } from 'pusher-js';
 import type { ChatMessage, RealtimeConfig } from '@/types';
 
 export type RealtimeEvent = 'notification' | 'message' | 'message-deleted' | 'session' | 'exam';
 
-type AuthCallback = (error: Error | null, data: unknown) => void;
-
-let echo: Echo<'pusher'> | null = null;
+let echo: Echo<'reverb'> | null = null;
 let connectionKey: string | null = null;
 let userChannel: string | null = null;
 const halaqaChannels = new Set<number>();
@@ -18,7 +17,7 @@ const events = new EventTarget();
  * Authorize private/presence channels with axios, which always sends the
  * current XSRF cookie (the CSRF meta tag can be stale in an SPA).
  */
-function authorize({ socketId, channelName }: { socketId: string; channelName: string }, callback: AuthCallback): void {
+function authorize({ socketId, channelName }: { socketId: string; channelName: string }, callback: ChannelAuthorizationCallback): void {
     axios
         .post('/broadcasting/auth', { socket_id: socketId, channel_name: channelName }, { headers: { Accept: 'application/json' } })
         .then((response) => callback(null, response.data))
@@ -29,14 +28,14 @@ function emit(event: RealtimeEvent, payload: unknown): void {
     events.dispatchEvent(new CustomEvent(event, { detail: payload }));
 }
 
-export function getEcho(config: RealtimeConfig): Echo<'pusher'> | null {
+export function getEcho(config: RealtimeConfig): Echo<'reverb'> | null {
     if (!config.enabled || !config.key) {
         disconnectRealtime();
 
         return null;
     }
 
-    const key = [config.broadcaster, config.key, config.cluster, config.host, config.port, config.scheme].join('|');
+    const key = [config.key, config.host, config.port, config.scheme].join('|');
 
     if (echo && connectionKey === key) {
         return echo;
@@ -44,29 +43,30 @@ export function getEcho(config: RealtimeConfig): Echo<'pusher'> | null {
 
     disconnectRealtime();
 
-    const common = {
+    echo = new Echo({
+        broadcaster: 'reverb',
         key: config.key,
         Pusher,
-        channelAuthorization: { endpoint: '/broadcasting/auth', transport: 'ajax' as const, customHandler: authorize },
-    };
-
-    echo = (
-        config.broadcaster === 'reverb'
-            ? new Echo({
-                  ...common,
-                  broadcaster: 'reverb',
-                  wsHost: config.host,
-                  wsPort: config.port,
-                  wssPort: config.port,
-                  forceTLS: config.scheme === 'https',
-                  enabledTransports: ['ws', 'wss'],
-              })
-            : new Echo({ ...common, broadcaster: 'pusher', cluster: config.cluster, forceTLS: true })
-    ) as Echo<'pusher'>;
+        wsHost: config.host,
+        wsPort: config.port,
+        wssPort: config.port,
+        forceTLS: config.scheme === 'https',
+        enabledTransports: ['ws', 'wss'],
+        channelAuthorization: { endpoint: '/broadcasting/auth', transport: 'ajax', customHandler: authorize },
+    });
 
     connectionKey = key;
 
     return echo;
+}
+
+/**
+ * Whether the WebSocket to Reverb is open now (pages fall back to refreshing by themselves when it is not).
+ */
+export function isRealtimeConnected(): boolean {
+    const connector = echo?.connector as { pusher?: { connection?: { state?: string } } } | undefined;
+
+    return connector?.pusher?.connection?.state === 'connected';
 }
 
 export function disconnectRealtime(): void {

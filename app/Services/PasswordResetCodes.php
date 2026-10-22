@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Enums\CodePurpose;
+use App\Models\SentCode;
 use App\Models\User;
 use App\Notifications\PasswordResetCode;
 use Illuminate\Support\Carbon;
@@ -12,7 +14,8 @@ use Illuminate\Validation\ValidationException;
 /**
  * The codes (OTP) that let a user who forgot the password choose a new one: six digits sent by email, valid for
  * CODE_MINUTES, refused after MAX_ATTEMPTS wrong tries, and sent again at most every RESEND_SECONDS. One code per
- * email, kept hashed in the cache; a new code replaces the previous one.
+ * email, kept hashed in the cache; a new code replaces the previous one. A copy is also kept encrypted for two hours
+ * (SentCode) so the administration can give it when the email does not arrive.
  */
 class PasswordResetCodes
 {
@@ -67,7 +70,20 @@ class PasswordResetCodes
 
         $expiresAt = now()->addMinutes(self::CODE_MINUTES);
 
-        Cache::put($this->key('code', $email), ['hash' => Hash::make($code), 'attempts' => 0, 'expires_at' => $expiresAt->getTimestamp()], $expiresAt);
+        $sent = SentCode::query()->create([
+            'user_id' => $user->id,
+            'purpose' => CodePurpose::PasswordReset,
+            'channel' => 'email',
+            'destination' => $email,
+            'code' => $code,
+            'expires_at' => $expiresAt,
+        ]);
+
+        Cache::put(
+            $this->key('code', $email),
+            ['hash' => Hash::make($code), 'attempts' => 0, 'expires_at' => $expiresAt->getTimestamp(), 'sent_code_id' => $sent->id],
+            $expiresAt,
+        );
 
         $user->notify(new PasswordResetCode($code, self::CODE_MINUTES));
     }
@@ -91,6 +107,7 @@ class PasswordResetCodes
 
             if ($attempts >= self::MAX_ATTEMPTS) {
                 Cache::forget($key);
+                $this->markSentCode($entry, 'blocked_at');
 
                 throw ValidationException::withMessages(['code' => __('Too many wrong tries: ask for a new code.')]);
             }
@@ -102,6 +119,7 @@ class PasswordResetCodes
         }
 
         Cache::forget($key);
+        $this->markSentCode($entry, 'used_at');
 
         $user = $this->accountOf($email);
 
@@ -110,6 +128,18 @@ class PasswordResetCodes
         }
 
         return $user;
+    }
+
+    /**
+     * Note on the administration's copy that the code was used, or stopped working.
+     *
+     * @param  array{sent_code_id?: int}  $entry
+     */
+    protected function markSentCode(array $entry, string $column): void
+    {
+        if (isset($entry['sent_code_id'])) {
+            SentCode::query()->whereKey($entry['sent_code_id'])->update([$column => now()]);
+        }
     }
 
     protected function key(string $kind, string $email): string

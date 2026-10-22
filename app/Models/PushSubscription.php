@@ -10,10 +10,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
- * One browser or installed app of a user that receives push notifications.
+ * One browser or installed app of a user that receives push notifications, known by its
+ * Firebase Cloud Messaging token.
  */
-#[Fillable(['user_id', 'endpoint', 'endpoint_hash', 'public_key', 'auth_token', 'user_agent', 'last_used_at'])]
-#[Hidden(['public_key', 'auth_token'])]
+#[Fillable(['user_id', 'token', 'token_hash', 'user_agent', 'last_used_at'])]
+#[Hidden(['token'])]
 class PushSubscription extends Model
 {
     /** @use HasFactory<PushSubscriptionFactory> */
@@ -39,8 +40,8 @@ class PushSubscription extends Model
         return $this->belongsTo(User::class);
     }
 
-    public static function hashEndpoint(string $endpoint): string
+    public static function hashToken(string $token): string
     {
-        return hash('sha256', $endpoint);
+        return hash('sha256', $token);
     }
 }

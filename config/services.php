@@ -42,14 +42,18 @@ return [
     ],
 
     /*
-     * Push notifications on phones and desktops (Web Push, VAPID).
-     * Create the keys with: php artisan webpush:keys
+     * Push notifications on phones and desktops, sent through Firebase Cloud Messaging.
+     * From the Firebase console (Project settings):
+     * - credentials: Service accounts > Generate new private key (a secret JSON file, keep it out of git).
+     * - api_key, app_id, messaging_sender_id: General > Your apps > the web app (firebaseConfig).
+     * - vapid_key: Cloud Messaging > Web Push certificates > the key pair (public).
      */
-    'webpush' => [
-        'public_key' => env('VAPID_PUBLIC_KEY'),
-        'private_key' => env('VAPID_PRIVATE_KEY'),
-        // mailto: or https:// address the push services can contact (defaults to MAIL_FROM_ADDRESS).
-        'subject' => env('VAPID_SUBJECT'),
+    'firebase' => [
+        'credentials' => env('FIREBASE_CREDENTIALS', storage_path('app/private/firebase-credentials.json')),
+        'api_key' => env('FIREBASE_API_KEY'),
+        'app_id' => env('FIREBASE_APP_ID'),
+        'messaging_sender_id' => env('FIREBASE_MESSAGING_SENDER_ID'),
+        'vapid_key' => env('FIREBASE_VAPID_KEY'),
     ],
 
     'zoom' => [

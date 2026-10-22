@@ -45,10 +45,10 @@ class AuthenticatedSessionController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
-        $endpoint = $request->input('push_endpoint');
+        $token = $request->input('push_token');
 
-        if (is_string($endpoint) && $endpoint !== '') {
-            $request->user()?->pushSubscriptions()->where('endpoint_hash', PushSubscription::hashEndpoint($endpoint))->delete();
+        if (is_string($token) && $token !== '') {
+            $request->user()?->pushSubscriptions()->where('token_hash', PushSubscription::hashToken($token))->delete();
         }
 
         Auth::guard('web')->logout();

@@ -8,7 +8,8 @@ use App\Models\Setting;
 use App\Models\User;
 use App\Notifications\AddedToHalaqa;
 use App\Notifications\Channels\WebPushChannel;
-use App\Services\WebPush\WebPush;
+use Firebase\JWT\JWT;
+use Firebase\JWT\Key;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
@@ -19,12 +20,16 @@ class PushNotificationsTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected const FCM_URL = 'https://fcm.googleapis.com/v1/projects/wird-test/messages:send';
+
     /**
-     * The browser's side of a subscription: its P-256 key pair and auth secret.
+     * The RSA key pair of the fake service account, made once for the whole class.
      *
-     * @var array{public_key: string, private_key: string, auth: string}
+     * @var array{private: string, public: string}|null
      */
-    protected array $browser;
+    protected static ?array $serviceAccountKeys = null;
+
+    protected string $credentialsPath;
 
     protected User $student;
 
@@ -32,124 +37,146 @@ class PushNotificationsTest extends TestCase
     {
         parent::setUp();
 
-        $vapid = WebPush::generateKeys();
+        $this->credentialsPath = (string) tempnam(sys_get_temp_dir(), 'firebase');
+
+        file_put_contents($this->credentialsPath, (string) json_encode([
+            'type' => 'service_account',
+            'project_id' => 'wird-test',
+            'client_email' => 'firebase-adminsdk@wird-test.iam.gserviceaccount.com',
+            'private_key' => $this->serviceAccountKeys()['private'],
+        ]));
 
         config([
-            'services.webpush.public_key' => $vapid['public_key'],
-            'services.webpush.private_key' => $vapid['private_key'],
-            'services.webpush.subject' => 'mailto:admin@rattil.test',
+            'services.firebase.credentials' => $this->credentialsPath,
+            'services.firebase.api_key' => 'AIza-test-key',
+            'services.firebase.app_id' => '1:1234:web:abcd',
+            'services.firebase.messaging_sender_id' => '1234',
+            'services.firebase.vapid_key' => 'BHsTydwtUH5VBuGozCYu6P5aXhrT1nNhmON3d81vKVTjnuvMAqyq2S73DWBq-Xa4qs8APkdDQ2oGIhycrXfPPF0',
         ]);
 
-        $this->browser = [...WebPush::generateKeys(), 'auth' => WebPush::base64UrlEncode(random_bytes(16))];
+        Http::preventStrayRequests();
+
         $this->student = User::factory()->student()->create();
     }
 
-    protected function subscribe(User $user, string $endpoint = 'https://fcm.googleapis.com/fcm/send/device-1'): PushSubscription
+    protected function tearDown(): void
     {
-        return PushSubscription::factory()->for($user)->create([
-            'endpoint' => $endpoint,
-            'endpoint_hash' => PushSubscription::hashEndpoint($endpoint),
-            'public_key' => $this->browser['public_key'],
-            'auth_token' => $this->browser['auth'],
+        if (is_file($this->credentialsPath)) {
+            unlink($this->credentialsPath);
+        }
+
+        parent::tearDown();
+    }
+
+    /**
+     * On Windows PHP needs its bundled openssl.cnf to create keys.
+     *
+     * @return array{private: string, public: string}
+     */
+    protected function serviceAccountKeys(): array
+    {
+        if (static::$serviceAccountKeys === null) {
+            $options = ['private_key_bits' => 2048, 'private_key_type' => OPENSSL_KEYTYPE_RSA];
+            $config = dirname(PHP_BINARY).'/extras/ssl/openssl.cnf';
+
+            if (is_file($config)) {
+                $options['config'] = $config;
+            }
+
+            $key = openssl_pkey_new($options);
+            openssl_pkey_export($key, $private, null, $options);
+
+            static::$serviceAccountKeys = ['private' => $private, 'public' => openssl_pkey_get_details($key)['key']];
+        }
+
+        return static::$serviceAccountKeys;
+    }
+
+    /**
+     * @param  array<string, mixed>  $body
+     */
+    protected function fakeFirebase(int $status = 200, array $body = ['name' => 'projects/wird-test/messages/1']): void
+    {
+        Http::fake([
+            'oauth2.googleapis.com/token' => Http::response(['access_token' => 'google-access-token', 'expires_in' => 3599, 'token_type' => 'Bearer']),
+            'fcm.googleapis.com/*' => Http::response($body, $status),
         ]);
     }
 
     /**
-     * Decrypt a pushed message the way the browser does (RFC 8291).
-     *
      * @return array<string, mixed>
      */
-    protected function decrypt(string $body): array
+    protected function pushedPayload(Request $request): array
     {
-        $salt = substr($body, 0, 16);
-        $keyLength = ord($body[20]);
-        $senderKey = substr($body, 21, $keyLength);
-        $record = substr($body, 21 + $keyLength);
-
-        $browserPublic = WebPush::base64UrlDecode($this->browser['public_key']);
-        $private = openssl_pkey_get_private(WebPush::privateKeyPem(WebPush::base64UrlDecode($this->browser['private_key']), $browserPublic));
-        $shared = openssl_pkey_derive(openssl_pkey_get_public(WebPush::publicKeyPem($senderKey)), $private, 32);
-
-        $ikm = hash_hkdf('sha256', $shared, 32, "WebPush: info\0".$browserPublic.$senderKey, WebPush::base64UrlDecode($this->browser['auth']));
-        $key = hash_hkdf('sha256', $ikm, 16, "Content-Encoding: aes128gcm\0", $salt);
-        $nonce = hash_hkdf('sha256', $ikm, 12, "Content-Encoding: nonce\0", $salt);
-
-        $plaintext = openssl_decrypt(substr($record, 0, -16), 'aes-128-gcm', $key, OPENSSL_RAW_DATA, $nonce, substr($record, -16));
-
-        $this->assertIsString($plaintext, 'The message could not be decrypted with the browser keys.');
-
-        return json_decode(rtrim($plaintext, "\x02"), true);
+        return json_decode($request['message']['data']['payload'], true);
     }
 
-    /**
-     * The VAPID token is signed with the platform's private key and names the push service.
-     */
-    protected function assertSignedFor(Request $request): void
+    public function test_a_device_registers_its_token_and_belongs_to_whoever_signs_in_on_it(): void
     {
-        $this->assertMatchesRegularExpression('/^vapid t=([\w-]+)\.([\w-]+)\.([\w-]+), k=([\w-]+)$/', $request->header('Authorization')[0]);
-        preg_match('/^vapid t=([\w-]+)\.([\w-]+)\.([\w-]+), k=([\w-]+)$/', $request->header('Authorization')[0], $parts);
+        $token = 'dKq3Lw7xR0e:APA91bHk2-test_token';
 
-        [, $header, $claims, $signature, $key] = $parts;
-        $this->assertSame(config('services.webpush.public_key'), $key);
-        $this->assertSame('https://fcm.googleapis.com', json_decode(WebPush::base64UrlDecode($claims), true)['aud']);
-
-        $raw = WebPush::base64UrlDecode($signature);
-        $integer = fn (string $value): string => "\x02".chr(strlen($value = ltrim($value, "\0")) + (ord($value[0]) > 0x7F ? 1 : 0)).(ord($value[0]) > 0x7F ? "\0" : '').$value;
-        $der = $integer(substr($raw, 0, 32)).$integer(substr($raw, 32));
-        $der = "\x30".chr(strlen($der)).$der;
-
-        $this->assertSame(1, openssl_verify("{$header}.{$claims}", $der, WebPush::publicKeyPem(WebPush::base64UrlDecode($key)), OPENSSL_ALGO_SHA256));
-    }
-
-    public function test_a_device_subscribes_and_belongs_to_whoever_signs_in_on_it(): void
-    {
-        $subscription = ['endpoint' => 'https://fcm.googleapis.com/fcm/send/device-1', 'keys' => ['p256dh' => $this->browser['public_key'], 'auth' => $this->browser['auth']]];
-
-        $this->actingAs($this->student)->postJson(route('push-subscriptions.store'), $subscription)->assertCreated();
+        $this->actingAs($this->student)->postJson(route('push-subscriptions.store'), ['token' => $token])->assertCreated();
 
         $sister = User::factory()->student()->create();
-        $this->actingAs($sister)->postJson(route('push-subscriptions.store'), $subscription)->assertCreated();
+        $this->actingAs($sister)->postJson(route('push-subscriptions.store'), ['token' => $token])->assertCreated();
 
         $this->assertSame(1, PushSubscription::query()->count());
         $this->assertTrue(PushSubscription::query()->first()->user->is($sister));
+        $this->assertSame($token, PushSubscription::query()->first()->token);
     }
 
-    public function test_only_secure_push_addresses_are_accepted(): void
+    public function test_only_firebase_tokens_are_accepted(): void
     {
         $this->actingAs($this->student)
-            ->postJson(route('push-subscriptions.store'), ['endpoint' => 'http://push.example.com/1', 'keys' => ['p256dh' => $this->browser['public_key'], 'auth' => $this->browser['auth']]])
-            ->assertJsonValidationErrors('endpoint');
+            ->postJson(route('push-subscriptions.store'), ['token' => 'https://push.example.com/<script>'])
+            ->assertJsonValidationErrors('token');
     }
 
     public function test_a_device_unsubscribes_only_itself(): void
     {
-        $mine = $this->subscribe($this->student);
-        $other = $this->subscribe(User::factory()->student()->create(), 'https://fcm.googleapis.com/fcm/send/device-2');
+        $mine = PushSubscription::factory()->for($this->student)->create();
+        $other = PushSubscription::factory()->for(User::factory()->student())->create();
 
-        $this->actingAs($this->student)->deleteJson(route('push-subscriptions.destroy'), ['endpoint' => $other->endpoint])->assertNoContent();
-        $this->actingAs($this->student)->deleteJson(route('push-subscriptions.destroy'), ['endpoint' => $mine->endpoint])->assertNoContent();
+        $this->actingAs($this->student)->deleteJson(route('push-subscriptions.destroy'), ['token' => $other->token])->assertNoContent();
+        $this->actingAs($this->student)->deleteJson(route('push-subscriptions.destroy'), ['token' => $mine->token])->assertNoContent();
 
         $this->assertModelMissing($mine);
         $this->assertModelExists($other);
     }
 
-    public function test_notifications_are_pushed_encrypted_and_signed(): void
+    public function test_notifications_are_sent_through_firebase_with_the_service_account(): void
     {
-        Http::fake(['fcm.googleapis.com/*' => Http::response('', 201)]);
-        $subscription = $this->subscribe($this->student);
-        $halaqa = Halaqa::factory()->create();
+        $this->fakeFirebase();
+        $subscription = PushSubscription::factory()->for($this->student)->create();
 
-        $this->student->notify(new AddedToHalaqa($halaqa));
+        $this->student->notify(new AddedToHalaqa(Halaqa::factory()->create()));
 
         $notification = $this->student->notifications()->first();
 
-        Http::assertSentCount(1);
-        Http::assertSent(function (Request $request) use ($notification): bool {
-            $this->assertSame('aes128gcm', $request->header('Content-Encoding')[0]);
-            $this->assertSame('86400', $request->header('TTL')[0]);
-            $this->assertSignedFor($request);
+        Http::assertSent(function (Request $request): bool {
+            if ($request->url() !== 'https://oauth2.googleapis.com/token') {
+                return false;
+            }
 
-            $payload = $this->decrypt($request->body());
+            $this->assertSame('urn:ietf:params:oauth:grant-type:jwt-bearer', $request['grant_type']);
+
+            $claims = JWT::decode($request['assertion'], new Key($this->serviceAccountKeys()['public'], 'RS256'));
+            $this->assertSame('firebase-adminsdk@wird-test.iam.gserviceaccount.com', $claims->iss);
+            $this->assertSame('https://www.googleapis.com/auth/firebase.messaging', $claims->scope);
+
+            return true;
+        });
+
+        Http::assertSent(function (Request $request) use ($subscription, $notification): bool {
+            if ($request->url() !== self::FCM_URL) {
+                return false;
+            }
+
+            $this->assertSame('Bearer google-access-token', $request->header('Authorization')[0]);
+            $this->assertSame($subscription->token, $request['message']['token']);
+            $this->assertSame('86400', $request['message']['webpush']['headers']['TTL']);
+
+            $payload = $this->pushedPayload($request);
             $this->assertSame($notification->data['title'], $payload['title']);
             $this->assertSame(route('notifications.open', $notification->id, false), $payload['url']);
             $this->assertSame('rtl', $payload['dir']);
@@ -160,15 +187,43 @@ class PushNotificationsTest extends TestCase
         $this->assertNotNull($subscription->fresh()->last_used_at);
     }
 
-    public function test_devices_the_push_service_forgot_are_removed(): void
+    public function test_the_access_token_is_reused_between_notifications(): void
     {
-        Http::fake(['*' => Http::response('', 410)]);
-        $subscription = $this->subscribe($this->student);
+        $this->fakeFirebase();
+        PushSubscription::factory()->for($this->student)->count(2)->create();
+
+        $this->student->notify(new AddedToHalaqa(Halaqa::factory()->create()));
+        $this->student->notify(new AddedToHalaqa(Halaqa::factory()->create()));
+
+        Http::assertSentCount(5);
+        Http::assertSent(fn (Request $request): bool => $request->url() === 'https://oauth2.googleapis.com/token');
+        $this->assertCount(4, Http::recorded(fn (Request $request): bool => $request->url() === self::FCM_URL));
+    }
+
+    public function test_devices_firebase_forgot_are_removed(): void
+    {
+        $this->fakeFirebase(404, ['error' => [
+            'code' => 404,
+            'status' => 'NOT_FOUND',
+            'details' => [['@type' => 'type.googleapis.com/google.firebase.fcm.v1.FcmError', 'errorCode' => 'UNREGISTERED']],
+        ]]);
+        $subscription = PushSubscription::factory()->for($this->student)->create();
 
         $this->student->notify(new AddedToHalaqa(Halaqa::factory()->create()));
 
         $this->assertModelMissing($subscription);
         $this->assertSame(1, $this->student->notifications()->count());
+    }
+
+    public function test_devices_are_kept_when_firebase_fails_for_another_reason(): void
+    {
+        $this->fakeFirebase(503, ['error' => ['code' => 503, 'status' => 'UNAVAILABLE']]);
+        $subscription = PushSubscription::factory()->for($this->student)->create();
+
+        $this->student->notify(new AddedToHalaqa(Halaqa::factory()->create()));
+
+        $this->assertModelExists($subscription);
+        $this->assertNull($subscription->fresh()->last_used_at);
     }
 
     public function test_push_is_used_only_for_subscribed_users_when_it_is_turned_on(): void
@@ -177,37 +232,47 @@ class PushNotificationsTest extends TestCase
 
         $this->assertNotContains(WebPushChannel::class, $notification->via($this->student));
 
-        $this->subscribe($this->student);
+        PushSubscription::factory()->for($this->student)->create();
         $this->assertContains(WebPushChannel::class, $notification->via($this->student));
 
         Setting::put(['notify_push' => false]);
         $this->assertNotContains(WebPushChannel::class, $notification->via($this->student));
     }
 
-    public function test_the_test_notification_reaches_the_users_devices(): void
+    public function test_the_test_notification_reaches_the_users_devices_without_waiting_for_the_queue(): void
     {
-        Http::fake(['fcm.googleapis.com/*' => Http::response('', 201)]);
-        $this->subscribe($this->student);
+        config(['queue.default' => 'database']);
+        $this->fakeFirebase();
+        PushSubscription::factory()->for($this->student)->create();
 
-        $this->actingAs($this->student)->postJson(route('push-subscriptions.test'))->assertOk()->assertJson(['devices' => 1]);
+        $this->actingAs($this->student)->postJson(route('push-subscriptions.test'))->assertOk()->assertJson(['devices' => 1, 'delivered' => 1]);
 
-        Http::assertSent(fn (Request $request): bool => $this->decrypt($request->body())['url'] === route('dashboard', absolute: false));
+        Http::assertSent(fn (Request $request): bool => $request->url() === self::FCM_URL
+            && $this->pushedPayload($request)['url'] === route('dashboard', absolute: false));
         $this->assertSame(0, $this->student->notifications()->count());
     }
 
-    public function test_the_test_notification_needs_the_keys(): void
+    public function test_the_test_notification_tells_when_firebase_refused_it(): void
     {
-        config(['services.webpush.private_key' => null]);
+        $this->fakeFirebase(403, ['error' => ['code' => 403, 'status' => 'PERMISSION_DENIED']]);
+        PushSubscription::factory()->for($this->student)->create();
+
+        $this->actingAs($this->student)->postJson(route('push-subscriptions.test'))->assertOk()->assertJson(['devices' => 1, 'delivered' => 0]);
+    }
+
+    public function test_the_test_notification_needs_firebase(): void
+    {
+        unlink($this->credentialsPath);
 
         $this->actingAs($this->student)->postJson(route('push-subscriptions.test'))->assertStatus(422);
     }
 
     public function test_signing_out_stops_the_pushes_to_that_device_only(): void
     {
-        $phone = $this->subscribe($this->student);
-        $laptop = $this->subscribe($this->student, 'https://fcm.googleapis.com/fcm/send/laptop');
+        $phone = PushSubscription::factory()->for($this->student)->create();
+        $laptop = PushSubscription::factory()->for($this->student)->create();
 
-        $this->actingAs($this->student)->post(route('logout'), ['push_endpoint' => $phone->endpoint])->assertRedirect(route('login'));
+        $this->actingAs($this->student)->post(route('logout'), ['push_token' => $phone->token])->assertRedirect(route('login'));
 
         $this->assertGuest();
         $this->assertModelMissing($phone);
@@ -229,16 +294,22 @@ class PushNotificationsTest extends TestCase
             ->assertRedirect(route('notifications.index'));
     }
 
-    public function test_signed_in_users_get_the_key_to_subscribe(): void
+    public function test_signed_in_users_get_only_the_public_firebase_settings(): void
     {
         $this->actingAs($this->student)
             ->get(route('dashboard'))
-            ->assertInertia(fn (AssertableInertia $page) => $page->where('push.public_key', config('services.webpush.public_key')));
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->has('push.firebase', 5)
+                ->where('push.firebase.projectId', 'wird-test')
+                ->where('push.firebase.apiKey', 'AIza-test-key')
+                ->where('push.firebase.appId', '1:1234:web:abcd')
+                ->where('push.firebase.messagingSenderId', '1234')
+                ->where('push.firebase.vapidKey', config('services.firebase.vapid_key')));
 
         Setting::put(['notify_push' => false]);
 
         $this->actingAs($this->student)
             ->get(route('dashboard'))
-            ->assertInertia(fn (AssertableInertia $page) => $page->where('push.public_key', null));
+            ->assertInertia(fn (AssertableInertia $page) => $page->where('push.firebase', null));
     }
 }

@@ -5,12 +5,12 @@ namespace App\Http\Controllers;
 use App\Http\Requests\SettingsRequest;
 use App\Models\Setting;
 use App\Services\AppIcons;
+use App\Services\Firebase\CloudMessaging;
 use App\Services\MailSettings;
 use App\Services\Meetings\Drivers\JitsiDriver;
 use App\Services\Meetings\GoogleClient;
 use App\Services\Meetings\MeetingManager;
 use App\Services\Realtime;
-use App\Services\WebPush\WebPush;
 use App\Services\WhatsApp\WhatsAppClient;
 use DateTimeZone;
 use Illuminate\Http\RedirectResponse;
@@ -54,7 +54,7 @@ class SettingsController extends Controller
                 'realtime' => ['enabled' => Realtime::enabled(), 'driver' => Realtime::driver()],
                 'mail' => ['driver' => $mail->effective()['mailer'], 'from' => $mail->effective()['from']],
                 'whatsapp' => ['driver' => config('services.whatsapp.driver'), 'configured' => $this->whatsApp->isConfigured()],
-                'push' => ['configured' => app(WebPush::class)->isConfigured()],
+                'push' => ['configured' => app(CloudMessaging::class)->isConfigured()],
                 'queue' => config('queue.default'),
                 'webhooks' => [
                     'zoom' => route('webhooks.zoom'),

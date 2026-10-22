@@ -94,13 +94,15 @@ async function trim(cache) {
 }
 
 /*
- * Push notifications. The server sends JSON: { title, body, url, icon, badge, tag, lang, dir, sticky }.
+ * Push notifications, sent through Firebase Cloud Messaging as data messages:
+ * { data: { payload: '{ title, body, url, icon, badge, tag, lang, dir, sticky }' } }.
  */
 self.addEventListener('push', (event) => {
     let data = {};
 
     try {
-        data = event.data ? event.data.json() : {};
+        const message = event.data ? event.data.json() : {};
+        data = message.data?.payload ? JSON.parse(message.data.payload) : message;
     } catch {
         data = { body: event.data ? event.data.text() : '' };
     }

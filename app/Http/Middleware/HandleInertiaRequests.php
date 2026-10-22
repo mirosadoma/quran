@@ -8,10 +8,10 @@ use App\Models\AcademyJoinRequest;
 use App\Models\ContactMessage;
 use App\Models\Setting;
 use App\Services\ChatService;
+use App\Services\Firebase\CloudMessaging;
 use App\Services\MascotQuotes;
 use App\Services\Narrator;
 use App\Services\Realtime;
-use App\Services\WebPush\WebPush;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
@@ -80,7 +80,7 @@ class HandleInertiaRequests extends Middleware
                 ? ['academy' => $user->academy?->name]
                 : null,
             'push' => fn (): array => [
-                'public_key' => $user && Setting::get('notify_push') && app(WebPush::class)->isConfigured() ? app(WebPush::class)->publicKey() : null,
+                'firebase' => $user && Setting::get('notify_push') ? app(CloudMessaging::class)->webConfig() : null,
             ],
             'locale' => app()->getLocale(),
             // The texts of the companion (mascot): sent once per language, then kept by the browser.

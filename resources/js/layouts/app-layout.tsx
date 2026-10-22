@@ -10,6 +10,7 @@ import { Sidebar } from '@/components/layout/sidebar';
 import { Topbar } from '@/components/layout/topbar';
 import { TourMascot } from '@/components/mascot/tour-mascot';
 import { useDocumentDirection, useFlashToasts } from '@/hooks/use-app-shell';
+import { useFirebaseConfig } from '@/hooks/use-push';
 import { useRealtime } from '@/hooks/use-realtime';
 import { useTrans } from '@/lib/i18n';
 import { syncPushSubscription } from '@/lib/push';
@@ -28,7 +29,8 @@ interface AppLayoutProps extends Omit<PageHeaderProps, 'title'> {
 }
 
 export default function AppLayout({ title, heading, description, actions, back, hideHeader = false, wide = false, flush = false, children }: AppLayoutProps) {
-    const { auth, realtime, push } = usePage().props;
+    const { auth, realtime } = usePage().props;
+    const firebase = useFirebaseConfig();
     const { t } = useTrans();
     const [menuOpen, setMenuOpen] = useState(false);
 
@@ -43,9 +45,9 @@ export default function AppLayout({ title, heading, description, actions, back, 
 
     useEffect(() => {
         if (userId) {
-            void syncPushSubscription(push.public_key, userId);
+            void syncPushSubscription(firebase, userId);
         }
-    }, [push.public_key, userId]);
+    }, [firebase, userId]);
 
     useRealtime<{ title?: string; body?: string }>('notification', (notification) => {
         toast(notification.title ?? t('New notification'), { description: notification.body });

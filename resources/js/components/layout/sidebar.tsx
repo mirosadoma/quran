@@ -16,6 +16,7 @@ import {
     Compass,
     HandHeart,
     Inbox,
+    KeyRound,
     LayoutDashboard,
     Leaf,
     LogOut,
@@ -168,6 +169,7 @@ function useNavigation(): NavGroup[] {
             icon: Inbox,
             badge: counts?.contact_messages,
         });
+        management.push({ label: t('Verification codes'), href: route('sent-codes.index'), active: current('sent-codes.*'), icon: KeyRound });
     }
 
     if (!isStudent) {
