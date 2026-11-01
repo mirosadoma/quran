@@ -292,16 +292,15 @@ TRANSCRIBER_TOKEN=...      # اختياري: نفس القيمة في متغير
 
 ## 11. النشر على سيرفر (نسخة برودكشن)
 
-**السيرفر:** VPS بنظام Ubuntu 24.04، على الأقل 2 معالج و4 جيجا رام (نموذج فحص التشكيل يأخذ حوالي 1 جيجا وصوت القراءة حوالي 200 ميجا)، والأفضل 4 معالج و8 جيجا مع زيادة الطلاب. مثل Hetzner (CPX31) أو DigitalOcean. Laravel Cloud وحده لا يكفي لأن خدمة `transcriber/` (Node) تحتاج سيرفراً، فالأسهل سيرفر واحد لكل شيء. **HTTPS إجباري** (الميكروفون لا يعمل بدونه).
+**السيرفر:** VPS بنظام Ubuntu 26.04، على الأقل 2 معالج و4 جيجا رام (نموذج فحص التشكيل يأخذ حوالي 1 جيجا وصوت القراءة حوالي 200 ميجا)، والأفضل 4 معالج و8 جيجا مع زيادة الطلاب. مثل Hetzner (CPX31) أو DigitalOcean. Laravel Cloud وحده لا يكفي لأن خدمة `transcriber/` (Node) تحتاج سيرفراً، فالأسهل سيرفر واحد لكل شيء. **HTTPS إجباري** (الميكروفون لا يعمل بدونه).
 
 **1) الدومين:** سجل `A` للدومين و `www` يشير لعنوان IP السيرفر.
 
 **2) تجهيز السيرفر (مرة واحدة):**
 ```bash
 sudo apt update && sudo apt upgrade -y
-sudo apt install -y software-properties-common && sudo add-apt-repository -y ppa:ondrej/php   # Ubuntu 24.04 يأتي بـ PHP 8.3 فقط
 sudo apt install -y nginx mysql-server supervisor git unzip certbot python3-certbot-nginx \
-  php8.5-fpm php8.5-cli php8.5-mysql php8.5-mbstring php8.5-xml php8.5-curl php8.5-zip php8.5-gd php8.5-intl php8.5-bcmath   # OPcache مدمج في PHP 8.5
+  php8.5-fpm php8.5-cli php8.5-mysql php8.5-mbstring php8.5-xml php8.5-curl php8.5-zip php8.5-gd php8.5-intl php8.5-bcmath   # PHP 8.5 من مستودعات Ubuntu 26.04 مباشرة، وOPcache مدمج فيه
 curl -sS https://getcomposer.org/installer | sudo php -- --install-dir=/usr/local/bin --filename=composer
 curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash - && sudo apt install -y nodejs
 sudo mysql -e "CREATE DATABASE quran CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; CREATE USER 'quran'@'localhost' IDENTIFIED BY 'كلمة-سر-قوية'; GRANT ALL ON quran.* TO 'quran'@'localhost';"

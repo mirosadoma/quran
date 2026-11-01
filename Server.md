@@ -9,7 +9,7 @@
 
 ## ثانيًا: على السيرفر (مرة واحدة)
 
-**السيرفر:** Ubuntu 24.04 بذاكرة ٤ جيجا على الأقل، ودومين بيشاور عليه، وHTTPS إجباري، وإلا مش هيشتغل الميكروفون ولا الإشعارات ولا تثبيت التطبيق. أوامر تجهيز السيرفر (PHP 8.5، MySQL، Nginx، Node 22، Composer، Supervisor، Certbot) موجودة في PLAN.md بند ٢، ومعاها الذاكرة الاحتياطية (swap) وتسريع PHP (OPcache).
+**السيرفر:** Ubuntu 26.04 بذاكرة ٤ جيجا على الأقل، ودومين بيشاور عليه، وHTTPS إجباري، وإلا مش هيشتغل الميكروفون ولا الإشعارات ولا تثبيت التطبيق. أوامر تجهيز السيرفر (PHP 8.5، MySQL، Nginx، Node 22، Composer، Supervisor، Certbot) موجودة في PLAN.md بند ٢، ومعاها الذاكرة الاحتياطية (swap) وتسريع PHP (OPcache).
 
 **سحب المشروع وبناؤه:**
 
@@ -107,33 +107,58 @@ php artisan db:seed --class=ContentSeeder --force
 
 ولو غيرت أي حاجة في `.env` شغل `php artisan optimize` تاني.
 
-## خامسًا: نقل سيرفر شغال من PHP 8.3 لـ PHP 8.5 (مرة واحدة)
+## خامسًا: النقل لسيرفر جديد Ubuntu 26.04 (مرة واحدة)
 
-المشروع بقى محتاج PHP 8.5، والإصدارات الجديدة في `composer.lock` مش هتشتغل على 8.3. عشان كده الخطوات دي بالترتيب، والموقع بيقف دقيقة واحدة بس في النص.
+المشروع بقى محتاج PHP 8.5، والسيرفر القديم عليه PHP 8.3. **متعملش `git pull` للكود الجديد على السيرفر القديم**، لأن الموقع هيقع. السيرفر القديم يفضل شغال زي ما هو لحد آخر خطوة، والموقع بيقف بس الدقايق اللي بننقل فيها البيانات.
 
-**١) قبل الإيقاف (الموقع شغال عادي):** نزّل PHP 8.5 جنب 8.3 من غير ما تشيله، وانسخ ملف OPcache:
+**١) قبل النقل بيوم:** من لوحة الدومين قلّل الـ TTL بتاع سجلات `A` لـ 300 ثانية، عشان لما تغيّر العنوان الناس توصل للسيرفر الجديد بسرعة.
 
-```bash
-sudo apt install -y software-properties-common && sudo add-apt-repository -y ppa:ondrej/php && sudo apt update
-sudo apt install -y php8.5-fpm php8.5-cli php8.5-mysql php8.5-mbstring php8.5-xml php8.5-curl php8.5-zip php8.5-gd php8.5-intl php8.5-bcmath
-sudo cp /etc/php/8.3/fpm/conf.d/99-quran.ini /etc/php/8.5/fpm/conf.d/
-php8.5 -v
+**٢) جهّز السيرفر الجديد (القديم شغال عادي):** امشي على قسم "ثانيًا" كله، مع ٣ فروق:
+
+- **متعملش** `cp .env.example .env && php artisan key:generate`، ومتشغلش `db:seed`. بدلهم هتنسخ `.env` من السيرفر القديم (في الأمر اللي تحت)، عشان يفضل نفس `APP_KEY` ونفس مفاتيح Reverb وFirebase. غيّر فيه بس `DB_PASSWORD` لو قاعدة الجديد بكلمة سر تانية.
+- **شهادة HTTPS:** `certbot` مش هيشتغل على الجديد قبل ما الدومين يشاور عليه، فانسخ الشهادة وإعداد Nginx من القديم:
+
+  ```bash
+  # على القديم
+  sudo tar czf /root/move.tgz /etc/letsencrypt /etc/nginx/sites-available/quran /var/www/quran/.env
+  scp /root/move.tgz root@IP-الجديد:/root/
+  # على الجديد
+  sudo tar xzf /root/move.tgz -C /
+  sudo sed -i 's/php8.3-fpm.sock/php8.5-fpm.sock/' /etc/nginx/sites-available/quran
+  sudo ln -sf /etc/nginx/sites-available/quran /etc/nginx/sites-enabled/quran && sudo rm -f /etc/nginx/sites-enabled/default
+  sudo nginx -t && sudo systemctl reload nginx
+  ```
+
+- **متشغلش المجدول ولا طابور المهام لسه:** متضيفش سطر الكرون، ونفّذ `sudo supervisorctl stop quran-queue`. لو اشتغلوا على نسخة من البيانات الحقيقية هيبعتوا تذكيرات وإشعارات مكررة للطلاب.
+
+**٣) جرّب الجديد قبل التحويل:** خد نسخة تجريبية من البيانات بأوامر خطوة (٤) من غير `php artisan down` ومن غير `supervisorctl stop all` و`restart all` (عشان القديم يفضل شغال والطابور على الجديد يفضل واقف). وبعدين خلّي جهازك بس يفتح الدومين على السيرفر الجديد: افتح Notepad كـ Administrator، وضيف السطر ده في `C:\Windows\System32\drivers\etc\hosts`:
+
+```
+IP-الجديد  الدومين  www.الدومين
 ```
 
-لو كنت عدلت حاجة في `/etc/php/8.3/fpm/pool.d/www.conf` أو `php.ini` (زي `upload_max_filesize`)، اعمل نفس التعديل في ملفات `/etc/php/8.5/`. وبعدين `sudo systemctl restart php8.5-fpm`.
+جرب الدخول والمحادثة والتسميع والإشعار التجريبي. لما تخلص امسح السطر.
 
-**٢) النقل (الموقع واقف):**
+**٤) النقل (الموقع واقف):**
 
 ```bash
+# على القديم
 cd /var/www/quran && php artisan down --retry=60
-sudo update-alternatives --set php /usr/bin/php8.5   # الكرون وSupervisor وComposer يشتغلوا بـ 8.5
-git pull && composer install --no-dev -o
+sudo supervisorctl stop all
+mysqldump --single-transaction -u quran -p quran | gzip > /root/quran.sql.gz
+scp /root/quran.sql.gz root@IP-الجديد:/root/
+sudo rsync -a --delete /var/www/quran/storage/app/ root@IP-الجديد:/var/www/quran/storage/app/
+
+# على الجديد
+cd /var/www/quran
+gunzip -c /root/quran.sql.gz | mysql -u quran -p quran
 php artisan migrate --force && php artisan optimize
-sudo sed -i 's/php8.3-fpm.sock/php8.5-fpm.sock/' /etc/nginx/sites-available/quran && sudo nginx -t && sudo systemctl reload nginx
-php artisan queue:restart && php artisan reverb:restart && sudo supervisorctl restart all
-php artisan up
+sudo chown -R www-data:www-data storage bootstrap/cache transcriber
+sudo supervisorctl restart all
 ```
 
-**٣) اتأكد:** افتح الموقع وجرب الدخول والمحادثة والإشعار التجريبي، وتابع `tail -f storage/logs/laravel.log` شوية.
+بعدها ضيف سطر الكرون على الجديد (آخر قسم "ثانيًا")، وغيّر سجلات `A` للدومين و`www` لعنوان السيرفر الجديد. اللي لسه الدومين عنده بيشاور على القديم هيشوف صفحة الصيانة لحد ما يتحدّث، وده غالبًا دقايق.
 
-**لو حصلت مشكلة ورجعت للنسخة القديمة:** رجّع `php8.5-fpm.sock` لـ `php8.3-fpm.sock` في Nginx، و`sudo update-alternatives --set php /usr/bin/php8.3`، وارجع للكود القديم بـ `git checkout <الكومِت القديم> && composer install --no-dev -o && php artisan optimize`. سيب PHP 8.3 متسطب أسبوع، ولما تطمن شيله بـ `sudo apt purge 'php8.3-*'`.
+**٥) اتأكد:** افتح الموقع، وجرب الدخول والمحادثة والإشعار التجريبي، وتابع `tail -f storage/logs/laravel.log`. واتأكد إن التجديد التلقائي للشهادة شغال بـ `sudo certbot renew --dry-run`.
+
+**لو حصلت مشكلة:** رجّع سجلات `A` لعنوان القديم، وعلى القديم شغل `php artisan up && sudo supervisorctl start all`. أي بيانات اتعملت على الجديد بعد التحويل مش هتبقى على القديم، فقرّر بسرعة في أول ساعة. سيب السيرفر القديم أسبوع قبل ما تلغيه، ولما تطمن رجّع الـ TTL لقيمته العادية.
