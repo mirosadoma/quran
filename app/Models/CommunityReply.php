@@ -3,10 +3,12 @@
 namespace App\Models;
 
 use App\Enums\UserRole;
+use App\Observers\ContentCacheObserver;
 use App\Services\CommunitySearch;
 use Database\Factories\CommunityReplyFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -18,6 +20,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  *
  * search_body keeps the body reduced for searching; it is filled whenever the body is set.
  */
+#[ObservedBy(ContentCacheObserver::class)]
 #[Fillable(['community_post_id', 'user_id', 'body', 'is_answer'])]
 #[Hidden(['search_body'])]
 class CommunityReply extends Model

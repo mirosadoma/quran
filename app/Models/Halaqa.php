@@ -6,8 +6,10 @@ use App\Enums\HalaqaGender;
 use App\Enums\HalaqaLevel;
 use App\Enums\MeetingProvider;
 use App\Enums\UserRole;
+use App\Observers\ContentCacheObserver;
 use Database\Factories\HalaqaFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -23,6 +25,7 @@ use Illuminate\Support\Facades\DB;
     'academy_id', 'name', 'description', 'teacher_id', 'gender', 'level', 'capacity', 'schedule', 'duration_minutes',
     'timezone', 'meeting_provider', 'meeting_url', 'color', 'starts_on', 'is_active',
 ])]
+#[ObservedBy(ContentCacheObserver::class)]
 class Halaqa extends Model
 {
     /** @use HasFactory<HalaqaFactory> */

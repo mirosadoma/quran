@@ -28,9 +28,14 @@ interface CardCanvasProps {
     locale: Locale;
     className?: string;
     svgRef?: Ref<SVGSVGElement>;
-    /** Called with the drag distance in card units; enables dragging the photo. */
-    onPan?: (dx: number, dy: number) => void;
+    /** Called with the drag distance in card units and the photo dragged; enables dragging the photos. */
+    onPan?: (dx: number, dy: number, layer: CardLayer) => void;
+    /** Called with how much two fingers spread apart (above 1) or came together; enables pinching the photos. */
+    onZoom?: (factor: number, layer: CardLayer) => void;
 }
+
+/** The photo in the frame, or the second photo placed over the card. */
+export type CardLayer = 'photo' | 'overlay';
 
 const PATTERN_SIZE = 120;
 
@@ -59,7 +64,7 @@ const starField: [number, number, number][] = [
  * One greeting card as a self-contained SVG (no CSS classes inside), 1080 units wide.
  * The texts sit in a group marked data-layer="text" so the export can redraw them with the Amiri font.
  */
-export function CardCanvas({ template, design, logo = null, locale, className, svgRef, onPan }: CardCanvasProps) {
+export function CardCanvas({ template, design, logo = null, locale, className, svgRef, onPan, onZoom }: CardCanvasProps) {
     const id = `card-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
     const layout = cardLayout(template);
     const { width, height, frame } = layout;
@@ -70,30 +75,64 @@ export function CardCanvas({ template, design, logo = null, locale, className, s
     const cy = frame.y + frame.h / 2;
     const showLogo = design.showLogo && logo !== null;
     const lines = cardTextLines(template, design, showLogo ? logo.name : null, locale);
-    const drag = useRef<{ x: number; y: number } | null>(null);
-    const pannable = Boolean(onPan && design.photo);
+    // The fingers (or the mouse) on a photo: one drags it; two drag it by their middle and zoom it by their spread.
+    // The second photo moves when the first finger lands on it, otherwise the photo in the frame.
+    const pointers = useRef(new Map<number, { x: number; y: number }>());
+    const spread = useRef<number | null>(null);
+    const layer = useRef<CardLayer>('photo');
+    const pannable = Boolean(onPan && (design.photo || design.overlay));
+
+    const spreadOf = (): number | null => {
+        const [a, b] = [...pointers.current.values()];
+
+        return a && b ? Math.hypot(a.x - b.x, a.y - b.y) : null;
+    };
+
+    const middleOf = (): { x: number; y: number } => {
+        const points = [...pointers.current.values()].slice(0, 2);
+
+        return { x: points.reduce((sum, point) => sum + point.x, 0) / points.length, y: points.reduce((sum, point) => sum + point.y, 0) / points.length };
+    };
 
     const startDrag = (event: ReactPointerEvent<SVGSVGElement>) => {
         if (!pannable) {
             return;
         }
 
+        if (pointers.current.size === 0) {
+            const onOverlay = event.target instanceof Element && event.target.closest('[data-layer="overlay"]') !== null;
+
+            layer.current = onOverlay || !design.photo ? 'overlay' : 'photo';
+        }
+
         event.currentTarget.setPointerCapture(event.pointerId);
-        drag.current = { x: event.clientX, y: event.clientY };
+        pointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+        spread.current = spreadOf();
     };
 
     const moveDrag = (event: ReactPointerEvent<SVGSVGElement>) => {
-        if (!drag.current || !onPan) {
+        if (!pointers.current.has(event.pointerId) || !onPan) {
             return;
         }
 
         const scale = width / event.currentTarget.getBoundingClientRect().width;
-        onPan((event.clientX - drag.current.x) * scale, (event.clientY - drag.current.y) * scale);
-        drag.current = { x: event.clientX, y: event.clientY };
+        const before = middleOf();
+        pointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+        const after = middleOf();
+        onPan((after.x - before.x) * scale, (after.y - before.y) * scale, layer.current);
+
+        const now = spreadOf();
+
+        if (now !== null && spread.current) {
+            onZoom?.(now / spread.current, layer.current);
+        }
+
+        spread.current = now;
     };
 
-    const endDrag = () => {
-        drag.current = null;
+    const endDrag = (event: ReactPointerEvent<SVGSVGElement>) => {
+        pointers.current.delete(event.pointerId);
+        spread.current = spreadOf();
     };
 
     return (
@@ -149,11 +188,17 @@ export function CardCanvas({ template, design, logo = null, locale, className, s
 
             {has('stars') && <Stars width={width} height={height} color={palette.accent} />}
             {has('rays') && <Rays id={id} cx={cx} cy={cy} />}
+            {has('rosette') && <Rosette cx={cx} cy={cy} r={Math.max(frame.w, frame.h) * 0.74} color={palette.accent} />}
+            {has('confetti') && <Confetti width={width} height={height} palette={palette} />}
             {has('mosque') && <Mosque layout={layout} color={palette.accent} />}
+            {has('dunes') && <Dunes width={width} height={height} palette={palette} />}
 
             <g clipPath={`url(#${id}-clip)`}>
                 {design.photo ? (
-                    <g transform={`translate(${cx + design.offsetX} ${cy + design.offsetY}) scale(${design.zoom}) translate(${-cx} ${-cy})`}>
+                    <g
+                        transform={`translate(${cx + design.offsetX} ${cy + design.offsetY}) rotate(${design.rotation}) scale(${design.zoom}) translate(${-cx} ${-cy})`}
+                        opacity={design.opacity}
+                    >
                         <image href={design.photo} x={frame.x} y={frame.y} width={frame.w} height={frame.h} preserveAspectRatio="xMidYMid slice" />
                     </g>
                 ) : (
@@ -178,6 +223,8 @@ export function CardCanvas({ template, design, logo = null, locale, className, s
             {has('crescent') && <Crescent layout={layout} palette={palette} />}
             {has('kaaba') && template.frame !== 'none' && <Kaaba layout={layout} color={palette.accent} />}
             {has('ribbon') && <Ribbon layout={layout} palette={palette} />}
+            {has('bunting') && <Bunting width={width} inset={layout.inset} palette={palette} />}
+            {has('flowers') && <Flowers width={width} height={height} palette={palette} />}
 
             {has('border') && (
                 <g fill="none" stroke={palette.accent}>
@@ -191,6 +238,24 @@ export function CardCanvas({ template, design, logo = null, locale, className, s
                     <use href={`#${id}-corner`} transform={`translate(${width} 0) scale(-1 1)`} />
                     <use href={`#${id}-corner`} transform={`translate(0 ${height}) scale(1 -1)`} />
                     <use href={`#${id}-corner`} transform={`translate(${width} ${height}) scale(-1 -1)`} />
+                </g>
+            )}
+
+            {design.overlay && (
+                <g
+                    data-layer="overlay"
+                    transform={`translate(${design.overlay.x} ${design.overlay.y}) rotate(${design.overlay.rotation})`}
+                    opacity={design.overlay.opacity}
+                    style={pannable ? { cursor: 'move' } : undefined}
+                >
+                    <image
+                        href={design.overlay.photo}
+                        x={-design.overlay.size / 2}
+                        y={-design.overlay.size / 2}
+                        width={design.overlay.size}
+                        height={design.overlay.size}
+                        preserveAspectRatio="xMidYMid meet"
+                    />
                 </g>
             )}
 
@@ -392,6 +457,151 @@ function Ribbon({ layout, palette }: { layout: CardLayout; palette: CardPalette 
             strokeLinejoin="round"
         />
     );
+}
+
+/**
+ * A large faint eight-pointed rosette behind the photo: two stars, the second turned, inside two rings.
+ */
+function Rosette({ cx, cy, r, color }: { cx: number; cy: number; r: number; color: string }) {
+    return (
+        <g fill="none" stroke={color} opacity={0.22} strokeLinejoin="round">
+            <path d={polygonPath(starPoints(cx, cy, r))} strokeWidth={4} />
+            <path d={polygonPath(starPoints(cx, cy, r * 0.86))} strokeWidth={2} transform={`rotate(22.5 ${cx} ${cy})`} />
+            <circle cx={cx} cy={cy} r={r * 1.04} strokeWidth={2} />
+            <circle cx={cx} cy={cy} r={r * 1.1} strokeWidth={1} strokeDasharray="6 10" />
+        </g>
+    );
+}
+
+/** Confetti around the edges: x and y as fractions of the card, the turn, the shape (0 strip, 1 dot) and the colour. */
+const confettiField: [number, number, number, number, number][] = [
+    [0.07, 0.05, 20, 0, 0],
+    [0.16, 0.1, -35, 1, 1],
+    [0.25, 0.04, 60, 0, 2],
+    [0.36, 0.08, -15, 0, 3],
+    [0.47, 0.03, 40, 1, 0],
+    [0.58, 0.09, -50, 0, 1],
+    [0.68, 0.04, 15, 0, 2],
+    [0.78, 0.1, -25, 1, 3],
+    [0.88, 0.05, 70, 0, 0],
+    [0.95, 0.13, -10, 0, 1],
+    [0.04, 0.2, 45, 0, 2],
+    [0.09, 0.33, -60, 1, 3],
+    [0.05, 0.47, 25, 0, 0],
+    [0.1, 0.6, -30, 0, 1],
+    [0.94, 0.25, 35, 1, 2],
+    [0.9, 0.38, -45, 0, 3],
+    [0.95, 0.5, 10, 0, 0],
+    [0.91, 0.62, -70, 1, 1],
+];
+
+function Confetti({ width, height, palette }: { width: number; height: number; palette: CardPalette }) {
+    const colors = [palette.accent, palette.title, palette.text, palette.primary];
+
+    return (
+        <g opacity={0.85}>
+            {confettiField.map(([fx, fy, turn, shape, color], index) => {
+                const x = Math.round(fx * width);
+                const y = Math.round(fy * height);
+
+                return shape === 1 ? (
+                    <circle key={index} cx={x} cy={y} r={7} fill={colors[color]} />
+                ) : (
+                    <rect key={index} x={x - 13} y={y - 5} width={26} height={10} rx={3} fill={colors[color]} transform={`rotate(${turn} ${x} ${y})`} />
+                );
+            })}
+        </g>
+    );
+}
+
+/**
+ * Two rows of dunes (or waves) at the bottom of the card, faint behind the texts.
+ */
+function Dunes({ width, height, palette }: { width: number; height: number; palette: CardPalette }) {
+    const top = height - 300;
+
+    return (
+        <g>
+            <path
+                d={`M0 ${top + 60}C${width * 0.2} ${top} ${width * 0.35} ${top + 110} ${width * 0.55} ${top + 70}S${width * 0.85} ${top + 10} ${width} ${top + 50}V${height}H0Z`}
+                fill={palette.primary}
+                opacity={0.22}
+            />
+            <path
+                d={`M0 ${top + 150}C${width * 0.25} ${top + 90} ${width * 0.45} ${top + 190} ${width * 0.7} ${top + 140}S${width * 0.92} ${top + 110} ${width} ${top + 140}V${height}H0Z`}
+                fill={palette.accent}
+                opacity={0.14}
+            />
+        </g>
+    );
+}
+
+/**
+ * Pennants hung on a string across the top of the card, in the colours of the design.
+ */
+function Bunting({ width, inset, palette }: { width: number; inset: number; palette: CardPalette }) {
+    const colors = [palette.accent, palette.title, palette.primary];
+    const left = inset + 10;
+    const right = width - inset - 10;
+    const top = inset + 14;
+    const sag = 26;
+    const count = 13;
+    const y = (t: number) => top + sag * 4 * t * (1 - t);
+
+    return (
+        <g>
+            <path d={`M${left} ${top}Q${width / 2} ${top + sag * 2} ${right} ${top}`} fill="none" stroke={palette.accent} strokeWidth={3} />
+            {Array.from({ length: count }, (_, index) => {
+                const t = (index + 0.5) / count;
+                const x = left + (right - left) * t;
+                const at = y(t);
+                const half = 24;
+
+                return (
+                    <path
+                        key={index}
+                        d={`M${round(x - half)} ${round(at)}L${round(x + half)} ${round(at)}L${round(x)} ${round(at + 54)}Z`}
+                        fill={colors[index % colors.length]}
+                        stroke={palette.background}
+                        strokeWidth={2}
+                        opacity={0.95}
+                    />
+                );
+            })}
+        </g>
+    );
+}
+
+/**
+ * A flower with eight petals, two leaves and a heart, set in each corner of the card.
+ */
+function Flowers({ width, height, palette }: { width: number; height: number; palette: CardPalette }) {
+    const flower = (x: number, y: number, size: number, turn: number) => (
+        <g transform={`translate(${x} ${y}) rotate(${turn}) scale(${size})`}>
+            <path d="M0 0C-30 -10 -60 10 -70 40C-40 40 -15 25 0 0Z" fill={palette.primary} opacity={0.85} />
+            <path d="M0 0C10 30 40 55 70 55C65 25 40 5 0 0Z" fill={palette.primary} opacity={0.7} />
+            {Array.from({ length: 8 }, (_, index) => (
+                <ellipse key={index} cx={0} cy={-26} rx={13} ry={26} fill={palette.title} opacity={0.75} transform={`rotate(${index * 45})`} />
+            ))}
+            <circle r={13} fill={palette.accent} />
+            <circle r={6} fill={palette.background} opacity={0.6} />
+        </g>
+    );
+
+    return (
+        <g>
+            {flower(98, 98, 1, 0)}
+            {flower(width - 98, 98, 1, 90)}
+            {flower(98, height - 98, 0.9, -90)}
+            {flower(width - 98, height - 98, 0.9, 180)}
+            {flower(190, 70, 0.45, 30)}
+            {flower(width - 190, 70, 0.45, -30)}
+        </g>
+    );
+}
+
+function round(value: number): number {
+    return Math.round(value * 10) / 10;
 }
 
 function Logo({ id, layout, locale, logo }: { id: string; layout: CardLayout; locale: Locale; logo: CardLogo }) {

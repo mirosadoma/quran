@@ -17,6 +17,11 @@ use Illuminate\Http\Request;
  */
 class ExamDayController extends Controller
 {
+    /**
+     * The most time given to a day at once.
+     */
+    public const MAX_EXTENSION_MINUTES = 480;
+
     public function __construct(
         protected ExamDayLifecycle $lifecycle,
         protected ExamDistributor $distributor,
@@ -53,6 +58,28 @@ class ExamDayController extends Controller
         }
 
         $this->toast(__('The examining has started. Every student was sent to the hall of their examiner.'));
+
+        return back();
+    }
+
+    /**
+     * Give the day more time before it closes by itself.
+     */
+    public function extend(Request $request, ExamDay $day): RedirectResponse
+    {
+        $this->authorize('update', $day->exam);
+
+        $validated = $request->validate(['minutes' => ['required', 'integer', 'min:1', 'max:'.self::MAX_EXTENSION_MINUTES]]);
+
+        try {
+            $this->lifecycle->extend($day, (int) $validated['minutes']);
+        } catch (ExamException $exception) {
+            $this->toast($exception->getMessage(), 'error');
+
+            return back();
+        }
+
+        $this->toast(__('The exam day was given :minutes more minutes.', ['minutes' => $validated['minutes']]));
 
         return back();
     }

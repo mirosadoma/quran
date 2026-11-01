@@ -1,4 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
+import { useLayoutEffect, useRef } from 'react';
 import {
     AlarmClock,
     Bell,
@@ -202,6 +203,18 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
     const labels = useLabels();
     const groups = useNavigation();
     const user = auth.user;
+    const nav = useRef<HTMLElement>(null);
+    const activeHref = groups.flatMap((group) => group.items).find((item) => item.active)?.href;
+
+    // The link of the page open is brought into view (the sidebar is made again on every page, scrolled to the top).
+    useLayoutEffect(() => {
+        const list = nav.current;
+        const link = list?.querySelector<HTMLElement>('[aria-current="page"]');
+
+        if (list && link) {
+            list.scrollTop = link.offsetTop - (list.clientHeight - link.offsetHeight) / 2;
+        }
+    }, [activeHref]);
 
     return (
         <div className="relative flex h-full flex-col overflow-hidden bg-sidebar text-sidebar-ink">
@@ -214,7 +227,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
                 </Link>
             </div>
 
-            <nav className="relative flex-1 space-y-4 overflow-y-auto px-3 py-1">
+            <nav ref={nav} className="relative flex-1 space-y-4 overflow-y-auto px-3 py-1">
                 {groups.map((group) => (
                     <div key={group.label}>
                         <p className="mb-1 px-3 text-xs font-semibold tracking-wide text-sidebar-ink/45">{group.label}</p>
@@ -225,6 +238,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
                                         href={item.href}
                                         onClick={onNavigate}
                                         prefetch
+                                        aria-current={item.active ? 'page' : undefined}
                                         className={cn(
                                             'group relative flex items-center gap-3 rounded-xl px-3 py-2 text-base font-medium text-[15px] transition',
                                             item.active

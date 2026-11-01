@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Models\Setting;
 use App\Services\AppIcons;
+use App\Services\ContentCache;
 use App\Services\MailSettings;
 use App\Services\Quran;
 use Illuminate\Contracts\View\View as ViewContract;
@@ -22,6 +23,7 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(Quran::class);
+        $this->app->singleton(ContentCache::class);
     }
 
     /**

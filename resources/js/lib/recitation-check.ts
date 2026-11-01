@@ -101,6 +101,11 @@ export interface FollowOptions {
     prompts?: number[];
     /** Score over all the expected words (the ones not reached count as not said). */
     whole?: boolean;
+    /**
+     * A mistake does not stop the recitation: it is kept and the reader goes on to the next word (a whole
+     * surah read through, its mistakes marked as it goes). Otherwise it stops at the word until said right.
+     */
+    continuous?: boolean;
 }
 
 export interface WordMark {
@@ -483,6 +488,39 @@ function runAt(expected: ExpectedWord[], position: number, heard: string[], at: 
 }
 
 /**
+ * Where the reader went back to, when the words heard from `at` are earlier words of the recitation
+ * said again (at least two in a row): the place with the most of them, the nearest one on a tie.
+ */
+function rereadFrom(expected: ExpectedWord[], start: number, cursor: number, heard: string[], at: number): number | null {
+    let best: number | null = null;
+    let longest = 1;
+
+    for (let position = cursor - 1; position >= start; position--) {
+        const run = runAt(expected, position, heard, at);
+
+        if (run > longest) {
+            best = position;
+            longest = run;
+        }
+    }
+
+    return best;
+}
+
+/**
+ * The nearest place from `from` on where the words heard from `at` follow each other (at least two).
+ */
+function aheadFrom(expected: ExpectedWord[], from: number, heard: string[], at: number): number | null {
+    for (let position = from; position < expected.length; position++) {
+        if (runAt(expected, position, heard, at) >= 2) {
+            return position;
+        }
+    }
+
+    return null;
+}
+
+/**
  * Where the reader starts, from the word heard at `at`: the first word (or a try at it), or, when
  * the reader may start anywhere, two words in a row of the ayahs.
  */
@@ -552,6 +590,29 @@ export function followRecitation(expected: ExpectedWord[], final: string, interi
         return mistake;
     };
 
+    /**
+     * A word with a mistake said again (reading straight through, the reader went back): said right, its
+     * mistake is gone; said wrong, the last try is its mistake. A word already right is not judged again,
+     * so a word misheard while going back adds no mistake.
+     */
+    const reread = (position: number, kind: MistakeKind | null, at: number): void => {
+        if (!kinds.has(position)) {
+            return;
+        }
+
+        if (kind === null) {
+            kinds.delete(position);
+            spoken[at].status = 'right';
+
+            return;
+        }
+
+        const mistake = mistakeAt(expected, position, kind, heard[at]);
+        mistakes.push(mistake);
+        kinds.set(position, kind);
+        spoken[at] = { ...spoken[at], status: 'wrong', kind, letters: mistake.heardLetters, vowels: mistake.heardVowels };
+    };
+
     for (let at = 0; at <= heard.length && expected.length > 0; at++) {
         // A word prompted before this word was heard: it is counted as a mistake and the reader goes on.
         while (prompt < prompts.length && prompts[prompt] <= at) {
@@ -566,7 +627,8 @@ export function followRecitation(expected: ExpectedWord[], final: string, interi
             prompt++;
         }
 
-        if (at === heard.length || (start !== null && cursor >= expected.length)) {
+        // Reading straight through, the words said after the last one may still be earlier words said again.
+        if (at === heard.length || (!options.continuous && start !== null && cursor >= expected.length)) {
             break;
         }
 
@@ -580,6 +642,40 @@ export function followRecitation(expected: ExpectedWord[], final: string, interi
             start = cursor = begin;
         }
 
+        // Going back over the words: the next one said again with wrong letters.
+        if (options.continuous && again !== null && again + 1 < cursor) {
+            const word = comparable(heard[at]);
+            const target = expected[again + 1].plain;
+
+            if (word !== target && likeness(target, word) >= LETTER_SIMILAR) {
+                again++;
+                spoken[at].status = 'again';
+                reread(again, 'letter', at);
+
+                continue;
+            }
+        }
+
+        if (cursor >= expected.length) {
+            const word = comparable(heard[at]);
+            let back: number | null = again !== null && again + 1 < cursor && expected[again + 1].plain === word ? again + 1 : rereadFrom(expected, start, cursor, heard, at);
+
+            for (let position = cursor - 1; back === null && position >= Math.max(start, cursor - REWIND); position--) {
+                back = expected[position].plain === word ? position : null;
+            }
+
+            again = back;
+
+            if (back === null) {
+                spoken[at].status = 'other';
+            } else {
+                spoken[at].status = 'again';
+                reread(back, options.vowels && compareAt(expected, back, heard[at]).vowels.length > 0 ? 'vowel' : null, at);
+            }
+
+            continue;
+        }
+
         const step = judge({ expected, start, cursor, again, blocked: blocked !== null, vowels: !!options.vowels }, heard, at);
 
         if (step.type === 'accept') {
@@ -591,6 +687,47 @@ export function followRecitation(expected: ExpectedWord[], final: string, interi
         } else if (step.type === 'again') {
             spoken[at].status = 'again';
             again = step.at;
+
+            if (options.continuous) {
+                reread(step.at, options.vowels && compareAt(expected, step.at, heard[at]).vowels.length > 0 ? 'vowel' : null, at);
+            }
+        } else if (step.type === 'mistake' && options.continuous) {
+            const word = comparable(heard[at]);
+            const next = at + 1 < heard.length ? comparable(heard[at + 1]) : null;
+            // One of the next words said as it is written: the words before it were left out (even when it
+            // looks like the word to say, الرحمن / الرحيم).
+            // (A vowel mistake is the word to say, said with another vowel: never a word further on.)
+            let said = step.kind === 'vowel' ? -1 : expected.findIndex((later, position) => position > cursor && position <= cursor + LOOKAHEAD && later.plain === word);
+            const back = step.kind !== 'skipped' && said === -1 ? rereadFrom(expected, start, cursor, heard, at) : null;
+            again = null;
+
+            // Further on (an ayah left out, or a passage that could not be heard): the next words said
+            // follow each other there.
+            if (said === -1 && back === null && step.kind !== 'vowel') {
+                said = aheadFrom(expected, cursor + LOOKAHEAD + 1, heard, at) ?? -1;
+            }
+
+            if (back !== null) {
+                // An earlier ayah read again (further back than a word or two): its words are said again.
+                spoken[at].status = 'again';
+                again = back;
+                reread(back, options.vowels && compareAt(expected, back, heard[at]).vowels.length > 0 ? 'vowel' : null, at);
+            } else if (said !== -1) {
+                // The words left out are kept as mistakes, and the reader goes on from the word said.
+                for (; cursor < said; cursor++) {
+                    fail(cursor, 'skipped', null);
+                }
+
+                spoken[at].status = 'right';
+                cursor++;
+            } else if (step.kind === 'word' && next !== null && matchAt(expected, cursor, next, null) !== null) {
+                // The right word comes next: this one was a word too many (often misheard), not a mistake.
+                spoken[at].status = 'wrong';
+            } else {
+                const mistake = fail(cursor, step.kind, heard[at]);
+                spoken[at] = { ...spoken[at], status: 'wrong', kind: step.kind, letters: mistake.heardLetters, vowels: mistake.heardVowels };
+                cursor++;
+            }
         } else if (step.type === 'mistake') {
             blocked = fail(cursor, step.kind, heard[at]);
             spoken[at] = { ...spoken[at], status: 'wrong', kind: step.kind, letters: blocked.heardLetters, vowels: blocked.heardVowels };
@@ -721,6 +858,24 @@ export function wordMarks(expected: ExpectedWord[], progress: RecitationProgress
     }
 
     return marks;
+}
+
+/**
+ * The mushaf words (as "ayahId:index") said right in this recitation, with no mistake left on them: a
+ * mistake kept from before on one of them was corrected.
+ */
+export function wordsSaidRight(expected: ExpectedWord[], progress: RecitationProgress): Set<string> {
+    const right = new Set<string>();
+    const wrong = new Set<string>();
+
+    for (let position = progress.start ?? progress.cursor; position < progress.cursor; position++) {
+        const key = `${expected[position].ayahId}:${expected[position].index}`;
+        (progress.kinds.has(position) ? wrong : right).add(key);
+    }
+
+    wrong.forEach((key) => right.delete(key));
+
+    return right;
 }
 
 /**

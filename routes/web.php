@@ -239,6 +239,7 @@ Route::middleware(['auth', 'active'])->prefix('admin')->group(function () {
     Route::middleware('role:admin,manager')->group(function () {
         Route::post('exam-days/{day}/open', [ExamDayController::class, 'open'])->name('exams.days.open');
         Route::post('exam-days/{day}/start-examining', [ExamDayController::class, 'startExamining'])->name('exams.days.start-examining');
+        Route::post('exam-days/{day}/extend', [ExamDayController::class, 'extend'])->name('exams.days.extend');
         Route::post('exam-days/{day}/close', [ExamDayController::class, 'close'])->name('exams.days.close');
         Route::post('exam-days/{day}/sync-students', [ExamDayController::class, 'syncStudents'])->name('exams.days.sync-students');
         Route::post('exam-days/{day}/auto-assign', [ExamDayController::class, 'autoAssign'])->name('exams.days.auto-assign');

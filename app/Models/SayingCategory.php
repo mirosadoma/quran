@@ -2,8 +2,10 @@
 
 namespace App\Models;
 
+use App\Observers\ContentCacheObserver;
 use Database\Factories\SayingCategoryFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -13,6 +15,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 /**
  * A group of transmitted sayings: hadith qudsi, words of the Prophet ﷺ, of the companions, of the scholars, or stories.
  */
+#[ObservedBy(ContentCacheObserver::class)]
 #[Fillable(['slug', 'name', 'description', 'icon', 'color', 'sort_order'])]
 class SayingCategory extends Model
 {

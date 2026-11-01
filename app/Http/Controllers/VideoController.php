@@ -8,6 +8,7 @@ use App\Models\Halaqa;
 use App\Models\User;
 use App\Models\Video;
 use App\Notifications\VideoPublished;
+use App\Services\ContentCache;
 use App\Services\Notifier;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
@@ -17,7 +18,7 @@ use Inertia\Response;
 
 class VideoController extends Controller
 {
-    public function __construct(protected Notifier $notifier) {}
+    public function __construct(protected Notifier $notifier, protected ContentCache $cache) {}
 
     /**
      * The video library.
@@ -28,15 +29,23 @@ class VideoController extends Controller
         $halaqa = $request->query('halaqa');
         $search = trim((string) $request->query('search'));
 
-        $videos = Video::query()
+        $halaqat = $user->accessibleHalaqat()->orderBy('name')->get(['id', 'name', 'color']);
+        $query = fn (): Builder => Video::query()
             ->visibleTo($user)
             ->with(['halaqa', 'creator'])
             ->when($halaqa === 'general', fn (Builder $query) => $query->whereNull('halaqa_id'))
             ->when(is_numeric($halaqa), fn (Builder $query) => $query->where('halaqa_id', (int) $halaqa))
             ->when($search !== '', fn (Builder $query) => $query->where('title', 'like', "%{$search}%"))
-            ->latest()
-            ->paginate(12)
-            ->withQueryString();
+            ->latest();
+        // Kept for each reader (what they may see and manage) until a video changes; a search asks the database.
+        $reader = implode('.', [$user->id, $user->role->value, $user->academy_id ?? 0, md5($halaqat->pluck('id')->sort()->implode(','))]);
+        $videos = $search === ''
+            ? $this->cache->page('videos', "library.{$reader}.".match (true) {
+                $halaqa === 'general' => 'general',
+                is_numeric($halaqa) => (int) $halaqa,
+                default => 'all',
+            }, $request, 12, $query, fn (Video $video): array => (new VideoResource($video))->resolve())
+            : $this->paginated($query()->paginate(12)->withQueryString(), VideoResource::class);
 
         $openVideo = $request->integer('video')
             ? Video::query()->visibleTo($user)->with(['halaqa', 'creator'])->find($request->integer('video'))
@@ -49,9 +58,9 @@ class VideoController extends Controller
         };
 
         return Inertia::render('videos/index', [
-            'videos' => $this->paginated($videos, VideoResource::class),
+            'videos' => $videos,
             'filters' => ['halaqa' => $halaqa, 'search' => $search],
-            'halaqat' => $user->accessibleHalaqat()->orderBy('name')->get(['id', 'name', 'color']),
+            'halaqat' => $halaqat,
             'manageableHalaqat' => $manageable,
             'openVideo' => $openVideo ? (new VideoResource($openVideo))->resolve() : null,
             'can' => [

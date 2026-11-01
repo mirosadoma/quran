@@ -2,8 +2,10 @@
 
 namespace App\Models;
 
+use App\Observers\ContentCacheObserver;
 use Database\Factories\PrayerGuideFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -13,6 +15,7 @@ use Illuminate\Database\Eloquent\Model;
  * How to pray one of the voluntary prayers (qiyam, duha, the rawatib, istikhara...):
  * its facts, steps, virtues and du'as, in Arabic and English.
  */
+#[ObservedBy(ContentCacheObserver::class)]
 #[Fillable(['slug', 'sort_order', 'icon', 'tone', 'reminder', 'title', 'title_en', 'summary', 'summary_en', 'facts', 'steps', 'virtues', 'duas'])]
 class PrayerGuide extends Model
 {

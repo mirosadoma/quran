@@ -78,7 +78,7 @@ const TemplateTile = memo(function TemplateTile({ template, name, selected, onSe
     const design = useMemo<CardDesign>(() => {
         const texts = localizedTemplateTexts(template, locale);
 
-        return { title: texts.title, name, message: texts.message, photo: null, zoom: 1, offsetX: 0, offsetY: 0, showLogo: false };
+        return { title: texts.title, name, message: texts.message, photo: null, zoom: 1, offsetX: 0, offsetY: 0, rotation: 0, opacity: 1, overlay: null, showLogo: false };
     }, [template, name, locale]);
 
     return (

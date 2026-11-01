@@ -53,6 +53,24 @@ return [
             'lock_path' => storage_path('framework/cache/data'),
         ],
 
+        // The mushaf (pages, surahs, index, tafsir) kept forever on the disk, so reading it never asks
+        // the database. Only the mushaf is kept here: App\Services\Mushaf::flush() empties the whole store.
+        'mushaf' => [
+            'driver' => env('MUSHAF_CACHE_DRIVER', 'file'),
+            'path' => storage_path('framework/cache/mushaf'),
+            'lock_path' => storage_path('framework/cache/mushaf'),
+            'serialize' => false,
+        ],
+
+        // The content read far more than it changes (hadith, adhkar, videos, the community…), kept forever
+        // on the disk in a folder per section: App\Services\ContentCache empties a section when it changes.
+        'content' => [
+            'driver' => env('CONTENT_CACHE_DRIVER', 'file'),
+            'path' => storage_path('framework/cache/content'),
+            'lock_path' => storage_path('framework/cache/content'),
+            'serialize' => false,
+        ],
+
         'storage' => [
             'driver' => 'storage',
             'disk' => env('CACHE_STORAGE_DISK'),

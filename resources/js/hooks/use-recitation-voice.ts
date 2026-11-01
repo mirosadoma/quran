@@ -109,6 +109,8 @@ interface FollowSettings {
     freeStart?: boolean;
     /** Score over all the words (one ayah for children). */
     whole?: boolean;
+    /** A mistake is kept and the reader goes on, instead of stopping at the word (see followRecitation). */
+    continuous?: boolean;
     /** Every new mistake, to keep it for the session. */
     onMistake: (mistake: RecitationMistake) => void;
 }
@@ -147,17 +149,35 @@ function spokenWords(expected: ExpectedWord[], progress: RecitationProgress, sho
  * Listens to the reader and follows the recitation word by word (see followRecitation): each new
  * mistake is reported and announced with a short alert sound (unless the reader turned it off).
  */
-export function useRecitationFollow({ expected, vowelCheckAvailable, freeStart = false, whole = false, onMistake }: FollowSettings) {
+export function useRecitationFollow({ expected, vowelCheckAvailable, freeStart = false, whole = false, continuous = false, onMistake }: FollowSettings) {
     const voice = useRecitationVoice(vowelCheckAvailable);
     const [prompts, setPrompts] = useState<number[]>([]);
     const [sound, setSoundState] = useState<boolean>(() => readPreference('recitation.sound', true));
     const progress = useMemo(
-        () => followRecitation(expected, voice.final, voice.interim, { freeStart, whole, vowels: voice.checksVowels, prompts }),
-        [expected, voice.final, voice.interim, freeStart, whole, voice.checksVowels, prompts],
+        () => followRecitation(expected, voice.final, voice.interim, { freeStart, whole, continuous, vowels: voice.checksVowels, prompts }),
+        [expected, voice.final, voice.interim, freeStart, whole, continuous, voice.checksVowels, prompts],
     );
-    const quick = useMemo(() => (voice.fast ? followRecitation(expected, voice.fast, '', { freeStart, whole }) : null), [expected, voice.fast, freeStart, whole]);
-    const shown = useMemo(() => aheadWith(progress, quick), [progress, quick]);
-    const spoken = useMemo(() => spokenWords(expected, progress, shown, voice.interim), [expected, progress, shown, voice.interim]);
+    // Reading straight through, the words of the passage still being read are judged too, to show their
+    // mistakes as the reader goes (all but the last word, which may not be over). Only the final text of
+    // a passage keeps a mistake: the list and the alert wait for it.
+    const live = useMemo(() => {
+        const words = heardWords(voice.interim);
+
+        if (!continuous || words.length < 2) {
+            return null;
+        }
+
+        const last = words.pop() ?? '';
+
+        return { progress: followRecitation(expected, `${voice.final} ${words.join(' ')}`, last, { freeStart, whole, continuous, vowels: voice.checksVowels, prompts }), last };
+    }, [expected, voice.final, voice.interim, freeStart, whole, continuous, voice.checksVowels, prompts]);
+    const judged = live?.progress ?? progress;
+    const quick = useMemo(
+        () => (voice.fast ? followRecitation(expected, voice.fast, '', { freeStart, whole, continuous }) : null),
+        [expected, voice.fast, freeStart, whole, continuous],
+    );
+    const shown = useMemo(() => aheadWith(judged, quick), [judged, quick]);
+    const spoken = useMemo(() => spokenWords(expected, judged, shown, live ? live.last : voice.interim), [expected, judged, shown, live, voice.interim]);
     const reported = useRef({ expected, count: 0 });
     const onMistakeRef = useRef(onMistake);
     const soundRef = useRef(sound);

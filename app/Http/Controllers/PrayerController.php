@@ -5,12 +5,15 @@ namespace App\Http\Controllers;
 use App\Enums\PrayerReminderType;
 use App\Models\PrayerGuide;
 use App\Models\PrayerReminder;
+use App\Services\ContentCache;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class PrayerController extends Controller
 {
+    public function __construct(protected ContentCache $cache) {}
+
     /**
      * The voluntary prayers: how to pray them, their virtues and du'as, and the daily reminders.
      */
@@ -24,14 +27,17 @@ class PrayerController extends Controller
      */
     public function show(Request $request, string $slug): Response
     {
-        $guide = PrayerGuide::query()->where('slug', $slug)->first();
+        $guide = $this->cache->remember('prayers', "guide.{$slug}", fn (): ?array => PrayerGuide::query()->where('slug', $slug)->first()?->toGuideArray());
 
         abort_if($guide === null, 404);
 
         return $this->page($request, $guide);
     }
 
-    protected function page(Request $request, ?PrayerGuide $guide): Response
+    /**
+     * @param  array<string, mixed>|null  $guide
+     */
+    protected function page(Request $request, ?array $guide): Response
     {
         $saved = $request->user()->prayerReminders()->get()->keyBy(fn (PrayerReminder $reminder): string => $reminder->prayer->value);
 
@@ -43,9 +49,9 @@ class PrayerController extends Controller
         ]);
 
         return Inertia::render('prayers/index', [
-            'slug' => $guide?->slug,
-            'guides' => PrayerGuide::query()->ordered()->get()->map(fn (PrayerGuide $item): array => $item->toSummaryArray())->values(),
-            'guide' => $guide?->toGuideArray(),
+            'slug' => $guide['slug'] ?? null,
+            'guides' => $this->cache->remember('prayers', 'guides', fn (): array => PrayerGuide::query()->ordered()->get()->map(fn (PrayerGuide $item): array => $item->toSummaryArray())->values()->all()),
+            'guide' => $guide,
             'reminders' => $reminders,
             'timezone' => $request->user()->displayTimezone(),
         ]);

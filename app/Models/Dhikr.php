@@ -2,8 +2,10 @@
 
 namespace App\Models;
 
+use App\Observers\ContentCacheObserver;
 use Database\Factories\DhikrFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -14,6 +16,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 /**
  * One dhikr or dua with how many times to repeat it and its source.
  */
+#[ObservedBy(ContentCacheObserver::class)]
 #[Table('adhkar')]
 #[Fillable(['dhikr_category_id', 'title', 'text', 'repeat', 'reference', 'virtue', 'sort_order', 'is_active'])]
 class Dhikr extends Model

@@ -35,6 +35,13 @@ function emptyDay(startTime: string, date = ''): DayInput {
 }
 
 /**
+ * A key that stays with a day while new days are added on top: its id, or its place from the end.
+ */
+function dayKey(id: number | null, index: number, count: number): string {
+    return id !== null ? `saved-${id}` : `new-${count - index}`;
+}
+
+/**
  * Planning an exam: its title and maximum score, then its days, each with its time and its
  * halaqat. Examiners and the distribution of students are set on the exam page afterwards.
  */
@@ -49,7 +56,8 @@ export default function ExamForm({ exam, halaqat, academies, academyId, timezone
         title: exam?.title ?? '',
         description: exam?.description ?? '',
         max_score: exam?.max_score ?? defaults.max_score,
-        days: exam?.days?.length ? exam.days : [emptyDay(defaults.start_time)],
+        // The newest day first, like the days added on top.
+        days: exam?.days?.length ? [...exam.days].reverse() : [emptyDay(defaults.start_time)],
     });
 
     const errors = form.errors as Record<string, string | undefined>;
@@ -74,15 +82,18 @@ export default function ExamForm({ exam, halaqat, academies, academyId, timezone
         );
     };
 
+    // A new day goes on top of the list (no scrolling past the others to fill it in), the day after the
+    // latest one, at its start time; its date field takes the focus.
     const addDay = () => {
-        const last = form.data.days[form.data.days.length - 1];
-        const nextDate = last?.date ? new Date(`${last.date}T12:00:00Z`) : null;
+        const latest = form.data.days.reduce<DayInput | undefined>((found, day) => (day.date && (!found?.date || day.date > found.date) ? day : found), undefined);
+        const nextDate = latest?.date ? new Date(`${latest.date}T12:00:00Z`) : null;
 
         if (nextDate) {
             nextDate.setUTCDate(nextDate.getUTCDate() + 1);
         }
 
-        form.setData('days', [...form.data.days, { ...emptyDay(last?.start_time ?? defaults.start_time, nextDate ? nextDate.toISOString().slice(0, 10) : ''), halaqa_ids: [] }]);
+        form.setData('days', [{ ...emptyDay(latest?.start_time ?? defaults.start_time, nextDate ? nextDate.toISOString().slice(0, 10) : ''), halaqa_ids: [] }, ...form.data.days]);
+        requestAnimationFrame(() => document.getElementById(`day-date-${dayKey(null, 0, form.data.days.length + 1)}`)?.focus());
     };
 
     const removeDay = (index: number) => {
@@ -162,13 +173,14 @@ export default function ExamForm({ exam, halaqat, academies, academyId, timezone
                             {errors.days && <p className="text-xs font-medium text-rose-600">{errors.days}</p>}
                             {form.data.days.map((day, index) => {
                                 const locked = day.status !== undefined && day.status !== 'scheduled';
+                                const key = dayKey(day.id, index, form.data.days.length);
 
                                 return (
-                                    <div key={day.id ?? `new-${index}`} className={cn('rounded-2xl border p-4 sm:p-5', locked ? 'border-line bg-surface-muted/50' : 'border-line')}>
+                                    <div key={key} className={cn('rounded-2xl border p-4 sm:p-5', locked ? 'border-line bg-surface-muted/50' : 'border-line')}>
                                         <div className="mb-4 flex items-center justify-between gap-3">
                                             <h4 className="flex items-center gap-2 font-bold text-ink">
-                                                <span className="flex size-7 items-center justify-center rounded-full bg-primary-600 text-xs text-white">{index + 1}</span>
-                                                {day.date ? dates.day(day.date, { weekday: 'long' }) : t('Day :number', { number: index + 1 })}
+                                                <span className="flex size-7 items-center justify-center rounded-full bg-primary-600 text-xs text-white">{form.data.days.length - index}</span>
+                                                {day.date ? dates.day(day.date, { weekday: 'long' }) : t('Day :number', { number: form.data.days.length - index })}
                                                 {locked && (
                                                     <span className="inline-flex items-center gap-1 text-xs font-normal text-muted">
                                                         <Lock className="size-3.5" />
@@ -185,7 +197,7 @@ export default function ExamForm({ exam, halaqat, academies, academyId, timezone
 
                                         <div className="grid gap-4 sm:grid-cols-3">
                                             <Field label={t('Date')} error={errors[`days.${index}.date`]} required>
-                                                <Input type="date" value={day.date} disabled={locked} onChange={(event) => updateDay(index, { date: event.target.value })} aria-invalid={!!errors[`days.${index}.date`]} />
+                                                <Input id={`day-date-${key}`} type="date" value={day.date} disabled={locked} onChange={(event) => updateDay(index, { date: event.target.value })} aria-invalid={!!errors[`days.${index}.date`]} />
                                             </Field>
                                             <Field label={t('Start time')} error={errors[`days.${index}.start_time`]} required>
                                                 <Input type="time" value={day.start_time} disabled={locked} onChange={(event) => updateDay(index, { start_time: event.target.value })} />

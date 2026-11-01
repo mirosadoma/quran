@@ -1,9 +1,10 @@
 import { router, usePage, usePoll } from '@inertiajs/react';
-import { Award, CalendarDays, ClipboardList, Clock, DoorOpen, Lock, Pencil, Play, Trash, UserRound, Users } from 'lucide-react';
+import { Award, CalendarDays, ChevronDown, ChevronsDownUp, ChevronsUpDown, ClipboardList, Clock, DoorOpen, Lock, Pencil, Play, Trash, UserRound, Users } from 'lucide-react';
 import { useState } from 'react';
 import { Distribution } from '@/components/exams/distribution';
 import { ExamDayStatusBadge, ExamEntryStatusBadge, ExamStateBadge } from '@/components/exams/exam-badges';
 import { ExaminersPanel } from '@/components/exams/examiners-panel';
+import { ExtendDayButton } from '@/components/exams/extend-day';
 import { ResultChip } from '@/components/exams/result-chip';
 import { ResultsTable } from '@/components/exams/results-table';
 import { Countdown } from '@/components/session/countdown';
@@ -36,6 +37,10 @@ export default function ExamShow({ exam, missingStudents, teachers, can }: ExamS
     const [deleting, setDeleting] = useState(false);
     const days = exam.days ?? [];
     const live = days.some((day) => day.status === 'live');
+    // The days are folded, but for the last one (the only one when there is one).
+    const [expanded, setExpanded] = useState<Record<number, boolean>>(() => (days.length > 0 ? { [days[days.length - 1].id]: true } : {}));
+    const allExpanded = days.every((day) => expanded[day.id]);
+    const toggleAll = () => setExpanded(allExpanded ? {} : Object.fromEntries(days.map((day) => [day.id, true])));
 
     useRealtime('exam', () => router.reload());
     usePoll(15_000, {}, { autoStart: live && !realtime.enabled });
@@ -93,9 +98,27 @@ export default function ExamShow({ exam, missingStudents, teachers, can }: ExamS
             {days.length === 0 ? (
                 <Card className="p-8 text-center text-sm text-muted">{t('No days scheduled yet')}</Card>
             ) : (
-                <div className="space-y-6">
+                <div className="space-y-4">
+                    {days.length > 1 && (
+                        <div className="flex justify-end">
+                            <Button variant="ghost" size="sm" onClick={toggleAll} aria-expanded={allExpanded}>
+                                {allExpanded ? <ChevronsDownUp /> : <ChevronsUpDown />}
+                                {allExpanded ? t('Collapse all the days') : t('Show all the days')}
+                            </Button>
+                        </div>
+                    )}
                     {days.map((day, index) => (
-                        <DayPanel key={day.id} day={day} index={index} exam={exam} missingStudents={missingStudents[String(day.id)] ?? []} teachers={teachers} can={can} />
+                        <DayPanel
+                            key={day.id}
+                            day={day}
+                            index={index}
+                            exam={exam}
+                            missingStudents={missingStudents[String(day.id)] ?? []}
+                            teachers={teachers}
+                            can={can}
+                            expanded={!!expanded[day.id]}
+                            onToggle={() => setExpanded((current) => ({ ...current, [day.id]: !current[day.id] }))}
+                        />
                     ))}
                 </div>
             )}
@@ -119,9 +142,12 @@ interface DayPanelProps {
     missingStudents: { id: number; name: string }[];
     teachers: { id: number; name: string; role: string }[];
     can: ExamShowProps['can'];
+    /** Folded, the day shows its header only (with its actions). */
+    expanded: boolean;
+    onToggle: () => void;
 }
 
-function DayPanel({ day, index, exam, missingStudents, teachers, can }: DayPanelProps) {
+function DayPanel({ day, index, exam, missingStudents, teachers, can, expanded, onToggle }: DayPanelProps) {
     const { t } = useTrans();
     const dates = useDates();
     const { auth } = usePage().props;
@@ -153,11 +179,18 @@ function DayPanel({ day, index, exam, missingStudents, teachers, can }: DayPanel
             <CardHeader
                 icon={CalendarDays}
                 title={
-                    <span className="flex flex-wrap items-center gap-2">
+                    <button
+                        type="button"
+                        onClick={onToggle}
+                        aria-expanded={expanded}
+                        title={expanded ? t('Hide the details') : t('Show the details')}
+                        className="flex flex-wrap items-center gap-2 text-start"
+                    >
+                        <ChevronDown className={cn('size-5 shrink-0 text-muted transition', !expanded && 'ltr:-rotate-90 rtl:rotate-90')} />
                         {t('Day :number', { number: index + 1 })}: {dates.dateTime(day.starts_at)}
                         <ExamDayStatusBadge status={day.status} />
                         {day.status === 'live' && <Badge tone="gold">{day.phase === 'opening' ? t('Opening word') : t('Examining')}</Badge>}
-                    </span>
+                    </button>
                 }
                 description={
                     <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
@@ -194,6 +227,7 @@ function DayPanel({ day, index, exam, missingStudents, teachers, can }: DayPanel
                                 {t('Start the examining')}
                             </Button>
                         )}
+                        {can.update && day.status !== 'closed' && <ExtendDayButton day={day} />}
                         {can.update && day.status === 'live' && (
                             <Button variant="danger-soft" onClick={() => setClosing(true)}>
                                 <Lock />
@@ -204,7 +238,7 @@ function DayPanel({ day, index, exam, missingStudents, teachers, can }: DayPanel
                 }
             />
 
-            {isStudent ? (
+            {!expanded ? null : isStudent ? (
                 <StudentView day={day} maxScore={exam.max_score} />
             ) : (
                 <>

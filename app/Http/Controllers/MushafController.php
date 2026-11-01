@@ -35,7 +35,7 @@ class MushafController extends Controller
         return Inertia::render('mushaf/index', [
             'initialPage' => min(max($page, 1), Mushaf::PAGES),
             'focusAyahId' => $focus?->id,
-            'ready' => Ayah::query()->exists(),
+            'ready' => $this->mushaf->ready(),
             'index' => $this->mushaf->index(),
             'reciters' => Reciter::query()->available()->get()->map(fn (Reciter $reciter): array => $reciter->toPlayerArray())->values(),
             'tafsirs' => collect(TafsirEdition::cases())

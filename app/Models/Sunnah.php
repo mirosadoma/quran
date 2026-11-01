@@ -2,8 +2,10 @@
 
 namespace App\Models;
 
+use App\Observers\ContentCacheObserver;
 use Database\Factories\SunnahFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -11,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 /**
  * One neglected sunnah: how it is done, the hadith it comes from and where that hadith is narrated.
  */
+#[ObservedBy(ContentCacheObserver::class)]
 #[Fillable(['sunnah_category_id', 'slug', 'title', 'text', 'evidence', 'source', 'hadith_collection', 'hadith_number', 'sort_order'])]
 class Sunnah extends Model
 {

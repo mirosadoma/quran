@@ -2,8 +2,10 @@
 
 namespace App\Models;
 
+use App\Observers\ContentCacheObserver;
 use Database\Factories\SunnahCategoryFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -13,6 +15,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 /**
  * A group of neglected sunnahs, e.g. the sunnahs of eating or of sleep.
  */
+#[ObservedBy(ContentCacheObserver::class)]
 #[Fillable(['slug', 'name', 'description', 'icon', 'color', 'sort_order'])]
 class SunnahCategory extends Model
 {

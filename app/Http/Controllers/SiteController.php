@@ -13,6 +13,7 @@ use App\Models\Halaqa;
 use App\Models\Tafsir;
 use App\Models\User;
 use App\Models\Video;
+use App\Services\ContentCache;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -57,19 +58,21 @@ class SiteController extends Controller
         return Inertia::render('site/contact');
     }
 
-    public function videos(Request $request): Response
+    public function videos(Request $request, ContentCache $cache): Response
     {
         $search = trim((string) $request->query('search'));
 
-        $videos = Video::query()
+        $query = fn (): Builder => Video::query()
             ->public()
             ->when($search !== '', fn (Builder $query) => $query->where('title', 'like', "%{$search}%"))
-            ->latest()
-            ->paginate(12)
-            ->withQueryString();
+            ->latest();
+        // The same for every visitor: kept until a video changes; a search asks the database.
+        $videos = $search === '' && $request->user() === null
+            ? $cache->page('videos', 'public', $request, 12, $query, fn (Video $video): array => (new VideoResource($video))->resolve())
+            : $this->paginated($query()->paginate(12)->withQueryString(), VideoResource::class);
 
         return Inertia::render('site/videos', [
-            'videos' => $this->paginated($videos, VideoResource::class),
+            'videos' => $videos,
             'filters' => ['search' => $search],
         ]);
     }

@@ -2,9 +2,11 @@
 
 namespace App\Models;
 
+use App\Observers\ContentCacheObserver;
 use App\Services\Mushaf;
 use Database\Factories\HadithFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Attributes\WithoutTimestamps;
 use Illuminate\Database\Eloquent\Builder;
@@ -15,6 +17,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 /**
  * One hadith of a collection, with its number, its book and its grade (when the collection is not one of the two Sahihs).
  */
+#[ObservedBy(ContentCacheObserver::class)]
 #[Fillable(['hadith_collection_id', 'hadith_book_id', 'number', 'part', 'text', 'text_search', 'grade', 'grader'])]
 #[WithoutTimestamps]
 class Hadith extends Model

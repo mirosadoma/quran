@@ -5,9 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Hadith;
 use App\Models\HadithBook;
 use App\Models\HadithCollection;
+use App\Services\ContentCache;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -19,23 +19,35 @@ class HadithController extends Controller
     public const PER_PAGE = 20;
 
     /**
+     * The books, their hadiths and the hadith of the day are kept until the hadith change (see
+     * ContentCache); a search always asks the database.
+     */
+    public function __construct(protected ContentCache $cache) {}
+
+    /**
      * The books of hadith with the hadith of the day, or the hadiths of all the books matching a search.
      */
     public function index(Request $request): Response
     {
         $search = $this->search($request);
         $words = Hadith::searchWords($search);
-        $collections = HadithCollection::query()->ordered()->withCount(['books', 'hadiths'])->get();
-        $scope = is_string($request->query('collection')) ? $collections->firstWhere('slug', $request->query('collection')) : null;
+        $collections = $this->cache->remember('hadith', 'collections', fn (): array => HadithCollection::query()
+            ->ordered()
+            ->withCount(['books', 'hadiths'])
+            ->get()
+            ->map(fn (HadithCollection $collection): array => $collection->toPageArray())
+            ->values()
+            ->all());
+        $scope = is_string($request->query('collection')) ? collect($collections)->firstWhere('slug', $request->query('collection')) : null;
 
         return Inertia::render('hadith/index', [
-            'collections' => $collections->map(fn (HadithCollection $collection): array => $collection->toPageArray())->values(),
-            'filters' => ['search' => $search, 'collection' => $scope?->slug],
+            'collections' => $collections,
+            'filters' => ['search' => $search, 'collection' => $scope['slug'] ?? null],
             // The words the results were matched on, to highlight them.
             'highlight' => $words,
             'results' => $words === [] ? null : Hadith::query()
                 ->with(['collection', 'book'])
-                ->when($scope, fn (Builder $query) => $query->where('hadith_collection_id', $scope->id))
+                ->when($scope, fn (Builder $query) => $query->where('hadith_collection_id', $scope['id']))
                 ->matching($words)
                 ->orderBy('hadith_collection_id')
                 ->ordered()
@@ -53,32 +65,37 @@ class HadithController extends Controller
     {
         $search = $this->search($request);
         $words = Hadith::searchWords($search);
-        $books = $collection->books()->withCount('hadiths')->get();
+        $books = $this->cache->remember('hadith', "collection.{$collection->id}.books", fn (): array => $collection->books()
+            ->withCount('hadiths')
+            ->get()
+            ->map(fn (HadithBook $item): array => $item->toPageArray())
+            ->values()
+            ->all());
         $book = null;
 
         if ($request->filled('book')) {
-            $book = $books->firstWhere('number', $request->integer('book'));
+            $book = collect($books)->firstWhere('number', $request->integer('book'));
 
             abort_if($book === null, 404);
         } elseif ($words === []) {
-            $book = $books->first();
+            $book = $books[0] ?? null;
         }
 
-        $hadiths = Hadith::query()
+        $query = fn (): Builder => Hadith::query()
             ->with('book')
             ->where('hadith_collection_id', $collection->id)
             ->when($words !== [], fn (Builder $query) => $query->matching($words))
-            ->when($book, fn (Builder $query) => $query->where('hadith_book_id', $book->id))
-            ->ordered()
-            ->paginate(self::PER_PAGE)
-            ->withQueryString()
-            ->through(fn (Hadith $hadith): array => $hadith->toPageArray());
+            ->when($book, fn (Builder $query) => $query->where('hadith_book_id', $book['id']))
+            ->ordered();
+        $hadiths = $words === []
+            ? $this->cache->page('hadith', "collection.{$collection->id}.book.".($book['id'] ?? 0), $request, self::PER_PAGE, $query, fn (Hadith $hadith): array => $hadith->toPageArray())
+            : $query()->paginate(self::PER_PAGE)->withQueryString()->through(fn (Hadith $hadith): array => $hadith->toPageArray());
 
         return Inertia::render('hadith/show', [
-            'collection' => $collection->loadCount(['books', 'hadiths'])->toPageArray(),
-            'books' => $books->map(fn (HadithBook $item): array => $item->toPageArray())->values(),
-            'book' => $book?->toPageArray(),
-            'filters' => ['search' => $search, 'book' => $book?->number],
+            'collection' => $this->collectionArray($collection),
+            'books' => $books,
+            'book' => $book,
+            'filters' => ['search' => $search, 'book' => $book['number'] ?? null],
             'highlight' => $words,
             'hadiths' => $hadiths,
         ]);
@@ -89,27 +106,44 @@ class HadithController extends Controller
      */
     public function hadith(HadithCollection $collection, int $number): Response
     {
-        $hadiths = Hadith::query()
-            ->with('book')
-            ->where('hadith_collection_id', $collection->id)
-            ->where('number', $number)
-            ->ordered()
-            ->get();
+        $page = $this->cache->remember('hadith', "collection.{$collection->id}.hadith.{$number}", function () use ($collection, $number): ?array {
+            $hadiths = Hadith::query()
+                ->with('book')
+                ->where('hadith_collection_id', $collection->id)
+                ->where('number', $number)
+                ->ordered()
+                ->get();
 
-        abort_if($hadiths->isEmpty(), 404);
+            if ($hadiths->isEmpty()) {
+                return null;
+            }
 
-        $neighbour = fn (string $operator, string $direction): ?int => Hadith::query()
-            ->where('hadith_collection_id', $collection->id)
-            ->where('number', $operator, $number)
-            ->orderBy('number', $direction)
-            ->value('number');
+            $neighbour = fn (string $operator, string $direction): ?int => Hadith::query()
+                ->where('hadith_collection_id', $collection->id)
+                ->where('number', $operator, $number)
+                ->orderBy('number', $direction)
+                ->value('number');
 
-        return Inertia::render('hadith/hadith', [
-            'collection' => $collection->loadCount(['books', 'hadiths'])->toPageArray(),
-            'hadiths' => $hadiths->map(fn (Hadith $hadith): array => $hadith->toPageArray())->values(),
-            'previous' => $neighbour('<', 'desc'),
-            'next' => $neighbour('>', 'asc'),
-        ]);
+            return [
+                'hadiths' => $hadiths->map(fn (Hadith $hadith): array => $hadith->toPageArray())->values()->all(),
+                'previous' => $neighbour('<', 'desc'),
+                'next' => $neighbour('>', 'asc'),
+            ];
+        });
+
+        abort_if($page === null, 404);
+
+        return Inertia::render('hadith/hadith', ['collection' => $this->collectionArray($collection), ...$page]);
+    }
+
+    /**
+     * A collection with the number of its books and hadiths.
+     *
+     * @return array<string, mixed>
+     */
+    protected function collectionArray(HadithCollection $collection): array
+    {
+        return $this->cache->remember('hadith', "collection.{$collection->id}", fn (): array => $collection->loadCount(['books', 'hadiths'])->toPageArray());
     }
 
     /**
@@ -119,7 +153,7 @@ class HadithController extends Controller
      */
     protected function hadithOfTheDay(): ?array
     {
-        return Cache::remember('hadith.daily.'.now()->toDateString(), now()->endOfDay(), function (): ?array {
+        return $this->cache->remember('hadith', 'daily.'.now()->toDateString(), function (): ?array {
             $query = Hadith::query()
                 ->with(['collection', 'book'])
                 ->whereHas('collection', fn (Builder $query) => $query->whereIn('slug', ['riyad-as-salihin', 'nawawi-40']));

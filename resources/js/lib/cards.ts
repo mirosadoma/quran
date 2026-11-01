@@ -17,7 +17,7 @@ export type CardOccasion =
 export type CardRatio = 'portrait' | 'square';
 
 /** The shape the photo is clipped into; "none" fills the top of the card with the photo. */
-export type CardFrame = 'arch' | 'circle' | 'oval' | 'rounded' | 'star' | 'none';
+export type CardFrame = 'arch' | 'circle' | 'oval' | 'rounded' | 'star' | 'hexagon' | 'none';
 
 export type CardMotif =
     | 'crescent'
@@ -30,7 +30,17 @@ export type CardMotif =
     | 'kaaba'
     | 'ribbon'
     | 'pattern'
-    | 'lattice';
+    | 'lattice'
+    /** Pennants hung across the top (the decorations of Ramadan and the Eid). */
+    | 'bunting'
+    /** Flowers in the corners. */
+    | 'flowers'
+    /** Pieces of confetti around the edges. */
+    | 'confetti'
+    /** A large eight-pointed rosette behind the photo. */
+    | 'rosette'
+    /** Dunes (or waves) at the bottom. */
+    | 'dunes';
 
 export interface CardPalette {
     /** Top of the background gradient. */
@@ -73,7 +83,24 @@ export interface CardDesign {
     /** Pan of the photo in card units (the card is 1080 wide). */
     offsetX: number;
     offsetY: number;
+    /** Turn of the photo in degrees (clockwise), and how opaque it is (0 to 1). */
+    rotation: number;
+    opacity: number;
+    /** A second photo placed anywhere on the card, over the design. */
+    overlay: CardOverlay | null;
     showLogo: boolean;
+}
+
+/**
+ * The second photo: its centre and width in card units, its turn in degrees and its opacity.
+ */
+export interface CardOverlay {
+    photo: string;
+    x: number;
+    y: number;
+    size: number;
+    rotation: number;
+    opacity: number;
 }
 
 export const cardOccasions: { id: CardOccasion; name: Localized }[] = [
@@ -92,6 +119,54 @@ export const cardOccasions: { id: CardOccasion; name: Localized }[] = [
 
 const gold = '#d8a747';
 const cream = '#fbf3e1';
+
+/** Greetings shared by several designs of an occasion. */
+const greetings = {
+    eidFitr: {
+        defaultTitle: { ar: 'عيد فطر سعيد', en: 'Happy Eid al-Fitr' },
+        defaultMessage: { ar: 'تقبّل الله صيامكم وقيامكم، وكل عام وأنتم بخير', en: 'May Allah accept your fasting and prayers. Eid Mubarak!' },
+    },
+    eidAdha: {
+        defaultTitle: { ar: 'عيد أضحى مبارك', en: 'Eid al-Adha Mubarak' },
+        defaultMessage: { ar: 'تقبّل الله منا ومنكم، وأعاده عليكم بالخير والبركات', en: 'May Allah accept from us and you, and bring it back to you with blessings.' },
+    },
+    ramadan: {
+        defaultTitle: { ar: 'رمضان مبارك', en: 'Ramadan Mubarak' },
+        defaultMessage: { ar: 'اللهم بلّغنا رمضان وأعنّا على صيامه وقيامه', en: 'O Allah, let us reach Ramadan and help us fast it and pray in it.' },
+    },
+    hijri: {
+        defaultTitle: { ar: 'كل عام وأنتم بخير', en: 'Happy New Hijri Year' },
+        defaultMessage: { ar: 'عام هجري جديد، جعله الله عام طاعة وبركة', en: 'A new Hijri year; may Allah make it a year of obedience and blessing.' },
+    },
+    hajj: {
+        defaultTitle: { ar: 'حج مبرور وسعي مشكور', en: 'Hajj Mabrour' },
+        defaultMessage: { ar: 'تقبّل الله حجكم وغفر ذنبكم ورجعتم سالمين', en: 'May Allah accept your Hajj, forgive your sins and bring you back safely.' },
+    },
+    qadr: {
+        defaultTitle: { ar: 'ليلة القدر', en: 'Laylat al-Qadr' },
+        defaultMessage: { ar: 'سلامٌ هي حتى مطلع الفجر، رزقنا الله وإياكم قيامها', en: 'Peace it is until the rise of dawn; may Allah grant us to pray in it.' },
+    },
+    jumuah: {
+        defaultTitle: { ar: 'جمعة مباركة', en: "Jumu'ah Mubarak" },
+        defaultMessage: { ar: 'لا تنسوا سورة الكهف والإكثار من الصلاة على النبي ﷺ', en: 'Do not forget Surat al-Kahf and many blessings upon the Prophet ﷺ.' },
+    },
+    khatm: {
+        defaultTitle: { ar: 'هنيئًا لك ختم القرآن', en: 'Congratulations on completing the Quran' },
+        defaultMessage: { ar: 'جعل الله القرآن ربيع قلبك ونور صدرك وشفيعًا لك', en: 'May Allah make the Quran the spring of your heart and an intercessor for you.' },
+    },
+    graduation: {
+        defaultTitle: { ar: 'ألف مبروك التخرّج', en: 'Happy graduation' },
+        defaultMessage: { ar: 'بارك الله في علمك ونفع بك، والقادم أجمل بإذن الله', en: 'May Allah bless your knowledge and benefit others through you.' },
+    },
+    general: {
+        defaultTitle: { ar: 'ألف مبروك', en: 'Congratulations' },
+        defaultMessage: { ar: 'بارك الله لكم وأتمّ عليكم فرحتكم', en: 'May Allah bless you and complete your joy.' },
+    },
+    academy: {
+        defaultTitle: { ar: 'تهنئة من الأكاديمية', en: 'Greetings from the academy' },
+        defaultMessage: { ar: 'تهنئكم أسرة الأكاديمية وتسأل الله لكم التوفيق والسداد', en: 'The academy family congratulates you and wishes you success.' },
+    },
+} satisfies Record<string, Pick<CardTemplate, 'defaultTitle' | 'defaultMessage'>>;
 
 export const cardTemplates: CardTemplate[] = [
     {
@@ -271,6 +346,310 @@ export const cardTemplates: CardTemplate[] = [
         defaultMessage: { ar: 'تهنئكم أسرة الأكاديمية بالعيد السعيد، وكل عام وأنتم بخير', en: 'The academy family wishes you a blessed and happy Eid.' },
         showLogo: true,
     },
+    {
+        id: 'eid-fitr-rose',
+        occasion: 'eid-fitr',
+        name: { ar: 'عيد الفطر · وردي وذهبي', en: 'Eid al-Fitr · Rose & gold' },
+        ratio: 'portrait',
+        palette: { background: '#fbe7ec', backgroundEnd: '#ebb7c4', primary: '#c76b86', accent: '#b8862f', title: '#8c2f4f', text: '#4a1f2c' },
+        frame: 'hexagon',
+        motifs: ['bunting', 'flowers', 'border'],
+        ...greetings.eidFitr,
+    },
+    {
+        id: 'eid-fitr-lilac',
+        occasion: 'eid-fitr',
+        name: { ar: 'عيد الفطر · بنفسجي وزينة', en: 'Eid al-Fitr · Lilac lights' },
+        ratio: 'portrait',
+        palette: { background: '#3b1f5c', backgroundEnd: '#170a2b', primary: '#5a2d86', accent: '#e9c46a', title: '#f4d58d', text: '#f3e9ff' },
+        frame: 'circle',
+        motifs: ['bunting', 'stars', 'mosque', 'border'],
+        ...greetings.eidFitr,
+    },
+    {
+        id: 'eid-fitr-mint',
+        occasion: 'eid-fitr',
+        name: { ar: 'عيد الفطر · نعناعي', en: 'Eid al-Fitr · Mint' },
+        ratio: 'square',
+        palette: { background: '#ecf8f2', backgroundEnd: '#bfe6d6', primary: '#2f8f73', accent: '#c9973b', title: '#17604c', text: '#1f3b33' },
+        frame: 'circle',
+        motifs: ['confetti', 'crescent', 'border'],
+        ...greetings.eidFitr,
+    },
+    {
+        id: 'eid-fitr-sunset',
+        occasion: 'eid-fitr',
+        name: { ar: 'عيد الفطر · غروب', en: 'Eid al-Fitr · Sunset' },
+        ratio: 'portrait',
+        palette: { background: '#ff9a62', backgroundEnd: '#7b2d5e', primary: '#a63d6b', accent: '#ffe3a3', title: '#fff1c9', text: '#fff8ec' },
+        frame: 'arch',
+        motifs: ['rays', 'lanterns', 'crescent', 'border'],
+        ...greetings.eidFitr,
+    },
+    {
+        id: 'eid-adha-olive',
+        occasion: 'eid-adha',
+        name: { ar: 'عيد الأضحى · زيتوني', en: 'Eid al-Adha · Olive' },
+        ratio: 'portrait',
+        palette: { background: '#3d4f2a', backgroundEnd: '#1c2612', primary: '#56703a', accent: '#e4c37a', title: '#f2d68f', text: '#f7f2e2' },
+        frame: 'arch',
+        motifs: ['rosette', 'lanterns', 'crescent', 'border'],
+        ...greetings.eidAdha,
+    },
+    {
+        id: 'eid-adha-sky',
+        occasion: 'eid-adha',
+        name: { ar: 'عيد الأضحى · سماوي وزهور', en: 'Eid al-Adha · Sky & flowers' },
+        ratio: 'square',
+        palette: { background: '#e6f2fb', backgroundEnd: '#a9cfe8', primary: '#2c6e98', accent: '#c08b2c', title: '#1d4f72', text: '#183247' },
+        frame: 'hexagon',
+        motifs: ['bunting', 'flowers', 'border'],
+        ...greetings.eidAdha,
+    },
+    {
+        id: 'eid-adha-dunes',
+        occasion: 'eid-adha',
+        name: { ar: 'عيد الأضحى · كثبان ومكة', en: 'Eid al-Adha · Dunes & Makkah' },
+        ratio: 'portrait',
+        palette: { background: '#fde7c0', backgroundEnd: '#e9a65a', primary: '#b35a1f', accent: '#8a3f12', title: '#6b2a0a', text: '#3b1b0d' },
+        frame: 'circle',
+        motifs: ['rays', 'dunes', 'kaaba', 'corners', 'border'],
+        ...greetings.eidAdha,
+    },
+    {
+        id: 'ramadan-bunting',
+        occasion: 'ramadan',
+        name: { ar: 'رمضان · زينة وكحلي', en: 'Ramadan · Navy & decorations' },
+        ratio: 'portrait',
+        palette: { background: '#0b2447', backgroundEnd: '#04101f', primary: '#19376d', accent: '#f2c14e', title: '#ffd166', text: '#f6f2e7' },
+        frame: 'arch',
+        motifs: ['bunting', 'stars', 'mosque', 'border'],
+        ...greetings.ramadan,
+    },
+    {
+        id: 'ramadan-crimson',
+        occasion: 'ramadan',
+        name: { ar: 'رمضان · أحمر ملكي', en: 'Ramadan · Royal crimson' },
+        ratio: 'square',
+        palette: { background: '#7a1022', backgroundEnd: '#3d0711', primary: '#a1162e', accent: '#f4cf7e', title: '#ffe2a0', text: '#fff4e3' },
+        frame: 'star',
+        motifs: ['lattice', 'lanterns', 'border'],
+        ...greetings.ramadan,
+    },
+    {
+        id: 'ramadan-rosette',
+        occasion: 'ramadan',
+        name: { ar: 'رمضان · نجمة زمرّدية', en: 'Ramadan · Emerald rosette' },
+        ratio: 'portrait',
+        palette: { background: '#0d4d3f', backgroundEnd: '#032119', primary: '#0b3b31', accent: '#e0b55a', title: '#f3cf75', text: '#f4ecd8' },
+        frame: 'circle',
+        motifs: ['rosette', 'lanterns', 'crescent', 'corners', 'border'],
+        ...greetings.ramadan,
+    },
+    {
+        id: 'ramadan-pastel',
+        occasion: 'ramadan',
+        name: { ar: 'رمضان · كريمي هادئ', en: 'Ramadan · Soft cream' },
+        ratio: 'square',
+        palette: { background: '#fdf6e3', backgroundEnd: '#f3dfc1', primary: '#d9a35b', accent: '#9c6b2f', title: '#7a4a16', text: '#3d2a14' },
+        frame: 'oval',
+        motifs: ['bunting', 'mosque', 'border'],
+        ...greetings.ramadan,
+    },
+    {
+        id: 'hijri-dawn',
+        occasion: 'hijri-year',
+        name: { ar: 'عام هجري · فجر جديد', en: 'Hijri New Year · New dawn' },
+        ratio: 'portrait',
+        palette: { background: '#fde3c4', backgroundEnd: '#8fb7d9', primary: '#4b6f95', accent: '#a8692b', title: '#2b4466', text: '#22324a' },
+        frame: 'arch',
+        motifs: ['rays', 'mosque', 'crescent', 'border'],
+        ...greetings.hijri,
+    },
+    {
+        id: 'hijri-ink',
+        occasion: 'hijri-year',
+        name: { ar: 'عام هجري · حبر وذهب', en: 'Hijri New Year · Ink & gold' },
+        ratio: 'square',
+        palette: { background: '#111827', backgroundEnd: '#030712', primary: '#1f2937', accent: '#c9a14a', title: '#e8c87a', text: '#f3f4f6' },
+        frame: 'hexagon',
+        motifs: ['rosette', 'stars', 'corners', 'border'],
+        ...greetings.hijri,
+    },
+    {
+        id: 'hajj-white',
+        occasion: 'hajj',
+        name: { ar: 'الحج · أبيض الإحرام', en: 'Hajj · Ihram white' },
+        ratio: 'portrait',
+        palette: { background: '#ffffff', backgroundEnd: '#eef1f3', primary: '#e7ebee', accent: '#1f6e5a', title: '#134e40', text: '#1d2b27' },
+        frame: 'arch',
+        motifs: ['lattice', 'kaaba', 'corners', 'border'],
+        ...greetings.hajj,
+    },
+    {
+        id: 'hajj-night',
+        occasion: 'hajj',
+        name: { ar: 'الحج · ليلة عرفة', en: 'Hajj · Night of Arafah' },
+        ratio: 'square',
+        palette: { background: '#10223f', backgroundEnd: '#050c1a', primary: '#1b3359', accent: '#e7c46e', title: '#f2d48a', text: '#eef2f8' },
+        frame: 'circle',
+        motifs: ['stars', 'kaaba', 'rays', 'border'],
+        ...greetings.hajj,
+    },
+    {
+        id: 'qadr-violet',
+        occasion: 'qadr',
+        name: { ar: 'ليلة القدر · بنفسجي', en: 'Laylat al-Qadr · Violet' },
+        ratio: 'portrait',
+        palette: { background: '#2a1052', backgroundEnd: '#0b0420', primary: '#3e1a75', accent: '#f3d27c', title: '#ffe08f', text: '#f1eaff' },
+        frame: 'star',
+        motifs: ['stars', 'rays', 'rosette', 'border'],
+        ...greetings.qadr,
+    },
+    {
+        id: 'qadr-gold',
+        occasion: 'qadr',
+        name: { ar: 'ليلة القدر · أسود وذهبي', en: 'Laylat al-Qadr · Black & gold' },
+        ratio: 'square',
+        palette: { background: '#1c1607', backgroundEnd: '#0a0702', primary: '#3a2c0b', accent: '#e6bf55', title: '#f7d77a', text: '#f8efd9' },
+        frame: 'circle',
+        motifs: ['rosette', 'stars', 'corners', 'border'],
+        ...greetings.qadr,
+    },
+    {
+        id: 'jumuah-sage',
+        occasion: 'jumuah',
+        name: { ar: 'الجمعة · أخضر هادئ وزهور', en: "Jumu'ah · Sage & flowers" },
+        ratio: 'portrait',
+        palette: { background: '#f0f5ea', backgroundEnd: '#c9d8bb', primary: '#6b8f4e', accent: '#8a6a2f', title: '#3f5a2a', text: '#2a3320' },
+        frame: 'arch',
+        motifs: ['flowers', 'mosque', 'border'],
+        ...greetings.jumuah,
+    },
+    {
+        id: 'jumuah-blue',
+        occasion: 'jumuah',
+        name: { ar: 'الجمعة · أزرق سماوي', en: "Jumu'ah · Sky blue" },
+        ratio: 'square',
+        palette: { background: '#e8f1fb', backgroundEnd: '#b8d3ee', primary: '#2f6aa6', accent: '#b07d2b', title: '#1e4b7a', text: '#1c2c3d' },
+        frame: 'hexagon',
+        motifs: ['pattern', 'mosque', 'corners', 'border'],
+        ...greetings.jumuah,
+    },
+    {
+        id: 'khatm-royal',
+        occasion: 'khatm',
+        name: { ar: 'ختم القرآن · ملكي', en: 'Quran completion · Royal' },
+        ratio: 'portrait',
+        palette: { background: '#4a1d6b', backgroundEnd: '#1e0a2e', primary: '#3a1356', accent: '#f0c95c', title: '#ffd978', text: '#f6efff' },
+        frame: 'circle',
+        motifs: ['rosette', 'confetti', 'ribbon', 'border'],
+        ...greetings.khatm,
+    },
+    {
+        id: 'khatm-cream',
+        occasion: 'khatm',
+        name: { ar: 'ختم القرآن · كريمي وزهور', en: 'Quran completion · Cream & flowers' },
+        ratio: 'square',
+        palette: { background: '#fffaf0', backgroundEnd: '#f1e2c4', primary: '#e7cf9b', accent: '#a5782d', title: '#6f4b14', text: '#3c2a12' },
+        frame: 'arch',
+        motifs: ['flowers', 'ribbon', 'border'],
+        ...greetings.khatm,
+    },
+    {
+        id: 'graduation-confetti',
+        occasion: 'graduation',
+        name: { ar: 'التخرّج · احتفال', en: 'Graduation · Celebration' },
+        ratio: 'portrait',
+        palette: { background: '#0f3d5e', backgroundEnd: '#061a29', primary: '#145079', accent: '#f2c14e', title: '#ffd166', text: '#f2f7fb' },
+        frame: 'circle',
+        motifs: ['confetti', 'ribbon', 'border'],
+        ...greetings.graduation,
+    },
+    {
+        id: 'graduation-maroon',
+        occasion: 'graduation',
+        name: { ar: 'التخرّج · عنّابي', en: 'Graduation · Maroon' },
+        ratio: 'square',
+        palette: { background: '#5c1a2b', backgroundEnd: '#2b0812', primary: '#7a2238', accent: '#e8c27a', title: '#f6dca2', text: '#fff5ea' },
+        frame: 'hexagon',
+        motifs: ['confetti', 'stars', 'corners', 'border'],
+        ...greetings.graduation,
+    },
+    {
+        id: 'general-blossom',
+        occasion: 'general',
+        name: { ar: 'تهنئة · زهر وردي', en: 'Greeting · Blossom' },
+        ratio: 'portrait',
+        palette: { background: '#fff1f2', backgroundEnd: '#fbcfd6', primary: '#e28a9c', accent: '#b5485f', title: '#8e2a41', text: '#4a1f29' },
+        frame: 'oval',
+        motifs: ['flowers', 'border'],
+        ...greetings.general,
+    },
+    {
+        id: 'general-forest',
+        occasion: 'general',
+        name: { ar: 'تهنئة · أخضر الغابة', en: 'Greeting · Forest' },
+        ratio: 'square',
+        palette: { background: '#1f3d2b', backgroundEnd: '#0c1d13', primary: '#2c5a3d', accent: '#d9b75f', title: '#ecd38a', text: '#f0f5ee' },
+        frame: 'arch',
+        motifs: ['flowers', 'pattern', 'border'],
+        ...greetings.general,
+    },
+    {
+        id: 'general-ocean',
+        occasion: 'general',
+        name: { ar: 'تهنئة · موج البحر', en: 'Greeting · Ocean waves' },
+        ratio: 'portrait',
+        palette: { background: '#0e7490', backgroundEnd: '#083344', primary: '#155e75', accent: '#fde68a', title: '#fef3c7', text: '#ecfeff' },
+        frame: 'hexagon',
+        motifs: ['dunes', 'stars', 'border'],
+        ...greetings.general,
+    },
+    {
+        id: 'general-gold',
+        occasion: 'general',
+        name: { ar: 'تهنئة · ذهبي أنيق', en: 'Greeting · Elegant gold' },
+        ratio: 'square',
+        palette: { background: '#fbf7ee', backgroundEnd: '#efe4cc', primary: '#e9dcc0', accent: '#b08d46', title: '#7a5a1d', text: '#3b2d13' },
+        frame: 'circle',
+        motifs: ['rosette', 'border'],
+        ...greetings.general,
+    },
+    {
+        id: 'academy-ramadan',
+        occasion: 'academy',
+        name: { ar: 'الأكاديمية · رمضان', en: 'Academy · Ramadan' },
+        ratio: 'portrait',
+        palette: { background: '#ffffff', backgroundEnd: '#eef4fb', primary: '#dbe7f6', accent: '#1f4f8a', title: '#163d6b', text: '#1b2635' },
+        frame: 'none',
+        motifs: ['pattern', 'crescent', 'border'],
+        defaultTitle: { ar: 'رمضان كريم', en: 'Ramadan Kareem' },
+        defaultMessage: { ar: 'تهنئكم أسرة الأكاديمية بحلول شهر رمضان المبارك', en: 'The academy family wishes you a blessed Ramadan.' },
+        showLogo: true,
+    },
+    {
+        id: 'academy-khatm',
+        occasion: 'academy',
+        name: { ar: 'الأكاديمية · ختم القرآن', en: 'Academy · Quran completion' },
+        ratio: 'square',
+        palette: { background: '#0b3b31', backgroundEnd: '#05211b', primary: '#0b3b31', accent: gold, title: '#f1c866', text: cream },
+        frame: 'rounded',
+        motifs: ['confetti', 'ribbon', 'corners', 'border'],
+        ...greetings.academy,
+        showLogo: true,
+    },
+    {
+        id: 'academy-graduation',
+        occasion: 'academy',
+        name: { ar: 'الأكاديمية · تخرّج', en: 'Academy · Graduation' },
+        ratio: 'portrait',
+        palette: { background: '#f8fafc', backgroundEnd: '#e2e8f0', primary: '#cbd5e1', accent: '#0f766e', title: '#115e59', text: '#1e293b' },
+        frame: 'hexagon',
+        motifs: ['confetti', 'ribbon', 'border'],
+        ...greetings.academy,
+        showLogo: true,
+    },
 ];
 
 export function templateById(id: string): CardTemplate {
@@ -391,6 +770,11 @@ export function framePath(frame: CardFrame, box: CardBox): string {
             return roundedRectPath(box, 56);
         case 'star':
             return polygonPath(starPoints(cx, cy, Math.min(w, h) / 2));
+        case 'hexagon': {
+            const r = Math.min(w, h) / 2;
+
+            return polygonPath(Array.from({ length: 6 }, (_, index) => [cx + r * Math.cos((Math.PI / 3) * index - Math.PI / 2), cy + r * Math.sin((Math.PI / 3) * index - Math.PI / 2)]));
+        }
         case 'arch': {
             // A two-centred pointed arch: each side is an arc whose centre sits on the springing line.
             const r = w * 0.55;

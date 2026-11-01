@@ -4,6 +4,7 @@ import { ArrowRight, BellRing, DoorOpen, ExternalLink, Lock, Mic, Play, Radio, U
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { LogoMark } from '@/components/brand';
 import { ExamEntryStatusBadge } from '@/components/exams/exam-badges';
+import { ExtendDayButton } from '@/components/exams/extend-day';
 import { Queue, type QueueAction } from '@/components/exams/queue';
 import { ResultChip } from '@/components/exams/result-chip';
 import { Badge } from '@/components/ui/badge';
@@ -140,6 +141,7 @@ export default function ExamRoom({ day, viewer, rooms, embedded, guestToken }: R
                         {t('Start the examining')}
                     </Button>
                 )}
+                {viewer.kind === 'manager' && day.status === 'live' && <ExtendDayButton day={day} size="sm" />}
                 {viewer.kind === 'manager' && day.status === 'live' && (
                     <Button variant="danger" size="sm" onClick={() => setClosing(true)}>
                         <Lock />

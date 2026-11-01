@@ -8,6 +8,7 @@ use App\Http\Resources\CommunityReplyResource;
 use App\Models\CommunityPost;
 use App\Models\CommunityReply;
 use App\Services\CommunitySearch;
+use App\Services\ContentCache;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
@@ -23,7 +24,7 @@ class CommunityPostController extends Controller
      */
     protected const FILTERS = ['unanswered', 'mine'];
 
-    public function __construct(protected CommunitySearch $search) {}
+    public function __construct(protected CommunitySearch $search, protected ContentCache $cache) {}
 
     /**
      * The questions community: the newest questions, or the best matches of a search.
@@ -35,26 +36,31 @@ class CommunityPostController extends Controller
         $search = is_string($request->query('search')) ? mb_substr(trim($request->query('search')), 0, CommunitySearch::MAX_LENGTH) : '';
         $terms = $this->search->terms($search);
 
-        $posts = CommunityPost::query()
+        $query = fn (): Builder => CommunityPost::query()
             ->with('author')
             ->withReplyCounts()
             ->when($filter === 'unanswered', fn (Builder $query) => $query->unanswered())
             ->when($filter === 'mine', fn (Builder $query) => $query->whereBelongsTo($user, 'author'))
             ->tap(fn (Builder $query) => $this->search->apply($query, $terms))
             ->latest()
-            ->orderByDesc('id')
-            ->paginate(15)
-            ->withQueryString();
+            ->orderByDesc('id');
+        // Kept for each reader (what they may change) until a question or a reply changes; a search asks the database.
+        $reader = "{$user->id}.{$user->role->value}";
+        $posts = $terms['words'] === []
+            ? $this->cache->page('community', "list.{$reader}.{$filter}", $request, 15, $query, fn (CommunityPost $post): array => (new CommunityPostResource($post))->resolve())
+            : $this->paginated($query()->paginate(15)->withQueryString(), CommunityPostResource::class);
 
         return Inertia::render('community/index', [
-            'posts' => $this->paginated($posts, CommunityPostResource::class),
+            'posts' => $posts,
             'filters' => ['search' => $search, 'filter' => $filter],
             // The words the results were matched on, to highlight them.
             'highlight' => $terms['words'],
             'counts' => [
-                'all' => CommunityPost::query()->count(),
-                'unanswered' => CommunityPost::query()->unanswered()->count(),
-                'mine' => CommunityPost::query()->whereBelongsTo($user, 'author')->count(),
+                ...$this->cache->remember('community', 'counts', fn (): array => [
+                    'all' => CommunityPost::query()->count(),
+                    'unanswered' => CommunityPost::query()->unanswered()->count(),
+                ]),
+                'mine' => $this->cache->remember('community', "counts.mine.{$user->id}", fn (): int => CommunityPost::query()->whereBelongsTo($user, 'author')->count()),
             ],
         ]);
     }
@@ -64,22 +70,30 @@ class CommunityPostController extends Controller
      */
     public function show(Request $request, CommunityPost $post): Response
     {
-        $post->load('author')->loadCount(['answers', 'comments'])->loadExists(['replies as solved' => fn (Builder $query) => $query->whereNotNull('accepted_at')]);
+        $user = $request->user();
+        // Kept for each reader (what they may change or accept) until a question or a reply changes.
+        $page = $this->cache->remember('community', "post.{$post->id}.{$user->id}.{$user->role->value}", function () use ($post): array {
+            $post->load('author')->loadCount(['answers', 'comments'])->loadExists(['replies as solved' => fn (Builder $query) => $query->whereNotNull('accepted_at')]);
 
-        $replies = $post->replies()
-            ->with('author')
-            ->orderByRaw('accepted_at is null')
-            ->oldest()
-            ->orderBy('id')
-            ->get();
+            $replies = $post->replies()
+                ->with('author')
+                ->orderByRaw('accepted_at is null')
+                ->oldest()
+                ->orderBy('id')
+                ->get();
 
-        $replies->each->setRelation('post', $post);
+            $replies->each->setRelation('post', $post);
+
+            return [
+                'post' => (new CommunityPostResource($post))->resolve(),
+                'answers' => CommunityReplyResource::collection($replies->where('is_answer', true)->values())->resolve(),
+                'comments' => CommunityReplyResource::collection($replies->where('is_answer', false)->values())->resolve(),
+                'similar' => $this->summaries($this->search->similar($post->title, except: $post)),
+            ];
+        });
 
         return Inertia::render('community/show', [
-            'post' => (new CommunityPostResource($post))->resolve(),
-            'answers' => CommunityReplyResource::collection($replies->where('is_answer', true)->values())->resolve(),
-            'comments' => CommunityReplyResource::collection($replies->where('is_answer', false)->values())->resolve(),
-            'similar' => $this->summaries($this->search->similar($post->title, except: $post)),
+            ...$page,
             // The reply to scroll to (opened from a notification).
             'focus' => $request->integer('reply') ?: null,
             'can' => ['answer' => CommunityReply::isAnswerBy($request->user())],

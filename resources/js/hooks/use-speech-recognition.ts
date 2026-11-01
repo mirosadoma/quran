@@ -178,14 +178,14 @@ export function useSpeechRecognition(lang = 'ar-SA'): {
     const start = useCallback(() => {
         setError(null);
 
-        if (!isSpeechRecognitionSupported()) {
-            setError('unsupported');
+        if (!window.isSecureContext) {
+            setError('insecure');
 
             return;
         }
 
-        if (!window.isSecureContext) {
-            setError('insecure');
+        if (!isSpeechRecognitionSupported()) {
+            setError('unsupported');
 
             return;
         }

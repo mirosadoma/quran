@@ -3,8 +3,10 @@
 namespace App\Models;
 
 use App\Enums\SayingKind;
+use App\Observers\ContentCacheObserver;
 use Database\Factories\SayingFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -12,6 +14,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 /**
  * One transmitted saying or story, with who said it, where it is found and its lesson.
  */
+#[ObservedBy(ContentCacheObserver::class)]
 #[Fillable(['saying_category_id', 'slug', 'kind', 'title', 'text', 'attribution', 'source', 'lesson', 'hadith_collection', 'hadith_number', 'sort_order'])]
 class Saying extends Model
 {

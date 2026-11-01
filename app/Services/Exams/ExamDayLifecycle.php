@@ -111,6 +111,29 @@ class ExamDayLifecycle
     }
 
     /**
+     * Give the day more time: it ends this many minutes after its end time (after now when that
+     * time passed before the day was closed). A day without an end time is closed by hand.
+     *
+     * @throws ExamException
+     */
+    public function extend(ExamDay $day, int $minutes): void
+    {
+        if ($day->isClosed()) {
+            throw new ExamException(__('This exam day is closed.'));
+        }
+
+        if ($day->ends_at === null) {
+            throw new ExamException(__('This exam day has no end time: it stays open until it is closed by hand.'));
+        }
+
+        $from = $day->ends_at->isFuture() ? $day->ends_at : now();
+
+        $day->update(['ends_at' => $from->copy()->addMinutes($minutes)]);
+
+        ExamDayUpdated::dispatch($day);
+    }
+
+    /**
      * Remind the students and examiners of the day (the day before, and shortly before it starts).
      */
     public function remind(ExamDay $day, bool $dayBefore): void

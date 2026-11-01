@@ -1,4 +1,4 @@
-import { EyeOff, RotateCcw, X } from 'lucide-react';
+import { ChevronDown, ChevronUp, EyeOff, RotateCcw, X } from 'lucide-react';
 import { useEffect, useMemo, useRef } from 'react';
 import {
     BlockedNotice,
@@ -16,7 +16,7 @@ import { Switch } from '@/components/ui/form';
 import { useRecitationFollow } from '@/hooks/use-recitation-voice';
 import { useTrans } from '@/lib/i18n';
 import { type ExpectedWord, expectedWords, type RecitationMistake, type RecitationProgress } from '@/lib/recitation-check';
-import { formatNumber } from '@/lib/utils';
+import { cn, formatNumber } from '@/lib/utils';
 import type { MushafAyah } from '@/types';
 
 /**
@@ -41,19 +41,28 @@ interface RecitePanelProps {
     onClearMistakes: () => void;
     /** Where the reader is, to mark the words of the page (null before the reader starts). */
     onProgress: (state: ReciteState | null) => void;
+    /** Everything is shown; otherwise only a bar, so the page stays in view while reciting. */
+    expanded: boolean;
+    onExpanded: (expanded: boolean) => void;
     onClose: () => void;
 }
 
 /**
- * Recite from the mushaf with the voice, word by word like with a teacher: every word said is written,
- * the wrong ones struck through; at a mistake an alert sounds, the recitation stops at that word (marked
- * on the page) until it is said right, and the mistake is kept in the list. The microphone stays on
- * until the reader stops it. "Recite again" starts over.
+ * Recite from the mushaf with the voice, reading straight through: every word said is written, the wrong
+ * ones struck through; at a mistake an alert sounds, the word is marked on the page and kept in the list,
+ * and the reader goes on (passage by passage, as soon as each is heard). The microphone stays on until
+ * the reader stops it. "Recite again" starts over. Folded, the panel is a bar with the counts only.
  */
-export function RecitePanel({ ayahs, label, hideText, onHideText, vowelCheck, mistakes, onMistake, onClearMistakes, onProgress, onClose }: RecitePanelProps) {
+export function RecitePanel({ ayahs, label, hideText, onHideText, vowelCheck, mistakes, onMistake, onClearMistakes, onProgress, expanded, onExpanded, onClose }: RecitePanelProps) {
     const { t, locale } = useTrans();
     const expected = useMemo(() => expectedWords(ayahs), [ayahs]);
-    const { voice, progress, spoken, begin, restart, prompt, sound, setSound } = useRecitationFollow({ expected, vowelCheckAvailable: vowelCheck, freeStart: true, onMistake });
+    const { voice, progress, spoken, begin, restart, prompt, sound, setSound } = useRecitationFollow({
+        expected,
+        vowelCheckAvailable: vowelCheck,
+        freeStart: true,
+        continuous: true,
+        onMistake,
+    });
     const scroller = useRef<HTMLDivElement>(null);
 
     // Opened by a click: start listening right away (and again after turning the vowel check on or off).
@@ -74,76 +83,95 @@ export function RecitePanel({ ayahs, label, hideText, onHideText, vowelCheck, mi
         if (element) {
             element.scrollTop = element.scrollHeight;
         }
-    }, [spoken.length]);
+    }, [spoken.length, expanded]);
 
-    const counts = useMemo(
-        () => ({
-            mistakes: progress.mistakes.filter((mistake) => mistake.kind !== 'helped').length,
-            vowels: progress.mistakes.filter((mistake) => mistake.kind === 'vowel').length,
-        }),
-        [progress.mistakes],
-    );
+    // The words with a mistake left on them (a word corrected by saying it again no longer counts).
+    const counts = useMemo(() => {
+        const kinds = [...progress.kinds.values()];
+
+        return { mistakes: kinds.filter((kind) => kind !== 'helped').length, vowels: kinds.filter((kind) => kind === 'vowel').length };
+    }, [progress.kinds]);
 
     const again = () => {
         restart();
         begin();
     };
 
+    const counters = (
+        <div className="flex flex-wrap items-center gap-1.5 text-xs font-semibold">
+            <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300">
+                {t(':count right', { count: formatNumber(progress.right, locale) })}
+            </span>
+            <span className="rounded-full bg-rose-50 px-2.5 py-1 text-rose-700 dark:bg-rose-500/10 dark:text-rose-300">
+                {t(':count mistakes', { count: formatNumber(counts.mistakes, locale) })}
+            </span>
+            {voice.checksVowels && (
+                <span className="rounded-full bg-violet-50 px-2.5 py-1 text-violet-700 dark:bg-violet-500/10 dark:text-violet-300">
+                    {t(':count vowel mistakes', { count: formatNumber(counts.vowels, locale) })}
+                </span>
+            )}
+        </div>
+    );
+
     return (
         <div className="mushaf-dock fixed inset-x-0 bottom-(--bottom-nav-space) z-30 animate-slide-up border-t border-line bg-surface/97 shadow-[0_-10px_30px_-15px_rgb(0_0_0/0.3)] backdrop-blur lg:start-72">
-            <div className="mx-auto max-h-[70vh] max-w-4xl overflow-y-auto px-4 py-3">
+            <div className={cn('mx-auto max-w-4xl overflow-y-auto px-4', expanded ? 'max-h-[55vh] py-3 lg:max-h-[70vh]' : 'py-2')}>
                 <div className="flex items-center gap-3">
                     <MicButton size="md" listening={voice.listening} onClick={voice.listening ? voice.stop : begin} />
                     <div className="min-w-0 flex-1">
-                        <p className="text-sm font-bold text-ink">{voice.listening ? t('Listening… recite from memory') : t('Recite with your voice')}</p>
-                        {voice.busy ? <VowelCheckBusy /> : <p className="truncate text-xs text-muted">{label}</p>}
+                        <p className="truncate text-sm font-bold text-ink">{voice.listening ? t('Listening… recite from memory') : t('Recite with your voice')}</p>
+                        {voice.busy ? <VowelCheckBusy /> : expanded ? <p className="truncate text-xs text-muted">{label}</p> : null}
+                        {!expanded && !voice.busy && <div className="mt-1">{counters}</div>}
                     </div>
-                    {progress.cursor > (progress.start ?? 0) && <ScoreRing score={progress.score} size={54} />}
+                    {progress.cursor > (progress.start ?? 0) && <ScoreRing score={progress.score} size={expanded ? 54 : 44} />}
+                    <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        onClick={() => onExpanded(!expanded)}
+                        aria-expanded={expanded}
+                        aria-label={expanded ? t('Hide the details') : t('Show the details')}
+                        title={expanded ? t('Hide the details') : t('Show the details')}
+                    >
+                        {expanded ? <ChevronDown /> : <ChevronUp />}
+                    </Button>
                     <Button variant="ghost" size="icon-sm" onClick={onClose} aria-label={t('Close')}>
                         <X />
                     </Button>
                 </div>
 
-                {voice.error && <SpeechErrorNotice error={voice.error} className="mt-3" />}
+                {voice.error && <SpeechErrorNotice error={voice.error} className={expanded ? 'mt-3' : 'mt-2'} />}
                 {progress.blocked && <BlockedNotice mistake={progress.blocked} onPrompt={prompt} className="mt-3" />}
-                <div ref={scroller} className="mt-3 max-h-[20vh] overflow-y-auto rounded-2xl bg-surface-muted/70 px-4 py-1.5 ring-1 ring-line" aria-live="polite">
-                    <HeardText
-                        words={spoken}
-                        placeholder={t('Start reciting: every word you say is written here, and a wrong word is struck through. At a mistake you hear an alert and the word is marked on the page.')}
-                        className="text-xl"
-                    />
-                </div>
 
-                <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2.5">
-                    <div className="flex flex-wrap items-center gap-1.5 text-xs font-semibold">
-                        <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300">
-                            {t(':count right', { count: formatNumber(progress.right, locale) })}
-                        </span>
-                        <span className="rounded-full bg-rose-50 px-2.5 py-1 text-rose-700 dark:bg-rose-500/10 dark:text-rose-300">
-                            {t(':count mistakes', { count: formatNumber(counts.mistakes, locale) })}
-                        </span>
-                        {voice.checksVowels && (
-                            <span className="rounded-full bg-violet-50 px-2.5 py-1 text-violet-700 dark:bg-violet-500/10 dark:text-violet-300">
-                                {t(':count vowel mistakes', { count: formatNumber(counts.vowels, locale) })}
-                            </span>
-                        )}
-                    </div>
-                    <label className="flex cursor-pointer items-center gap-2 text-sm text-ink">
-                        <Switch checked={hideText} onChange={onHideText} />
-                        <EyeOff className="size-4 text-muted" />
-                        {t('Hide the ayahs')}
-                    </label>
-                    <Button variant="secondary" size="sm" className="ms-auto" onClick={again}>
-                        <RotateCcw />
-                        {t('Recite again')}
-                    </Button>
-                </div>
+                {expanded && (
+                    <>
+                        <div ref={scroller} className="mt-3 max-h-[20vh] overflow-y-auto rounded-2xl bg-surface-muted/70 px-4 py-1.5 ring-1 ring-line" aria-live="polite">
+                            <HeardText
+                                words={spoken}
+                                placeholder={t('Start reciting: every word you say is written here, and a wrong word is struck through. At a mistake you hear an alert and the word is marked on the page.')}
+                                className="text-xl"
+                            />
+                        </div>
 
-                <RecitationOptions voice={voice} sound={sound} onSound={setSound} className="mt-3" />
+                        <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2.5">
+                            {counters}
+                            <label className="flex cursor-pointer items-center gap-2 text-sm text-ink">
+                                <Switch checked={hideText} onChange={onHideText} />
+                                <EyeOff className="size-4 text-muted" />
+                                {t('Hide the ayahs')}
+                            </label>
+                            <Button variant="secondary" size="sm" className="ms-auto" onClick={again}>
+                                <RotateCcw />
+                                {t('Recite again')}
+                            </Button>
+                        </div>
 
-                <MistakeList mistakes={mistakes} onClear={onClearMistakes} className="mt-3" />
+                        <RecitationOptions voice={voice} sound={sound} onSound={setSound} className="mt-3" />
 
-                <RecitationLimitsNote vowels={voice.checksVowels} className="mt-2" />
+                        <MistakeList mistakes={mistakes} onClear={onClearMistakes} className="mt-3" />
+
+                        <RecitationLimitsNote vowels={voice.checksVowels} className="mt-2" />
+                    </>
+                )}
             </div>
         </div>
     );

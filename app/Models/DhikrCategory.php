@@ -2,8 +2,10 @@
 
 namespace App\Models;
 
+use App\Observers\ContentCacheObserver;
 use Database\Factories\DhikrCategoryFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -14,6 +16,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 /**
  * A group of adhkar or duas, e.g. morning adhkar or Quranic duas.
  */
+#[ObservedBy(ContentCacheObserver::class)]
 #[Table('adhkar_categories')]
 #[Fillable(['name', 'slug', 'description', 'icon', 'color', 'sort_order', 'is_active'])]
 class DhikrCategory extends Model

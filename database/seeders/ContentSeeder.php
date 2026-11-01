@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Services\ContentCache;
 use Illuminate\Database\Seeder;
 
 /**
@@ -15,7 +16,7 @@ class ContentSeeder extends Seeder
     /**
      * Run the database seeds.
      */
-    public function run(): void
+    public function run(ContentCache $cache): void
     {
         $this->call([
             AyahSeeder::class,
@@ -30,5 +31,8 @@ class ContentSeeder extends Seeder
             SunnahSeeder::class,
             SayingSeeder::class,
         ]);
+
+        // The seeders write many rows at once (no model events): the cached content is built again.
+        $cache->flushAll();
     }
 }

@@ -11,7 +11,7 @@ Schedule::command('prayers:remind')->everyMinute()->withoutOverlapping();
 Schedule::command('sessions:close')->everyTenMinutes()->withoutOverlapping();
 Schedule::command('exams:remind')->everyMinute()->withoutOverlapping();
 Schedule::command('exams:open')->everyMinute()->withoutOverlapping();
-Schedule::command('exams:close')->everyFiveMinutes()->withoutOverlapping();
+Schedule::command('exams:close')->everyMinute()->withoutOverlapping();
 Schedule::command('alarms:ring')->everyMinute()->withoutOverlapping();
 // The sent codes (OTP) are kept two hours only.
 Schedule::command('model:prune', ['--model' => [SentCode::class]])->everyTenMinutes()->withoutOverlapping();

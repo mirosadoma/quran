@@ -13,6 +13,7 @@ use App\Models\User;
 use App\Models\WordMeaning;
 use App\Services\Mushaf;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia;
 use Tests\TestCase;
 
@@ -71,6 +72,31 @@ class MushafTest extends TestCase
             ->assertJsonPath('ayahs.1.ayah', 2);
 
         $this->actingAs($this->student)->getJson(route('mushaf.page', 605))->assertNotFound();
+    }
+
+    public function test_the_pages_and_tafsir_are_kept_without_asking_the_database_until_the_mushaf_is_flushed(): void
+    {
+        Tafsir::factory()->create(['ayah_id' => 262, 'edition' => TafsirEdition::Muyassar, 'text' => 'هو الله المتفرد بالألوهية']);
+        $this->actingAs($this->student)->getJson(route('mushaf.page', 1))->assertOk();
+        $this->actingAs($this->student)->getJson(route('mushaf.tafsir', ['ayah' => 262]))->assertOk();
+
+        Ayah::query()->whereKey(1)->update(['text' => 'نص بعد التعديل']);
+        Tafsir::query()->where('ayah_id', 262)->update(['text' => 'تفسير بعد التعديل']);
+        DB::enableQueryLog();
+
+        $this->actingAs($this->student)->getJson(route('mushaf.page', 1))->assertJsonPath('ayahs.0.text', 'بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ');
+        $this->actingAs($this->student)->getJson(route('mushaf.tafsir', ['ayah' => 262]))->assertJsonPath('text', 'هو الله المتفرد بالألوهية');
+
+        // Only the ayah of the tafsir link is found (route model binding), by its id.
+        $this->assertSame(
+            ['select * from "ayahs" where "id" = ? limit 1'],
+            collect(DB::getQueryLog())->pluck('query')->filter(fn (string $query): bool => str_contains($query, 'ayahs') || str_contains($query, 'tafsirs'))->values()->all(),
+        );
+
+        app(Mushaf::class)->flush();
+
+        $this->actingAs($this->student)->getJson(route('mushaf.page', 1))->assertJsonPath('ayahs.0.text', 'نص بعد التعديل');
+        $this->actingAs($this->student)->getJson(route('mushaf.tafsir', ['ayah' => 262]))->assertJsonPath('text', 'تفسير بعد التعديل');
     }
 
     public function test_tafsir_of_an_ayah_in_the_chosen_book(): void

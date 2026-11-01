@@ -9,16 +9,19 @@ use App\Services\Exams\ExamDayLifecycle;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
+use Illuminate\Database\Eloquent\Builder;
 
 #[Signature('exams:open')]
 #[Description('Open the exam days whose start time has come and invite their students and examiners')]
 class OpenDueExamDays extends Command
 {
     /**
-     * Days are opened during this many minutes after their start time; after that the manager
-     * opens them by hand.
+     * A day without an end time is opened during this many hours after its start; after that the
+     * manager opens it by hand (a server back after a long stop sends no invitations to old days).
+     * A day with an end time is opened at any time before it ends, so a scheduler started late
+     * (or stopped for a while) still opens it.
      */
-    protected const WINDOW_MINUTES = 30;
+    protected const WINDOW_HOURS = 5;
 
     /**
      * Execute the console command.
@@ -28,7 +31,10 @@ class OpenDueExamDays extends Command
         $days = ExamDay::query()
             ->with('exam')
             ->where('status', ExamDayStatus::Scheduled)
-            ->whereBetween('starts_at', [now()->subMinutes(self::WINDOW_MINUTES), now()])
+            ->where('starts_at', '<=', now())
+            ->where(fn (Builder $query) => $query
+                ->where('ends_at', '>', now())
+                ->orWhere(fn (Builder $query) => $query->whereNull('ends_at')->where('starts_at', '>=', now()->subHours(self::WINDOW_HOURS))))
             ->get();
 
         $opened = 0;

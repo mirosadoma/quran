@@ -12,9 +12,12 @@ use Illuminate\Support\Collection;
  * The stories for children and the stories of the prophets, to read or to listen to.
  * They live in the stories table (installed from database/data/stories by StorySeeder).
  * Quran passages are only references (surah and ayahs): their text always comes from the ayahs table.
+ * Lists and stories are kept until the stories change (see ContentCache).
  */
 class StoryLibrary
 {
+    public function __construct(protected ContentCache $cache) {}
+
     /**
      * Words read (or heard) in a minute, to estimate how long a story takes.
      */
@@ -27,12 +30,12 @@ class StoryLibrary
      */
     public function all(StoryKind $kind): array
     {
-        return Story::query()
+        return $this->cache->remember('stories', "{$kind->value}.all", fn (): array => Story::query()
             ->ofKind($kind)
             ->ordered()
             ->get()
             ->map(fn (Story $story): array => $this->summary($story))
-            ->all();
+            ->all());
     }
 
     /**
@@ -41,6 +44,14 @@ class StoryLibrary
      * @return array{slug: string, order: int, title: array{ar: string, en: string}, summary: array{ar: string, en: string}, icon: string|null, tone: string|null, minutes: int, sections: list<array{heading: string|null, paragraphs: list<string>, ayahs: list<array{surah: int, from: int, to: int, verses: list<array{ayah: int, text: string}>}>}>, lessons: list<string>, audio: string|null}|null
      */
     public function find(StoryKind $kind, string $slug): ?array
+    {
+        return $this->cache->remember('stories', "{$kind->value}.{$slug}", fn (): ?array => $this->build($kind, $slug));
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    protected function build(StoryKind $kind, string $slug): ?array
     {
         $story = Story::query()->ofKind($kind)->where('slug', $slug)->first();
 

@@ -1,6 +1,6 @@
 import { router, usePage } from '@inertiajs/react';
 import { BookOpenCheck, Building2, CalendarDays, ChevronDown, Clock, Languages, LogOut, Menu, MonitorSmartphone, Moon, Sun, UserRound } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { LogoMark } from '@/components/brand';
 import { AppButton, AppDialog } from '@/components/install-app';
 import { NotificationsMenu } from '@/components/layout/notifications-menu';
@@ -217,9 +217,24 @@ function ImpersonationBanner() {
 export function Topbar({ onMenu }: { onMenu: () => void }) {
     const { t } = useTrans();
     const [appOpen, setAppOpen] = useState(false);
+    const header = useRef<HTMLElement>(null);
+
+    // Its height (the date strip and the impersonation banner change it), for what sticks under it: --topbar-height.
+    useEffect(() => {
+        const element = header.current;
+
+        if (!element) {
+            return;
+        }
+
+        const observer = new ResizeObserver(() => document.documentElement.style.setProperty('--topbar-height', `${element.offsetHeight}px`));
+        observer.observe(element);
+
+        return () => observer.disconnect();
+    }, []);
 
     return (
-        <header className="no-print sticky top-0 z-20 border-b border-line/80 bg-canvas/85 backdrop-blur-md">
+        <header ref={header} className="no-print sticky top-0 z-20 border-b border-line/80 bg-canvas/85 backdrop-blur-md">
             <ImpersonationBanner />
             <div className="flex h-16 items-center gap-2 px-4 sm:px-6 lg:px-8">
                 <button

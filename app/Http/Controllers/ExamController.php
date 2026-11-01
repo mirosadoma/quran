@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\ExamDayStatus;
 use App\Enums\UserRole;
+use App\Exceptions\ExamException;
 use App\Http\Requests\ExamRequest;
 use App\Http\Resources\ExamResource;
 use App\Models\Academy;
@@ -13,6 +15,7 @@ use App\Models\Setting;
 use App\Models\User;
 use App\Notifications\ExamCreated;
 use App\Notifications\ExamScheduled;
+use App\Services\Exams\ExamDayLifecycle;
 use App\Services\Exams\ExamDistributor;
 use App\Services\Exams\ExamRooms;
 use App\Services\Notifier;
@@ -30,6 +33,7 @@ class ExamController extends Controller
         protected ExamDistributor $distributor,
         protected ExamRooms $rooms,
         protected Notifier $notifier,
+        protected ExamDayLifecycle $lifecycle,
     ) {}
 
     /**
@@ -107,7 +111,11 @@ class ExamController extends Controller
             $this->notifyStudents($day, $day->halaqat()->pluck('halaqat.id')->all());
         }
 
-        $this->toast(__('Exam created. Add the examiners of every day and share the students among them.'));
+        $opened = $this->openDueDays($exam, $exam->days->pluck('id')->all(), $request->user());
+
+        $this->toast($opened > 0
+            ? __('Exam created. A day whose time has come was opened at once: add its examiners and share the students among them.')
+            : __('Exam created. Add the examiners of every day and share the students among them.'));
 
         return redirect()->route('exams.show', $exam);
     }
@@ -198,8 +206,10 @@ class ExamController extends Controller
         $exam->load('days.halaqat');
         $timezone = $this->timezoneOf($exam->academy);
         $newHalaqatByDay = [];
+        // The days added, or moved to another start time: opened at once when that time has come.
+        $timed = [];
 
-        DB::transaction(function () use ($request, $exam, $timezone, &$newHalaqatByDay): void {
+        DB::transaction(function () use ($request, $exam, $timezone, &$newHalaqatByDay, &$timed): void {
             $exam->update($request->safe()->only(['title', 'description', 'max_score']));
 
             $kept = [];
@@ -210,10 +220,15 @@ class ExamController extends Controller
                 if ($day === null) {
                     $day = $exam->days()->create(['starts_at' => $data['starts_at'], 'ends_at' => $data['ends_at']]);
                     $before = [];
+                    $timed[] = $day->id;
                 } else {
                     $before = $day->halaqat->pluck('id')->all();
 
                     if (! $day->isClosed()) {
+                        if (! $day->starts_at->equalTo($data['starts_at'])) {
+                            $timed[] = $day->id;
+                        }
+
                         $day->update(['starts_at' => $data['starts_at'], 'ends_at' => $data['ends_at']]);
                     }
                 }
@@ -237,9 +252,37 @@ class ExamController extends Controller
             }
         }
 
-        $this->toast(__('Exam updated.'));
+        $opened = $this->openDueDays($exam, $timed, $request->user());
+
+        $this->toast($opened > 0 ? __('Exam updated. A day whose time has come was opened at once.') : __('Exam updated.'));
 
         return redirect()->route('exams.show', $exam);
+    }
+
+    /**
+     * Open at once the given days whose start time has already come (and that have not ended yet):
+     * a day planned for now does not wait for the scheduler.
+     *
+     * @param  list<int>  $dayIds
+     */
+    protected function openDueDays(Exam $exam, array $dayIds, User $by): int
+    {
+        $opened = 0;
+
+        foreach ($exam->days->whereIn('id', $dayIds) as $day) {
+            if ($day->status !== ExamDayStatus::Scheduled || $day->starts_at->isFuture() || ($day->ends_at !== null && ! $day->ends_at->isFuture())) {
+                continue;
+            }
+
+            try {
+                $this->lifecycle->open($day, $by);
+                $opened++;
+            } catch (ExamException $exception) {
+                report($exception);
+            }
+        }
+
+        return $opened;
     }
 
     /**

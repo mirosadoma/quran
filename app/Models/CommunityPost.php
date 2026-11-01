@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use App\Observers\ContentCacheObserver;
 use App\Services\CommunitySearch;
 use Database\Factories\CommunityPostFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -21,6 +23,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * search_title and search_body keep the title and the body reduced for searching; they are
  * filled whenever the title or the body is set.
  */
+#[ObservedBy(ContentCacheObserver::class)]
 #[Fillable(['user_id', 'title', 'body'])]
 #[Hidden(['search_title', 'search_body'])]
 class CommunityPost extends Model

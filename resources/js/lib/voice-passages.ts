@@ -8,10 +8,16 @@ export const RATE = 16000;
 /** Frames of 30 ms for telling the voice from silence. */
 const FRAME = 480;
 const FRAME_MS = 30;
-/** A passage ends after this much silence; a long one is cut at a short pause, or anyway at the longest length. */
-const PAUSE_MS = 450;
-const LONG_S = 12;
-const LONGEST_S = 25;
+/**
+ * A passage ends after this much silence; a long one is cut at a short pause, or anyway at the longest
+ * length (Whisper hears 30 s at once). The noise suppression of the microphone hushes a long madd (a
+ * steady sound, like a noise): with a shorter pause the word was cut there, and its end, heard alone,
+ * was taken for other words (ولا الضالين).
+ */
+const PAUSE_MS = 800;
+const LONG_S = 20;
+const SHORT_PAUSE_MS = 240;
+const LONGEST_S = 28;
 /** Kept from before the voice starts, so its first letter is not cut. */
 const PREROLL_FRAMES = 10;
 /** Less voice than this is noise (a cough, a click). */
@@ -125,7 +131,7 @@ export class VoicePassages {
 
         const seconds = (this.passage.length * FRAME) / RATE;
 
-        if (this.silence * FRAME_MS >= PAUSE_MS || (seconds >= LONG_S && this.silence >= 4) || seconds >= LONGEST_S) {
+        if (this.silence * FRAME_MS >= PAUSE_MS || (seconds >= LONG_S && this.silence * FRAME_MS >= SHORT_PAUSE_MS) || seconds >= LONGEST_S) {
             this.end();
 
             return;

@@ -2,8 +2,10 @@
 
 namespace App\Models;
 
+use App\Observers\ContentCacheObserver;
 use Database\Factories\HadithBookFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Attributes\WithoutTimestamps;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -13,6 +15,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 /**
  * A book (kitab) of a collection of hadith, e.g. "كتاب الإيمان" of Sahih al-Bukhari.
  */
+#[ObservedBy(ContentCacheObserver::class)]
 #[Fillable(['hadith_collection_id', 'number', 'name', 'name_en'])]
 #[WithoutTimestamps]
 class HadithBook extends Model

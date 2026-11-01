@@ -23,6 +23,7 @@ use App\Notifications\ExamTurnNow;
 use App\Notifications\ExamTurnSoon;
 use App\Services\Exams\ExamDayLifecycle;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Notification;
 use Inertia\Testing\AssertableInertia;
 use Tests\TestCase;
@@ -412,6 +413,10 @@ class ExamsTest extends TestCase
         $due = $this->examWithDay(['starts_at' => now()->subMinutes(2)]);
         $finished = $this->examWithDay(['starts_at' => now()->subHours(3), 'ends_at' => now()->subMinute(), 'status' => ExamDayStatus::Live]);
         $endless = $this->examWithDay(['starts_at' => now()->subHours(3), 'status' => ExamDayStatus::Live]);
+        // The scheduler was stopped at the start time: a day still running is opened late.
+        $late = $this->examWithDay(['starts_at' => now()->subHours(6), 'ends_at' => now()->addHours(2)]);
+        // A day without an end time left far behind waits for the manager.
+        $forgotten = $this->examWithDay(['starts_at' => now()->subHours(13)]);
 
         $this->artisan('exams:remind')->assertSuccessful();
         $this->artisan('exams:open')->assertSuccessful();
@@ -427,6 +432,85 @@ class ExamsTest extends TestCase
         $this->assertSame(ExamDayStatus::Scheduled, $soon->fresh()->status);
         $this->assertSame(ExamDayStatus::Closed, $finished->fresh()->status);
         $this->assertSame(ExamDayStatus::Live, $endless->fresh()->status);
+        $this->assertSame(ExamDayStatus::Live, $late->fresh()->status);
+        $this->assertSame(ExamDayStatus::Scheduled, $forgotten->fresh()->status);
+    }
+
+    public function test_a_day_planned_for_a_time_already_come_is_opened_at_once(): void
+    {
+        $zone = $this->academy->timezone;
+        $this->travelTo(Carbon::parse('2026-11-01 10:00', $zone));
+        $day = fn (string $date, string $start, string $end = ''): array => ['date' => $date, 'start_time' => $start, 'end_time' => $end, 'halaqa_ids' => [$this->halaqa->id]];
+
+        $this->actingAs($this->manager)->post(route('exams.store'), [
+            'title' => 'اختبار اليوم',
+            'max_score' => 10,
+            'days' => [$day('2026-11-01', '09:40', '12:00'), $day('2026-11-02', '09:00')],
+        ])->assertSessionHasNoErrors();
+
+        $exam = Exam::query()->sole();
+        $this->assertSame(ExamDayStatus::Live, $exam->days[0]->status);
+        $this->assertSame(ExamDayStatus::Scheduled, $exam->days[1]->status);
+        Notification::assertSentTo($this->students[0], ExamDayOpened::class);
+
+        // A day added later in the morning opens at once; a day whose time has not come, or that is over, waits.
+        $tomorrow = $exam->days[1];
+        $this->actingAs($this->manager)->put(route('exams.update', $exam), [
+            'title' => $exam->title,
+            'max_score' => 10,
+            'days' => [
+                ['id' => $exam->days[0]->id, ...$day('2026-11-01', '09:40', '12:00')],
+                ['id' => $tomorrow->id, ...$day('2026-11-02', '09:00')],
+                $day('2026-11-01', '09:55', '11:00'),
+                $day('2026-11-01', '08:00', '09:00'),
+            ],
+        ])->assertSessionHasNoErrors();
+
+        $this->assertSame(
+            ['live', 'live', 'scheduled', 'scheduled'],
+            $this->statusesOf($exam->load('days'), ['2026-11-01 09:40', '2026-11-01 09:55', '2026-11-01 08:00', '2026-11-02 09:00'], $zone),
+        );
+    }
+
+    /**
+     * @param  list<string>  $starts  local start times of the days, in the order wanted
+     * @return list<string>
+     */
+    protected function statusesOf(Exam $exam, array $starts, string $zone): array
+    {
+        return array_map(fn (string $start): string => $exam->days->first(fn (ExamDay $day): bool => $day->starts_at->setTimezone($zone)->format('Y-m-d H:i') === $start)->status->value, $starts);
+    }
+
+    public function test_the_manager_gives_a_day_more_time_and_it_closes_by_itself_at_the_new_time(): void
+    {
+        $this->travelTo(now()->startOfMinute());
+
+        $day = $this->examWithDay(['starts_at' => now()->subHour(), 'ends_at' => now()->addMinutes(10), 'status' => ExamDayStatus::Live]);
+
+        $this->actingAs($this->manager)->post(route('exams.days.extend', $day), ['minutes' => 30])->assertSessionHasNoErrors();
+        $this->assertTrue($day->fresh()->ends_at->equalTo(now()->addMinutes(40)));
+
+        // At the old end time the day goes on; it closes at the new one.
+        $this->travel(11)->minutes();
+        $this->artisan('exams:close')->assertSuccessful();
+        $this->assertSame(ExamDayStatus::Live, $day->fresh()->status);
+
+        $this->travel(30)->minutes();
+        $this->artisan('exams:close')->assertSuccessful();
+        $this->assertSame(ExamDayStatus::Closed, $day->fresh()->status);
+
+        // A closed day, a day without an end time, other people and odd numbers of minutes are refused.
+        $this->actingAs($this->manager)->post(route('exams.days.extend', $day), ['minutes' => 30]);
+        $this->assertSame(ExamDayStatus::Closed, $day->fresh()->status);
+
+        $endless = $this->examWithDay(['starts_at' => now(), 'status' => ExamDayStatus::Live]);
+        $this->actingAs($this->manager)->post(route('exams.days.extend', $endless), ['minutes' => 30]);
+        $this->assertNull($endless->fresh()->ends_at);
+
+        $running = $this->examWithDay(['starts_at' => now(), 'ends_at' => now()->addHour(), 'status' => ExamDayStatus::Live]);
+        $this->actingAs($this->manager)->post(route('exams.days.extend', $running), ['minutes' => 0])->assertSessionHasErrors('minutes');
+        $this->actingAs($this->students[0])->post(route('exams.days.extend', $running), ['minutes' => 30])->assertForbidden();
+        $this->assertTrue($running->fresh()->ends_at->equalTo(now()->addHour()));
     }
 
     public function test_everyone_sees_only_the_exams_they_take_part_in(): void

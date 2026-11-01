@@ -321,14 +321,15 @@ export function useServerTranscription(): {
     const start = useCallback(() => {
         setError(null);
 
-        if (!supported) {
-            setError('unsupported');
+        // First: over plain http the browser hides the microphone, which would look like an unsupported browser.
+        if (!window.isSecureContext) {
+            setError('insecure');
 
             return;
         }
 
-        if (!window.isSecureContext) {
-            setError('insecure');
+        if (!supported) {
+            setError('unsupported');
 
             return;
         }

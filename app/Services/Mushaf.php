@@ -6,12 +6,14 @@ use App\Enums\TafsirEdition;
 use App\Models\Ayah;
 use App\Models\Tafsir;
 use App\Models\WordMeaning;
+use Illuminate\Contracts\Cache\Repository;
 use Illuminate\Support\Facades\Cache;
 
 /**
  * Pages, index, search and tafsir of the mushaf (Madani mushaf of 604 pages).
- * The Quran text never changes, so pages and the index are cached forever;
- * the AyahSeeder clears this cache after (re)seeding.
+ * The Quran text never changes, so pages, surahs, the index and the tafsir are cached forever in a
+ * store of their own on the disk (config/cache.php: mushaf), and reading them never asks the database;
+ * the seeders of the Quran, its tafsir and its word meanings clear this cache.
  */
 class Mushaf
 {
@@ -25,7 +27,7 @@ class Mushaf
      */
     public function page(int $page): array
     {
-        return Cache::rememberForever("mushaf.page.{$page}", fn (): array => Ayah::query()
+        return $this->cache()->rememberForever("mushaf.page.{$page}", fn (): array => Ayah::query()
             ->where('page', $page)
             ->with('meanings')
             ->orderBy('id')
@@ -51,7 +53,7 @@ class Mushaf
      */
     public function surah(int $surah): array
     {
-        return Cache::rememberForever("mushaf.surah.{$surah}", fn (): array => Ayah::query()
+        return $this->cache()->rememberForever("mushaf.surah.{$surah}", fn (): array => Ayah::query()
             ->where('surah', $surah)
             ->orderBy('ayah')
             ->get(['id', 'ayah', 'page', 'text', 'text_simple'])
@@ -83,7 +85,7 @@ class Mushaf
      */
     public function forgetPage(int $page): void
     {
-        Cache::forget("mushaf.page.{$page}");
+        $this->cache()->forget("mushaf.page.{$page}");
     }
 
     /**
@@ -94,7 +96,7 @@ class Mushaf
      */
     public function index(): array
     {
-        return Cache::rememberForever('mushaf.index', function (): array {
+        return $this->cache()->rememberForever('mushaf.index', function (): array {
             $firstAyahs = Ayah::query()
                 ->selectRaw('hizb_quarter, MIN(id) as first_id')
                 ->groupBy('hizb_quarter')
@@ -158,23 +160,34 @@ class Mushaf
      */
     public function tafsir(Ayah $ayah, TafsirEdition $edition): ?string
     {
-        return Tafsir::query()->where('edition', $edition)->where('ayah_id', $ayah->id)->value('text');
+        return $this->cache()->rememberForever(
+            "mushaf.tafsir.{$edition->value}.{$ayah->id}",
+            fn (): ?string => Tafsir::query()->where('edition', $edition)->where('ayah_id', $ayah->id)->value('text'),
+        );
     }
 
     /**
-     * Forget the cached pages and index (after seeding the Quran text).
+     * Whether the Quran text was seeded (from the cached index).
+     */
+    public function ready(): bool
+    {
+        return $this->index()['page_starts'] !== [];
+    }
+
+    /**
+     * Forget everything cached of the mushaf (after seeding the Quran text, its tafsir or its meanings).
      */
     public function flush(): void
     {
-        Cache::forget('mushaf.index');
+        $this->cache()->flush();
+    }
 
-        foreach (range(1, self::PAGES) as $page) {
-            Cache::forget("mushaf.page.{$page}");
-        }
-
-        foreach (range(1, 114) as $surah) {
-            Cache::forget("mushaf.surah.{$surah}");
-        }
+    /**
+     * The store that keeps the mushaf, for it alone.
+     */
+    protected function cache(): Repository
+    {
+        return Cache::store('mushaf');
     }
 
     /**

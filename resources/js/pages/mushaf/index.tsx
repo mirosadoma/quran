@@ -39,7 +39,7 @@ import { http } from '@/lib/http';
 import { useTrans } from '@/lib/i18n';
 import { cachedPage, clampPage, loadPage, pageOfAyah, readPreference, spreadOf, TOTAL_PAGES, updateCachedAyah, useMushafPages, writePreference } from '@/lib/mushaf';
 import { arabicDigits, surahName } from '@/lib/quran';
-import { type RecitationMistake, wordMarks } from '@/lib/recitation-check';
+import { type RecitationMistake, wordMarks, wordsSaidRight } from '@/lib/recitation-check';
 import { prepareSounds } from '@/lib/sounds';
 import { cn, formatNumber } from '@/lib/utils';
 import type { HighlightColor, MushafAyah, MushafBookmarkItem, MushafHighlightItem, MushafIndex, ReciterItem } from '@/types';
@@ -99,6 +99,8 @@ export default function Mushaf(props: MushafProps) {
     // The recitation mistakes stay marked on the pages until the page is reloaded.
     const [mistakes, setMistakes] = useState<RecitationMistake[]>([]);
     const [hideText, setHideText] = useState(false);
+    // The recitation panel with all its details, or folded into a bar so the page stays in view (on phones).
+    const [reciteExpanded, setReciteExpanded] = useState<boolean>(() => readPreference('recite.expanded', typeof window !== 'undefined' && window.innerWidth >= 1024));
     // Full screen: only the pages on a desk, the actions behind one floating icon.
     const [immersive, setImmersive] = useState(false);
     const pointerType = useRef('mouse');
@@ -381,8 +383,29 @@ export default function Mushaf(props: MushafProps) {
         () => ({ jalalah: colorJalalah, meanings: showMeanings && !recite, marks, hideUnrecited: !!recite && hideText }),
         [colorJalalah, showMeanings, recite, marks, hideText],
     );
-    const recordMistake = useCallback((mistake: RecitationMistake) => setMistakes((list) => [...list, mistake]), []);
+    // One mistake per word: its last one.
+    const recordMistake = useCallback(
+        (mistake: RecitationMistake) => setMistakes((list) => [...list.filter((kept) => kept.ayahId !== mistake.ayahId || kept.index !== mistake.index), mistake]),
+        [],
+    );
     const clearMistakes = useCallback(() => setMistakes([]), []);
+
+    // A word said right again (going back over it, or reciting again) has its mistake corrected.
+    useEffect(() => {
+        if (!reciting) {
+            return;
+        }
+
+        const right = wordsSaidRight(reciting.expected, reciting.progress);
+
+        if (right.size > 0) {
+            setMistakes((list) => {
+                const kept = list.filter((mistake) => !right.has(`${mistake.ayahId}:${mistake.index}`));
+
+                return kept.length === list.length ? list : kept;
+            });
+        }
+    }, [reciting]);
 
     const renderPage = useCallback(
         (number: number, side: PageSide) => (
@@ -669,9 +692,9 @@ export default function Mushaf(props: MushafProps) {
 
                 {immersive ? (
                     // Room to scroll the pages above the recitation panel or the player.
-                    <div className={cn(recite ? 'h-80' : recitation.active && 'h-28')} />
+                    <div className={cn(recite ? (reciteExpanded ? 'h-80' : 'h-28') : recitation.active && 'h-28')} />
                 ) : (
-                    <div className={cn(recite ? 'mb-80' : recitation.active && 'mb-28')}>
+                    <div className={cn(recite ? (reciteExpanded ? 'mb-80' : 'mb-28') : recitation.active && 'mb-28')}>
                         <PageNavigator page={current} left={double ? spread.left : null} compact={phone} onGo={goTo} onPrevious={previous} onNext={next} />
                     </div>
                 )}
@@ -777,6 +800,11 @@ export default function Mushaf(props: MushafProps) {
                     onMistake={recordMistake}
                     onClearMistakes={clearMistakes}
                     onProgress={setReciting}
+                    expanded={reciteExpanded}
+                    onExpanded={(value) => {
+                        setReciteExpanded(value);
+                        writePreference('recite.expanded', value);
+                    }}
                     onClose={stopReciting}
                 />
             ) : (

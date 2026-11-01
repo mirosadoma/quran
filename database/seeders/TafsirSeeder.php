@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Enums\TafsirEdition;
 use App\Models\Tafsir;
+use App\Services\Mushaf;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\File;
 
@@ -20,7 +21,7 @@ class TafsirSeeder extends Seeder
     /**
      * Run the database seeds.
      */
-    public function run(): void
+    public function run(Mushaf $mushaf): void
     {
         foreach (TafsirEdition::cases() as $edition) {
             $rows = json_decode(File::get(database_path("data/quran/tafsir-{$edition->value}.json")), true, flags: JSON_THROW_ON_ERROR);
@@ -37,5 +38,7 @@ class TafsirSeeder extends Seeder
                 );
             }
         }
+
+        $mushaf->flush();
     }
 }
