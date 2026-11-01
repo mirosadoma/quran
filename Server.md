@@ -9,7 +9,7 @@
 
 ## ثانيًا: على السيرفر (مرة واحدة)
 
-**السيرفر:** Ubuntu 24.04 بذاكرة ٤ جيجا على الأقل، ودومين بيشاور عليه، وHTTPS إجباري، وإلا مش هيشتغل الميكروفون ولا الإشعارات ولا تثبيت التطبيق. أوامر تجهيز السيرفر (PHP 8.3، MySQL، Nginx، Node 22، Composer، Supervisor، Certbot) موجودة في PLAN.md بند ٢، ومعاها الذاكرة الاحتياطية (swap) وتسريع PHP (OPcache).
+**السيرفر:** Ubuntu 24.04 بذاكرة ٤ جيجا على الأقل، ودومين بيشاور عليه، وHTTPS إجباري، وإلا مش هيشتغل الميكروفون ولا الإشعارات ولا تثبيت التطبيق. أوامر تجهيز السيرفر (PHP 8.5، MySQL، Nginx، Node 22، Composer، Supervisor، Certbot) موجودة في PLAN.md بند ٢، ومعاها الذاكرة الاحتياطية (swap) وتسريع PHP (OPcache).
 
 **سحب المشروع وبناؤه:**
 
@@ -95,7 +95,7 @@ cd transcriber && sudo -u www-data npm install --omit=dev
 cd /var/www/quran && git pull
 composer install --no-dev -o && npm ci && npm run build
 php artisan migrate --force && php artisan optimize
-sudo systemctl reload php8.3-fpm
+sudo systemctl reload php8.5-fpm
 php artisan queue:restart && php artisan reverb:restart && sudo supervisorctl restart quran-transcriber
 ```
 
@@ -106,3 +106,34 @@ php artisan db:seed --class=ContentSeeder --force
 ```
 
 ولو غيرت أي حاجة في `.env` شغل `php artisan optimize` تاني.
+
+## خامسًا: نقل سيرفر شغال من PHP 8.3 لـ PHP 8.5 (مرة واحدة)
+
+المشروع بقى محتاج PHP 8.5، والإصدارات الجديدة في `composer.lock` مش هتشتغل على 8.3. عشان كده الخطوات دي بالترتيب، والموقع بيقف دقيقة واحدة بس في النص.
+
+**١) قبل الإيقاف (الموقع شغال عادي):** نزّل PHP 8.5 جنب 8.3 من غير ما تشيله، وانسخ ملف OPcache:
+
+```bash
+sudo apt install -y software-properties-common && sudo add-apt-repository -y ppa:ondrej/php && sudo apt update
+sudo apt install -y php8.5-fpm php8.5-cli php8.5-mysql php8.5-mbstring php8.5-xml php8.5-curl php8.5-zip php8.5-gd php8.5-intl php8.5-bcmath
+sudo cp /etc/php/8.3/fpm/conf.d/99-quran.ini /etc/php/8.5/fpm/conf.d/
+php8.5 -v
+```
+
+لو كنت عدلت حاجة في `/etc/php/8.3/fpm/pool.d/www.conf` أو `php.ini` (زي `upload_max_filesize`)، اعمل نفس التعديل في ملفات `/etc/php/8.5/`. وبعدين `sudo systemctl restart php8.5-fpm`.
+
+**٢) النقل (الموقع واقف):**
+
+```bash
+cd /var/www/quran && php artisan down --retry=60
+sudo update-alternatives --set php /usr/bin/php8.5   # الكرون وSupervisor وComposer يشتغلوا بـ 8.5
+git pull && composer install --no-dev -o
+php artisan migrate --force && php artisan optimize
+sudo sed -i 's/php8.3-fpm.sock/php8.5-fpm.sock/' /etc/nginx/sites-available/quran && sudo nginx -t && sudo systemctl reload nginx
+php artisan queue:restart && php artisan reverb:restart && sudo supervisorctl restart all
+php artisan up
+```
+
+**٣) اتأكد:** افتح الموقع وجرب الدخول والمحادثة والإشعار التجريبي، وتابع `tail -f storage/logs/laravel.log` شوية.
+
+**لو حصلت مشكلة ورجعت للنسخة القديمة:** رجّع `php8.5-fpm.sock` لـ `php8.3-fpm.sock` في Nginx، و`sudo update-alternatives --set php /usr/bin/php8.3`، وارجع للكود القديم بـ `git checkout <الكومِت القديم> && composer install --no-dev -o && php artisan optimize`. سيب PHP 8.3 متسطب أسبوع، ولما تطمن شيله بـ `sudo apt purge 'php8.3-*'`.

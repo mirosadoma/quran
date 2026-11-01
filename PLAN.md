@@ -19,7 +19,7 @@
 
 | الطبقة | الاختيار | السبب |
 |---|---|---|
-| Backend | **Laravel 13** (PHP 8.3) | أحدث إصدار، Auth وQueue وScheduler وNotifications جاهزة |
+| Backend | **Laravel 13** (PHP 8.5) | أحدث إصدار، Auth وQueue وScheduler وNotifications جاهزة |
 | Frontend | **React 19 + TypeScript** عبر **Inertia.js v3** | لارافيل وريأكت في مشروع واحد بدون API منفصل: الـ Routing والصلاحيات والـ Validation في لارافيل، والواجهة SPA سريعة في ريأكت |
 | التصميم | **Tailwind CSS v4** + Headless UI + Lucide Icons | تصميم خاص بهوية إسلامية، ودعم RTL كامل بالخصائص المنطقية (`ms-`/`me-`/`start-`/`end-`) |
 | قاعدة البيانات | **MySQL** | متوفرة في Laragon وأي استضافة |
@@ -178,7 +178,7 @@ lang/ar.json             كل نصوص الواجهة بالعربية (الإن
 ## 9. التشغيل محلياً (Laragon)
 
 ```bash
-# 1) المتطلبات: PHP 8.3+، Composer، Node 20+، MySQL (من Laragon)
+# 1) المتطلبات: PHP 8.5+، Composer، Node 20+، MySQL (من Laragon)
 composer install
 npm install
 
@@ -299,8 +299,9 @@ TRANSCRIBER_TOKEN=...      # اختياري: نفس القيمة في متغير
 **2) تجهيز السيرفر (مرة واحدة):**
 ```bash
 sudo apt update && sudo apt upgrade -y
+sudo apt install -y software-properties-common && sudo add-apt-repository -y ppa:ondrej/php   # Ubuntu 24.04 يأتي بـ PHP 8.3 فقط
 sudo apt install -y nginx mysql-server supervisor git unzip certbot python3-certbot-nginx \
-  php8.3-fpm php8.3-cli php8.3-mysql php8.3-mbstring php8.3-xml php8.3-curl php8.3-zip php8.3-gd php8.3-intl php8.3-bcmath php8.3-opcache
+  php8.5-fpm php8.5-cli php8.5-mysql php8.5-mbstring php8.5-xml php8.5-curl php8.5-zip php8.5-gd php8.5-intl php8.5-bcmath   # OPcache مدمج في PHP 8.5
 curl -sS https://getcomposer.org/installer | sudo php -- --install-dir=/usr/local/bin --filename=composer
 curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash - && sudo apt install -y nodejs
 sudo mysql -e "CREATE DATABASE quran CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; CREATE USER 'quran'@'localhost' IDENTIFIED BY 'كلمة-سر-قوية'; GRANT ALL ON quran.* TO 'quran'@'localhost';"
@@ -315,7 +316,7 @@ echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
 free -h   # يظهر سطر Swap بـ 2.0Gi
 ```
 
-**OPcache (يحفظ كود PHP جاهزاً في الذاكرة فتصير الصفحات أسرع):** الملف `/etc/php/8.3/fpm/conf.d/99-quran.ini`:
+**OPcache (يحفظ كود PHP جاهزاً في الذاكرة فتصير الصفحات أسرع):** الملف `/etc/php/8.5/fpm/conf.d/99-quran.ini`:
 ```ini
 opcache.enable=1
 opcache.memory_consumption=256
@@ -324,9 +325,9 @@ opcache.max_accelerated_files=20000
 opcache.validate_timestamps=0
 ```
 ```bash
-sudo systemctl restart php8.3-fpm
+sudo systemctl restart php8.5-fpm
 ```
-> مع `validate_timestamps=0` لا يرى PHP أي تعديل في الكود حتى `sudo systemctl reload php8.3-fpm` (موجود في خطوات التحديث بالأسفل).
+> مع `validate_timestamps=0` لا يرى PHP أي تعديل في الكود حتى `sudo systemctl reload php8.5-fpm` (موجود في خطوات التحديث بالأسفل).
 
 **3) رفع المشروع:** ارفعه أولاً على GitHub (مستودع خاص)، ثم:
 ```bash
@@ -382,7 +383,7 @@ server {
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_read_timeout 120s;
     }
-    location ~ \.php$ { include snippets/fastcgi-php.conf; fastcgi_pass unix:/run/php/php8.3-fpm.sock; }
+    location ~ \.php$ { include snippets/fastcgi-php.conf; fastcgi_pass unix:/run/php/php8.5-fpm.sock; }
     location ~ /\.(?!well-known) { deny all; }
 }
 ```
@@ -431,7 +432,7 @@ curl http://127.0.0.1:8787/health   # أول تشغيل يحمّل حوالي 50
 cd /var/www/quran && git pull
 composer install --no-dev -o && npm install && npm run build
 php artisan migrate --force && php artisan optimize
-sudo systemctl reload php8.3-fpm   # OPcache يقرأ الكود الجديد
+sudo systemctl reload php8.5-fpm   # OPcache يقرأ الكود الجديد
 php artisan queue:restart && php artisan reverb:restart && sudo supervisorctl restart quran-transcriber
 ```
 
